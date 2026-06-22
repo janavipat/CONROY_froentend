@@ -1,26 +1,124 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * CONROY — design tokens reverse-engineered from the live Milano-theme storefront.
+ * Single typeface (Jost), white base with warm cream alt sections, near-black
+ * headings, a red brand accent, pill buttons and softly rounded media.
+ */
+@theme {
+  /* Palette (from the live site's CSS custom properties) */
+  --color-white: #ffffff;
+  --color-cream: #f0ede4; /* warm alt sections */
+  --color-paper: #f7f6f2; /* very light warm */
+  --color-mist: #f5f5f5; /* neutral light grey */
+  --color-ink: #111111; /* headings */
+  --color-ink-soft: #444444; /* body text */
+  --color-stone: #8c8c8c; /* muted text */
+  --color-line: #ebebeb; /* borders */
+  --color-accent: #d0473e; /* brand red */
+  --color-forest: #253230; /* dark feature scheme */
+  --color-lime: #f3fc81; /* lime on forest */
+
+  /* Semantic */
+  --color-background: var(--color-white);
+  --color-foreground: var(--color-ink-soft);
+
+  /* Typography — one family, like the real site */
+  --font-sans: var(--font-jost), ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-jost), ui-sans-serif, system-ui, sans-serif;
+
+  /* Shape */
+  --radius-pill: 30px;
+  --radius-media: 10px;
+
+  /* Layout */
+  --spacing-header: 4.5rem;
+
+  /* Easing */
+  --ease-luxe: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  border-color: var(--color-line);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-background);
+  color: var(--color-ink-soft);
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 300;
+  letter-spacing: 0;
+}
+
+/* Headings — Jost, near-black, tight tracking (matches --heading-letter-spacing). */
+.font-display {
+  font-family: var(--font-sans);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: var(--color-ink);
+  letter-spacing: -0.02em;
+}
+
+/* Small uppercase eyebrow / label text. */
+.eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 500;
+}
+
+/* Marquee for the announcement bar */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.animate-marquee {
+  animation: marquee 30s linear infinite;
+}
+
+/* Refined scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-mist);
+}
+::-webkit-scrollbar-thumb {
+  background: #d6d2c6;
+  border-radius: 9999px;
+}
+
+::selection {
+  background: var(--color-ink);
+  color: var(--color-white);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
