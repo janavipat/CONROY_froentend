@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Container } from "@/components/ui/Container";
 import { PageHeader } from "@/layouts/PageHeader";
-import { AuthForm } from "@/components/forms/AuthForm";
+import { LoginPanel } from "@/components/forms/LoginPanel";
 
 export const metadata: Metadata = {
   title: "Login",
@@ -19,7 +19,7 @@ export default function LoginPage() {
       />
       <section className="py-16 lg:py-24">
         <Container className="max-w-md">
-          <AuthForm mode="login" />
+          <LoginPanel />
         </Container>
       </section>
     </>
