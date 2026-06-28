@@ -53,7 +53,7 @@ export default async function CollectionPage(props: PageProps<"/collections/[han
       />
       <section className="py-14 lg:py-20">
         <Container>
-          <p className="mb-8 text-xs uppercase tracking-[0.18em] text-stone">
+          <p className="mb-8 text-xs tracking-[0.01em] text-stone">
             {products.length} {products.length === 1 ? "product" : "products"}
           </p>
           <ProductGrid products={products} columns={4} priorityCount={4} />

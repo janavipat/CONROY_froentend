@@ -55,7 +55,7 @@ export function CollectionShowcase() {
                   <p className="eyebrow text-cream/80">{s.eyebrow}</p>
                   <h3 className="mt-2 font-display text-3xl text-cream sm:text-4xl">{s.title}</h3>
                   <p className="mt-2 max-w-xs text-sm text-cream/85">{s.copy}</p>
-                  <span className="mt-4 inline-flex items-center gap-2 text-[0.72rem] uppercase tracking-[0.18em] text-cream">
+                  <span className="mt-4 inline-flex items-center gap-2 text-[0.72rem] tracking-[0.01em] text-cream">
                     Shop now
                     <ArrowRightIcon className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
                   </span>

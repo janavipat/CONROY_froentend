@@ -14,7 +14,7 @@ export function ServiceFeatures() {
               <Reveal key={feature.title} index={i} className="flex items-start gap-4">
                 <Icon className="h-8 w-8 shrink-0 text-ink" />
                 <div>
-                  <h3 className="text-sm font-medium uppercase tracking-[0.12em] text-ink">
+                  <h3 className="text-sm font-medium tracking-[0.01em] text-ink">
                     {feature.title}
                   </h3>
                   <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">

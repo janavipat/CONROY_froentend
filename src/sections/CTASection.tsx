@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/Button";
 /** Closing promise band — "original, authentic pieces that are made to last". */
 export function CTASection() {
   return (
-    <section className="bg-paper py-20 lg:py-28">
+    <section className="bg-sky py-20 lg:py-28">
       <Container>
         <Reveal className="mx-auto flex max-w-3xl flex-col items-center text-center">
           <p className="eyebrow text-stone">Our Promise</p>

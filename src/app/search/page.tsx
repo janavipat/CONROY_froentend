@@ -31,7 +31,7 @@ export default function SearchPage() {
       </label>
 
       <div className="mt-5 flex flex-wrap items-center gap-2">
-        <span className="text-xs uppercase tracking-[0.12em] text-stone">Trending:</span>
+        <span className="text-xs tracking-[0.01em] text-stone">Trending:</span>
         {TRENDING_SEARCHES.map((term) => (
           <button
             key={term}

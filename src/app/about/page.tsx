@@ -117,7 +117,7 @@ export default function AboutPage() {
       <section className="bg-ink py-20 text-center text-cream lg:py-28">
         <Container>
           <Reveal>
-            <p className="mx-auto max-w-3xl font-display text-2xl italic leading-snug sm:text-3xl lg:text-4xl">
+            <p className="mx-auto max-w-3xl font-display text-2xl italic leading-snug text-white sm:text-3xl lg:text-4xl">
               “Clothing meant to be lived in, passed down, and appreciated — not for a season, but
               for a lifetime.”
             </p>

@@ -13,13 +13,13 @@ const VARIANTS: Record<Variant, string> = {
 };
 
 const SIZES: Record<Size, string> = {
-  sm: "h-10 px-7 text-[0.72rem]",
-  md: "h-12 px-9 text-[0.78rem]",
-  lg: "h-14 px-11 text-[0.82rem]",
+  sm: "h-10 px-6 text-sm",
+  md: "h-12 px-8 text-sm",
+  lg: "h-14 px-10 text-[0.95rem]",
 };
 
 const baseClasses =
-  "inline-flex items-center justify-center gap-2 rounded-pill font-normal uppercase tracking-[0.12em] transition-colors duration-300 ease-[var(--ease-luxe)] cursor-pointer disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-pill font-medium tracking-normal transition-colors duration-300 ease-[var(--ease-luxe)] cursor-pointer disabled:opacity-50 disabled:pointer-events-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ink";
 
 interface CommonProps {
   variant?: Variant;
