@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { useCart } from "@/lib/cart-context";
+import { createOrder } from "@/services/orders";
 import { formatCurrency } from "@/utils/format";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
@@ -11,15 +12,41 @@ import { BagIcon, MinusIcon, PlusIcon } from "@/components/ui/Icons";
 
 export default function CartPage() {
   const { items, subtotal, removeItem, updateQuantity, count, clear } = useCart();
-  const [placed, setPlaced] = useState(false);
+  const [placed, setPlaced] = useState<{ orderId?: string } | null>(null);
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  async function handleCheckout() {
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+      setError("Please enter a valid email for your order confirmation.");
+      return;
+    }
+    setError("");
+    setSubmitting(true);
+    const result = await createOrder(email, items);
+    setSubmitting(false);
+    if (result.ok) {
+      setPlaced({ orderId: result.orderId });
+      clear();
+    } else {
+      setError(result.message);
+    }
+  }
 
   if (placed) {
     return (
       <Container className="flex min-h-[60vh] flex-col items-center justify-center gap-5 py-20 text-center">
         <h1 className="font-display text-4xl text-ink">Thank you for your order</h1>
         <p className="max-w-md text-ink-soft">
-          This is a demonstration checkout. In production, payment would be handled by a secure
-          provider. We&apos;ve cleared your cart.
+          Your order has been received and a confirmation will be sent to your email.
+          {placed.orderId && (
+            <>
+              {" "}
+              Your order reference is{" "}
+              <span className="font-medium text-ink">{placed.orderId.slice(0, 8)}</span>.
+            </>
+          )}
         </p>
         <Button href="/collections/all">Continue shopping</Button>
       </Container>
@@ -129,8 +156,26 @@ export default function CartPage() {
             <span className="font-display text-lg text-ink">Total</span>
             <span className="font-display text-lg text-ink">{formatCurrency(subtotal)}</span>
           </div>
-          <Button onClick={() => setPlaced(true)} size="lg" className="mt-6 w-full">
-            Checkout
+
+          <label className="mt-6 block">
+            <span className="eyebrow text-stone">Email for confirmation</span>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              className="mt-2 h-11 w-full border border-line bg-white px-3 text-sm text-ink focus:border-ink focus:outline-none"
+            />
+          </label>
+          {error && <p className="mt-2 text-xs text-accent">{error}</p>}
+
+          <Button
+            onClick={handleCheckout}
+            size="lg"
+            className="mt-4 w-full"
+            disabled={submitting}
+          >
+            {submitting ? "Placing order…" : "Checkout"}
           </Button>
           <p className="mt-3 text-center text-xs text-stone">
             Taxes included. Secure, encrypted payment.

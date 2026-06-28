@@ -1,12 +1,12 @@
-import { getAllProducts } from "@/lib/products";
+import { fetchAllProducts } from "@/services/catalog";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { ProductGrid } from "@/components/product/ProductGrid";
 import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/motion/Reveal";
 
-export function FeaturedProducts() {
-  const products = getAllProducts();
+export async function FeaturedProducts() {
+  const products = await fetchAllProducts();
   return (
     <section className="py-16 sm:py-20 lg:py-24">
       <Container>

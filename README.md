@@ -165,6 +165,33 @@ npm run lint
 
 ---
 
+## 🔗 Backend integration (Supabase API)
+
+The storefront integrates with the Express + Supabase backend in [`../backend`](../backend).
+Set the API base URL in `.env.local`:
+
+```
+NEXT_PUBLIC_API_BASE_URL=http://localhost:4000/api
+```
+
+What's wired:
+
+- **Catalog** — the homepage grid, `/collections/[handle]` and `/products/[handle]` fetch
+  from the API via `src/services/catalog.ts`. It uses ISR (`revalidate`) and **falls back to
+  the bundled static catalog** if the backend is unreachable, so the site always builds and
+  renders.
+- **Checkout** — the cart collects an email and `POST`s to `/api/orders`
+  (`src/services/orders.ts`); the backend resolves authoritative prices from Supabase and
+  returns an order reference.
+- **Forms** — the contact form and newsletter post through the Axios layer
+  (`src/services/`), which targets `NEXT_PUBLIC_API_BASE_URL`.
+
+To run the full stack locally: start the backend (`cd ../backend && npm run dev`), then the
+frontend (`npm run dev`). With no backend running, everything degrades gracefully to the
+in-app data and route handlers.
+
+---
+
 ## ☁️ Deployment
 
 The app is a standard Next.js project and deploys anywhere Next 16 is supported.
