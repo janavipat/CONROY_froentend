@@ -15,7 +15,7 @@ export function AnnouncementBar() {
         {track.map((msg, i) => (
           <span
             key={i}
-            className="mx-8 inline-flex items-center gap-8 text-[0.66rem] uppercase tracking-[0.22em]"
+            className="mx-8 inline-flex items-center gap-8 text-[0.66rem] tracking-[0.06em]"
           >
             {msg}
             <span aria-hidden className="text-white/50">

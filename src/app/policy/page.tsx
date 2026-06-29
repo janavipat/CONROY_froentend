@@ -69,7 +69,7 @@ export default function PolicyPage() {
               <a
                 key={s.id}
                 href={`#${s.id}`}
-                className="rounded-full border border-line px-4 py-1.5 text-xs uppercase tracking-[0.12em] text-ink-soft transition-colors hover:border-ink hover:text-ink"
+                className="rounded-full border border-line px-4 py-1.5 text-xs tracking-[0.01em] text-ink-soft transition-colors hover:border-ink hover:text-ink"
               >
                 {s.title}
               </a>

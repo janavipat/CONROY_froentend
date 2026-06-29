@@ -32,7 +32,7 @@ export function Accordion({
             >
               <span
                 className={cn(
-                  "text-sm uppercase tracking-[0.12em]",
+                  "text-sm tracking-[0.01em]",
                   isOpen ? "text-ink" : "text-ink-soft",
                 )}
               >

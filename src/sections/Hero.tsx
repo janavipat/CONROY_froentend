@@ -61,7 +61,7 @@ export function Hero() {
           >
             <Link
               href="/collections/all"
-              className="inline-flex h-13 items-center justify-center rounded-pill bg-white px-10 text-[0.78rem] uppercase tracking-[0.14em] text-ink transition-colors duration-300 hover:bg-ink hover:text-white"
+              className="inline-flex h-13 items-center justify-center rounded-pill bg-white px-10 text-[0.78rem] tracking-[0.01em] text-ink transition-colors duration-300 hover:bg-ink hover:text-white"
             >
               Shop Collection
             </Link>

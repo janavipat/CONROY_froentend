@@ -48,8 +48,8 @@ export function Header() {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "relative text-[0.78rem] uppercase tracking-[0.14em] text-ink-soft transition-colors hover:text-accent",
-                    "after:absolute after:-bottom-1.5 after:left-0 after:h-px after:bg-accent after:transition-all after:duration-300",
+                    "relative text-sm text-ink-soft transition-colors hover:text-ink",
+                    "after:absolute after:-bottom-1.5 after:left-0 after:h-px after:bg-ink after:transition-all after:duration-300",
                     isActive(link.href) ? "text-ink after:w-full" : "after:w-0 hover:after:w-full",
                   )}
                 >
@@ -62,7 +62,7 @@ export function Header() {
           {/* Center: wordmark */}
           <Link
             href="/"
-            className="font-display text-2xl font-semibold tracking-[0.22em] text-ink sm:text-[1.6rem] lg:flex-1 lg:text-center"
+            className="font-display text-2xl font-semibold tracking-[0.14em] text-ink sm:text-[1.6rem] lg:flex-1 lg:text-center"
             aria-label={`${SITE.name} home`}
           >
             {SITE.name}

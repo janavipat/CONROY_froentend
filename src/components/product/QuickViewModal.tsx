@@ -43,7 +43,7 @@ export function QuickViewModal({
           <Link
             href={`/products/${product.handle}`}
             onClick={onClose}
-            className="text-xs uppercase tracking-[0.18em] text-ink underline-offset-4 hover:underline"
+            className="text-xs tracking-[0.01em] text-ink underline-offset-4 hover:underline"
           >
             View full details
           </Link>

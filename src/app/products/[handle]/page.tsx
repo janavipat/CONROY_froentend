@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import {
-  PRODUCTS,
-  getAllProducts,
-  getProductByHandle,
-} from "@/lib/products";
+import { PRODUCTS, getProductByHandle } from "@/lib/products";
+import { fetchAllProducts, fetchProductByHandle } from "@/services/catalog";
 import { SITE } from "@/lib/site";
 import { formatCurrency } from "@/utils/format";
 import { Container } from "@/components/ui/Container";
@@ -60,10 +57,12 @@ const RETURNS_COPY =
 
 export default async function ProductPage(props: PageProps<"/products/[handle]">) {
   const { handle } = await props.params;
-  const product = getProductByHandle(handle);
+  const product = await fetchProductByHandle(handle);
   if (!product) notFound();
 
-  const related = getAllProducts().filter((p) => p.handle !== product.handle).slice(0, 4);
+  const related = (await fetchAllProducts())
+    .filter((p) => p.handle !== product.handle)
+    .slice(0, 4);
 
   // Structured data for rich results.
   const jsonLd = {

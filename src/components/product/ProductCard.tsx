@@ -38,7 +38,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
           </Link>
 
           {product.badge && (
-            <span className="absolute left-3 top-3 bg-ink px-2.5 py-1 text-[0.6rem] uppercase tracking-[0.18em] text-cream">
+            <span className="absolute left-3 top-3 bg-ink px-2.5 py-1 text-[0.6rem] tracking-[0.01em] text-cream">
               {product.badge}
             </span>
           )}
@@ -47,7 +47,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
           <button
             onClick={() => setQuickView(true)}
             className={cn(
-              "absolute inset-x-3 bottom-3 h-10 bg-cream/95 text-[0.7rem] uppercase tracking-[0.18em] text-ink opacity-0 backdrop-blur transition-all duration-300",
+              "absolute inset-x-3 bottom-3 h-10 bg-cream/95 text-[0.7rem] tracking-[0.01em] text-ink opacity-0 backdrop-blur transition-all duration-300",
               "translate-y-2 group-hover:translate-y-0 group-hover:opacity-100 hover:bg-ink hover:text-cream",
             )}
           >

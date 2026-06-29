@@ -13,7 +13,7 @@ const VALUES = [
 
 export function Philosophy() {
   return (
-    <section className="bg-paper py-16 sm:py-20 lg:py-28">
+    <section className="bg-sage py-16 sm:py-20 lg:py-28">
       <Container>
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
           <Reveal className="relative aspect-[4/5] overflow-hidden bg-mist">

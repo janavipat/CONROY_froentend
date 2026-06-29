@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { COLLECTIONS, getCollectionByHandle, getProductsForCollection } from "@/lib/products";
+import { COLLECTIONS, getCollectionByHandle } from "@/lib/products";
+import { fetchCollection } from "@/services/catalog";
 import { SITE } from "@/lib/site";
 import { Container } from "@/components/ui/Container";
 import { ProductGrid } from "@/components/product/ProductGrid";
@@ -33,10 +34,10 @@ export async function generateMetadata(
 
 export default async function CollectionPage(props: PageProps<"/collections/[handle]">) {
   const { handle } = await props.params;
-  const collection = getCollectionByHandle(handle);
-  if (!collection) notFound();
+  const result = await fetchCollection(handle);
+  if (!result) notFound();
 
-  const products = getProductsForCollection(handle);
+  const { collection, products } = result;
 
   return (
     <>
@@ -52,7 +53,7 @@ export default async function CollectionPage(props: PageProps<"/collections/[han
       />
       <section className="py-14 lg:py-20">
         <Container>
-          <p className="mb-8 text-xs uppercase tracking-[0.18em] text-stone">
+          <p className="mb-8 text-xs tracking-[0.01em] text-stone">
             {products.length} {products.length === 1 ? "product" : "products"}
           </p>
           <ProductGrid products={products} columns={4} priorityCount={4} />
