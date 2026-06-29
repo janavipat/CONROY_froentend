@@ -30,18 +30,39 @@ const DEMO_KEY = "conroy-demo-auth";
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-/** Maps raw Supabase auth errors to clean, human messages. */
-function friendlyError(message?: string): string {
-  const m = (message ?? "").toLowerCase();
-  if (m.includes("rate") || m.includes("too many") || m.includes("seconds"))
+/** Maps raw Supabase auth errors to clean, human messages. Checks the stable
+ *  error `code` first, then falls back to message text. Order matters: the
+ *  server-config errors are checked BEFORE the "invalid number" heuristic,
+ *  since "Unsupported phone provider" also contains the word "phone". */
+function friendlyError(err?: { code?: string; message?: string } | null): string {
+  const code = (err?.code ?? "").toLowerCase();
+  const m = (err?.message ?? "").toLowerCase();
+
+  // Server hasn't enabled phone/SMS sign-in yet (config, not user error).
+  if (code === "phone_provider_disabled" || code === "otp_disabled" || m.includes("provider"))
+    return "Phone sign-in isn't enabled on the server yet. (Supabase → Auth → Phone provider.)";
+  if (code === "sms_send_failed" || m.includes("sms"))
+    return "Couldn't send the SMS right now. Please try again shortly.";
+
+  // Rate limiting.
+  if (code.includes("rate") || m.includes("rate") || m.includes("too many") || m.includes("seconds"))
     return "Too many attempts. Please wait a moment and try again.";
-  if (m.includes("invalid") && m.includes("otp")) return "That code is invalid or has expired.";
-  if (m.includes("expired")) return "This code has expired. Please request a new one.";
-  if (m.includes("token")) return "Incorrect code. Please check and try again.";
-  if (m.includes("phone")) return "Please enter a valid mobile number.";
-  if (m.includes("sms") || m.includes("provider"))
-    return "SMS service is unavailable right now. Please try again later.";
-  return message || "Something went wrong. Please try again.";
+
+  // OTP verification problems.
+  if (code === "otp_expired" || m.includes("expired"))
+    return "This code has expired. Please request a new one.";
+  if (
+    code === "otp_invalid" ||
+    (m.includes("invalid") && (m.includes("otp") || m.includes("token"))) ||
+    m.includes("token")
+  )
+    return "Incorrect code. Please check and try again.";
+
+  // Genuinely malformed phone number (be specific so provider errors don't match).
+  if (code === "validation_failed" || m.includes("invalid phone") || m.includes("invalid number"))
+    return "Please enter a valid mobile number.";
+
+  return err?.message || "Something went wrong. Please try again.";
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -99,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       phone: phoneE164,
       options: { channel: "sms" },
     });
-    return { error: error ? friendlyError(error.message) : null };
+    return { error: error ? friendlyError(error) : null };
   }, []);
 
   const verifyOtp = useCallback(async (phoneE164: string, code: string) => {
@@ -124,7 +145,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       token: code,
       type: "sms",
     });
-    if (error) return { error: friendlyError(error.message) };
+    if (error) return { error: friendlyError(error) };
     if (data.user) setUser({ id: data.user.id, phone: data.user.phone ?? phoneE164 });
     return { error: null };
   }, []);
