@@ -1,27 +1,13 @@
 import type { Metadata } from "next";
-import { Container } from "@/components/ui/Container";
-import { PageHeader } from "@/layouts/PageHeader";
-import { AuthForm } from "@/components/forms/AuthForm";
+import { LoginExperience } from "@/components/auth/LoginExperience";
 
 export const metadata: Metadata = {
-  title: "Login",
-  description: "Sign in to your CONROY account.",
+  title: "Sign in",
+  description: "Sign in to your CONROY account with your mobile number.",
   alternates: { canonical: "/account/login" },
   robots: { index: false, follow: true },
 };
 
 export default function LoginPage() {
-  return (
-    <>
-      <PageHeader
-        title="Login"
-        breadcrumbs={[{ label: "Home", href: "/" }, { label: "Login" }]}
-      />
-      <section className="py-16 lg:py-24">
-        <Container className="max-w-md">
-          <AuthForm mode="login" />
-        </Container>
-      </section>
-    </>
-  );
+  return <LoginExperience />;
 }

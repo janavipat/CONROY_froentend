@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* Class-based dark mode: `dark:` utilities activate under any `.dark` ancestor,
+ * so dark mode can be scoped to a subtree (e.g. the auth screen) without a
+ * site-wide theme. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /*
  * CONROY — design tokens reverse-engineered from the live Milano-theme storefront.
  * Single typeface (Jost), white base with warm cream alt sections, near-black
