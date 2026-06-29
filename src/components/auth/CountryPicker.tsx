@@ -53,7 +53,7 @@ export function CountryPicker({
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="flex h-12 items-center gap-1.5 rounded-l-xl border border-r-0 border-line bg-white px-3 text-sm text-ink transition-colors hover:bg-mist focus:outline-none disabled:opacity-60 dark:border-white/15 dark:bg-white/5 dark:text-white dark:hover:bg-white/10"
+        className="flex h-12 items-center gap-1.5 border border-line bg-white px-3 text-sm text-ink transition-colors hover:bg-mist focus:outline-none disabled:opacity-60"
       >
         <span className="text-base leading-none">{value.flag}</span>
         <span className="font-medium">{value.dial}</span>
@@ -69,16 +69,16 @@ export function CountryPicker({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 6, scale: 0.98, transition: { duration: 0.12 } }}
             transition={{ type: "spring", stiffness: 420, damping: 30 }}
-            className="absolute left-0 top-[calc(100%+0.5rem)] z-50 w-72 overflow-hidden rounded-xl border border-line bg-white shadow-[0_12px_40px_rgba(0,0,0,0.16)] dark:border-white/10 dark:bg-[#17171a]"
+            className="absolute left-0 top-[calc(100%+0.5rem)] z-50 w-72 overflow-hidden rounded-md border border-line bg-white shadow-[0_12px_40px_rgba(0,0,0,0.16)]"
           >
-            <div className="flex items-center gap-2 border-b border-line px-3 dark:border-white/10">
+            <div className="flex items-center gap-2 border-b border-line px-3">
               <SearchIcon className="h-4 w-4 text-stone" />
               <input
                 autoFocus
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search country or code"
-                className="h-11 w-full bg-transparent text-sm text-ink outline-none placeholder:text-stone dark:text-white"
+                className="h-11 w-full bg-transparent text-sm text-ink outline-none placeholder:text-stone"
               />
             </div>
             <ul role="listbox" className="max-h-60 overflow-y-auto py-1">
@@ -95,8 +95,8 @@ export function CountryPicker({
                       setQuery("");
                     }}
                     className={cn(
-                      "flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink transition-colors hover:bg-mist dark:text-zinc-100 dark:hover:bg-white/5",
-                      c.iso2 === value.iso2 && "bg-mist font-medium dark:bg-white/5",
+                      "flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-ink transition-colors hover:bg-mist",
+                      c.iso2 === value.iso2 && "bg-mist font-medium",
                     )}
                   >
                     <span className="text-base">{c.flag}</span>

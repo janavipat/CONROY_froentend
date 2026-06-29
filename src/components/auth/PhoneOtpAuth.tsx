@@ -22,12 +22,11 @@ function Spinner({ className }: { className?: string }) {
   );
 }
 
-const panelMotion = {
-  initial: { opacity: 0, x: 24 },
-  animate: { opacity: 1, x: 0 },
-  exit: { opacity: 0, x: -24 },
-  transition: { type: "spring" as const, stiffness: 380, damping: 34 },
-};
+const labelClass = "mb-2 block text-[0.7rem] font-medium uppercase tracking-[0.16em] text-stone";
+const inputClass =
+  "h-12 w-full border border-line bg-white px-4 text-sm text-ink outline-none transition-colors placeholder:text-stone/70 focus:border-ink";
+const buttonClass =
+  "flex h-12 w-full items-center justify-center gap-2 bg-ink text-[0.78rem] font-medium uppercase tracking-[0.14em] text-white transition-colors hover:bg-black disabled:opacity-50";
 
 export function PhoneOtpAuth() {
   const { user, initializing, isConfigured, demoCode, sendOtp, verifyOtp, signOut } = useAuth();
@@ -126,8 +125,8 @@ export function PhoneOtpAuth() {
   /* ---- Auto-login splash --------------------------------------------- */
   if (initializing) {
     return (
-      <div className="flex h-48 flex-col items-center justify-center gap-3 text-stone">
-        <Spinner className="h-6 w-6 text-ink dark:text-white" />
+      <div className="flex h-44 flex-col items-center justify-center gap-3 text-stone">
+        <Spinner className="h-6 w-6 text-ink" />
         <p className="text-sm">Checking your session…</p>
       </div>
     );
@@ -136,23 +135,16 @@ export function PhoneOtpAuth() {
   /* ---- Already signed in (session exists) ---------------------------- */
   if (user) {
     return (
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col items-center gap-5 text-center"
-      >
-        <span className="grid h-14 w-14 place-items-center rounded-full bg-emerald-500/10 text-emerald-500">
+      <div className="flex flex-col items-center gap-5 text-center">
+        <span className="grid h-14 w-14 place-items-center rounded-full bg-ink text-white">
           <CheckIcon className="h-7 w-7" />
         </span>
         <div className="space-y-1">
-          <h2 className="font-display text-2xl text-ink dark:text-white">You&apos;re signed in</h2>
+          <h2 className="font-display text-2xl text-ink">You&apos;re signed in</h2>
           <p className="text-sm text-stone">{user.phone}</p>
         </div>
         <div className="flex w-full flex-col gap-2.5">
-          <Link
-            href="/collections/all"
-            className="flex h-12 items-center justify-center rounded-xl bg-ink text-sm font-medium text-white transition-transform hover:-translate-y-0.5 dark:bg-white dark:text-ink"
-          >
+          <Link href="/collections/all" className={buttonClass}>
             Continue shopping
           </Link>
           <button
@@ -160,44 +152,38 @@ export function PhoneOtpAuth() {
               await signOut();
               toast("Logged out", "info");
             }}
-            className="flex h-12 items-center justify-center rounded-xl border border-line text-sm font-medium text-ink transition-colors hover:bg-mist dark:border-white/15 dark:text-white dark:hover:bg-white/5"
+            className="flex h-12 w-full items-center justify-center border border-line text-[0.78rem] font-medium uppercase tracking-[0.14em] text-ink transition-colors hover:bg-mist"
           >
             Log out
           </button>
         </div>
-      </motion.div>
+      </div>
     );
   }
 
   /* ---- Auth flow ----------------------------------------------------- */
   return (
     <div>
-      <div className="mb-7">
-        <h1 className="font-display text-[1.7rem] leading-tight text-ink dark:text-white sm:text-3xl">
-          {step === "phone" ? "Sign in" : "Verify your number"}
-        </h1>
-        <p className="mt-1.5 text-sm text-stone">
-          {step === "phone"
-            ? "Enter your mobile number to receive a one-time code."
-            : `We sent a 6-digit code to ${e164}.`}
-        </p>
-      </div>
-
       <AnimatePresence mode="wait">
         {step === "phone" ? (
           <motion.form
             key="phone"
-            {...panelMotion}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
             onSubmit={(e) => {
               e.preventDefault();
               void handleSend();
             }}
             className="space-y-5"
           >
+            <p className="text-sm leading-relaxed text-ink-soft">
+              Enter your mobile number and we&apos;ll send you a one-time verification code.
+            </p>
+
             <div>
-              <label className="mb-2 block text-xs font-medium uppercase tracking-[0.14em] text-stone">
-                Mobile number
-              </label>
+              <label className={labelClass}>Mobile number</label>
               <div className="flex">
                 <CountryPicker value={country} onChange={setCountry} disabled={sending} />
                 <input
@@ -212,43 +198,23 @@ export function PhoneOtpAuth() {
                     if (phoneError) setPhoneError(null);
                   }}
                   placeholder="Mobile number"
-                  className={cn(
-                    "h-12 w-full rounded-r-xl border bg-white px-4 text-sm text-ink shadow-sm outline-none transition-all placeholder:text-stone focus:ring-2 focus:ring-ink/10",
-                    "border-line focus:border-ink",
-                    "dark:bg-white/5 dark:text-white dark:placeholder:text-stone dark:border-white/15 dark:focus:border-white dark:focus:ring-white/15",
-                    phoneError && "border-rose-500 focus:border-rose-500 focus:ring-rose-500/15",
-                  )}
+                  className={cn(inputClass, "border-l-0", phoneError && "border-accent")}
                 />
               </div>
-              <AnimatePresence>
-                {phoneError && (
-                  <motion.p
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: "auto" }}
-                    exit={{ opacity: 0, height: 0 }}
-                    className="mt-2 text-xs text-rose-500"
-                  >
-                    {phoneError}
-                  </motion.p>
-                )}
-              </AnimatePresence>
+              {phoneError && <p className="mt-2 text-xs text-accent">{phoneError}</p>}
             </div>
 
-            <label className="flex cursor-pointer items-center gap-2.5 text-sm text-ink-soft dark:text-zinc-300">
+            <label className="flex cursor-pointer items-center gap-2.5 text-sm text-ink-soft">
               <input
                 type="checkbox"
                 checked={remember}
                 onChange={(e) => setRemember(e.target.checked)}
-                className="h-4 w-4 rounded border-line text-ink accent-ink dark:accent-white"
+                className="h-4 w-4 accent-ink"
               />
               Keep me signed in on this device
             </label>
 
-            <button
-              type="submit"
-              disabled={sending}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-ink text-sm font-medium text-white shadow-lg shadow-ink/10 transition-all hover:-translate-y-0.5 hover:shadow-xl disabled:translate-y-0 disabled:opacity-60 dark:bg-white dark:text-ink dark:shadow-white/5"
-            >
+            <button type="submit" disabled={sending} className={buttonClass}>
               {sending ? (
                 <>
                   <Spinner /> Sending OTP…
@@ -259,14 +225,25 @@ export function PhoneOtpAuth() {
             </button>
           </motion.form>
         ) : (
-          <motion.div key="otp" {...panelMotion} className="space-y-5">
+          <motion.div
+            key="otp"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            className="space-y-5"
+          >
             <button
               type="button"
               onClick={changeNumber}
-              className="inline-flex items-center gap-1 text-xs font-medium text-stone transition-colors hover:text-ink dark:hover:text-white"
+              className="inline-flex items-center gap-1 text-xs font-medium text-stone transition-colors hover:text-ink"
             >
               <ChevronLeftIcon className="h-3.5 w-3.5" /> Change number
             </button>
+
+            <p className="text-sm leading-relaxed text-ink-soft">
+              Enter the 6-digit code sent to <span className="font-medium text-ink">{e164}</span>.
+            </p>
 
             <OtpInput
               value={otp}
@@ -279,45 +256,34 @@ export function PhoneOtpAuth() {
               error={Boolean(otpError)}
             />
 
-            <AnimatePresence>
-              {otpError && (
-                <motion.p
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="text-xs text-rose-500"
-                >
-                  {otpError}
-                </motion.p>
-              )}
-            </AnimatePresence>
+            {otpError && <p className="text-xs text-accent">{otpError}</p>}
 
             <button
               type="button"
               onClick={() => void handleVerify()}
               disabled={verifying || otp.length !== 6}
-              className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-ink text-sm font-medium text-white shadow-lg shadow-ink/10 transition-all hover:-translate-y-0.5 hover:shadow-xl disabled:translate-y-0 disabled:opacity-50 dark:bg-white dark:text-ink"
+              className={buttonClass}
             >
               {verifying ? (
                 <>
                   <Spinner /> Verifying…
                 </>
               ) : (
-                "Verify & continue"
+                "Verify & Sign in"
               )}
             </button>
 
             <div className="text-center text-sm text-stone">
               {resendIn > 0 ? (
                 <span>
-                  Resend code in <span className="font-medium text-ink dark:text-white">{resendIn}s</span>
+                  Resend code in <span className="font-medium text-ink">{resendIn}s</span>
                 </span>
               ) : (
                 <button
                   type="button"
                   onClick={() => void handleResend()}
                   disabled={sending}
-                  className="font-medium text-ink underline-offset-4 hover:underline disabled:opacity-50 dark:text-white"
+                  className="font-medium text-ink underline-offset-4 hover:underline disabled:opacity-50"
                 >
                   Resend OTP
                 </button>
@@ -328,9 +294,9 @@ export function PhoneOtpAuth() {
       </AnimatePresence>
 
       {!isConfigured && (
-        <p className="mt-6 rounded-lg border border-dashed border-line bg-mist/60 px-3 py-2 text-center text-xs text-stone dark:border-white/15 dark:bg-white/5">
-          Demo mode — use code <span className="font-semibold text-ink dark:text-white">{demoCode}</span>. Add a Supabase
-          anon key for live SMS.
+        <p className="mt-6 border border-dashed border-line bg-mist/60 px-3 py-2 text-center text-xs text-stone">
+          Demo mode — use code <span className="font-semibold text-ink">{demoCode}</span>. Add a
+          Supabase anon key for live SMS.
         </p>
       )}
     </div>

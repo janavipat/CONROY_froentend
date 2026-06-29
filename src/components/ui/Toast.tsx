@@ -47,16 +47,12 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, scale: 0.96, transition: { duration: 0.18 } }}
               transition={{ type: "spring", stiffness: 380, damping: 30 }}
-              className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-xl border border-black/5 bg-white/90 p-3.5 pr-3 shadow-[0_8px_30px_rgba(0,0,0,0.12)] backdrop-blur-md dark:border-white/10 dark:bg-[#17171a]/90"
+              className="pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-lg border border-line bg-white p-3.5 pr-3 shadow-[0_8px_30px_rgba(0,0,0,0.12)]"
             >
               <span
                 className={
                   "mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full text-white " +
-                  (t.type === "success"
-                    ? "bg-emerald-500"
-                    : t.type === "error"
-                      ? "bg-rose-500"
-                      : "bg-ink dark:bg-white dark:text-ink")
+                  (t.type === "success" ? "bg-ink" : t.type === "error" ? "bg-accent" : "bg-stone")
                 }
               >
                 {t.type === "success" ? (
@@ -67,11 +63,11 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
                   <span className="text-[0.7rem] font-bold">i</span>
                 )}
               </span>
-              <p className="flex-1 text-sm leading-snug text-ink dark:text-zinc-100">{t.message}</p>
+              <p className="flex-1 text-sm leading-snug text-ink">{t.message}</p>
               <button
                 onClick={() => remove(t.id)}
                 aria-label="Dismiss"
-                className="rounded-md p-1 text-stone transition-colors hover:text-ink dark:hover:text-white"
+                className="rounded-md p-1 text-stone transition-colors hover:text-ink"
               >
                 <CloseIcon className="h-3.5 w-3.5" />
               </button>
