@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/lib/auth/auth-context";
@@ -22,7 +22,6 @@ function Spinner({ className }: { className?: string }) {
   );
 }
 
-const labelClass = "mb-2 block text-[0.7rem] font-medium uppercase tracking-[0.16em] text-stone";
 const inputClass =
   "h-12 w-full border border-line bg-white px-4 text-sm text-ink outline-none transition-colors placeholder:text-stone/70 focus:border-ink";
 const buttonClass =
@@ -43,6 +42,7 @@ export function PhoneOtpAuth() {
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [otpError, setOtpError] = useState<string | null>(null);
   const [resendIn, setResendIn] = useState(0);
+  const phoneRef = useRef<HTMLInputElement>(null);
 
   const e164 = useMemo(() => `${country.dial}${phone}`, [country, phone]);
 
@@ -51,6 +51,12 @@ export function PhoneOtpAuth() {
     const id = setTimeout(() => setResendIn((s) => s - 1), 1000);
     return () => clearTimeout(id);
   }, [resendIn]);
+
+  // Focus the phone field AFTER hydration (avoids dropping the first keystroke
+  // that `autoFocus` causes when typing before React attaches its handlers).
+  useEffect(() => {
+    if (step === "phone") phoneRef.current?.focus();
+  }, [step]);
 
   function validatePhone(): boolean {
     const digits = phone.replace(/\D/g, "");
@@ -183,14 +189,26 @@ export function PhoneOtpAuth() {
             </p>
 
             <div>
-              <label className={labelClass}>Mobile number</label>
+              <div className="mb-2 flex items-center justify-between">
+                <label className="text-[0.7rem] font-medium uppercase tracking-[0.16em] text-stone">
+                  Mobile number
+                </label>
+                <span
+                  className={cn(
+                    "text-[0.7rem] tabular-nums",
+                    phone.length === country.len ? "text-ink" : "text-stone",
+                  )}
+                >
+                  {phone.length}/{country.len}
+                </span>
+              </div>
               <div className="flex">
                 <CountryPicker value={country} onChange={setCountry} disabled={sending} />
                 <input
+                  ref={phoneRef}
                   type="tel"
                   inputMode="numeric"
                   autoComplete="tel-national"
-                  autoFocus
                   value={phone}
                   disabled={sending}
                   onChange={(e) => {
