@@ -21,9 +21,9 @@ export function PageHeader({
 }) {
   return (
     <header className="border-b border-line bg-paper">
-      <Container className="py-14 text-center sm:py-16 lg:py-20">
+      <Container className="py-8 text-center sm:py-10 lg:py-12">
         {breadcrumbs && breadcrumbs.length > 0 && (
-          <nav aria-label="Breadcrumb" className="mb-6 flex justify-center">
+          <nav aria-label="Breadcrumb" className="mb-3 flex justify-center">
             <ol className="flex items-center gap-2 text-xs text-stone">
               {breadcrumbs.map((crumb, i) => (
                 <li key={i} className="flex items-center gap-2">
@@ -40,9 +40,9 @@ export function PageHeader({
             </ol>
           </nav>
         )}
-        <Reveal className="flex flex-col items-center gap-4">
+        <Reveal className="flex flex-col items-center gap-3">
           {eyebrow && <span className="eyebrow text-stone">{eyebrow}</span>}
-          <h1 className="font-display text-4xl leading-tight text-ink sm:text-5xl lg:text-6xl">
+          <h1 className="font-display text-3xl leading-tight text-ink sm:text-4xl lg:text-5xl">
             {title}
           </h1>
           {description && (
