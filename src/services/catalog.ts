@@ -14,7 +14,6 @@ import { getApiBase, hasRemoteApi } from "@/lib/api";
  * bundled static catalog so the storefront always builds and renders.
  */
 
-const REVALIDATE = 300; // seconds — ISR for catalog data
 
 function normalizeProduct(raw: Record<string, unknown>): Product {
   return {
@@ -45,7 +44,8 @@ function normalizeProduct(raw: Record<string, unknown>): Product {
 async function apiGet<T>(path: string): Promise<T | null> {
   if (!hasRemoteApi()) return null;
   try {
-    const res = await fetch(`${getApiBase()}${path}`, { next: { revalidate: REVALIDATE } });
+    // Always fetch fresh so admin edits reflect immediately (catalog is small).
+    const res = await fetch(`${getApiBase()}${path}`, { cache: "no-store" });
     if (!res.ok) return null;
     const json = (await res.json()) as { ok: boolean; data: T };
     return json.ok ? json.data : null;

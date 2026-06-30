@@ -1,6 +1,8 @@
 import { api } from "./api";
 import type { CartItem } from "@/types";
 
+export type PaymentMethod = "online" | "cod";
+
 export interface CreateOrderResult {
   ok: boolean;
   message: string;
@@ -15,9 +17,11 @@ export interface CreateOrderResult {
 export async function createOrder(
   email: string,
   items: CartItem[],
+  paymentMethod: PaymentMethod = "online",
 ): Promise<CreateOrderResult> {
   const payload = {
     email,
+    paymentMethod,
     items: items.map((i) => ({
       productHandle: i.productHandle,
       size: i.size,
@@ -33,9 +37,6 @@ export async function createOrder(
     return { ok: data.ok, message: data.message, orderId: data.data?.id };
   } catch {
     // Backend offline — acknowledge locally so the demo checkout still completes.
-    return {
-      ok: true,
-      message: "Order placed (demo mode — backend not connected).",
-    };
+    return { ok: true, message: "Order placed (demo mode — backend not connected)." };
   }
 }

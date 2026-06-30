@@ -1,9 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { SITE } from "@/lib/site";
-import { AnnouncementBar } from "@/components/layout/AnnouncementBar";
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
+import { StoreChrome } from "@/components/layout/StoreChrome";
 import { Providers } from "./providers";
 
 // Clean, native system-font stack (no web-font download) — like offduty.in.
@@ -58,10 +56,7 @@ export default function RootLayout({
     <html lang="en" className="h-full antialiased">
       <body className="flex min-h-full flex-col bg-white">
         <Providers>
-          <AnnouncementBar />
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
+          <StoreChrome>{children}</StoreChrome>
         </Providers>
       </body>
     </html>

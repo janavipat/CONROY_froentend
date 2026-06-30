@@ -77,14 +77,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (!supabase) {
       // Demo mode — read a stored demo session.
-      try {
-        const raw =
-          window.localStorage.getItem(DEMO_KEY) ?? window.sessionStorage.getItem(DEMO_KEY);
-        if (raw && active) setUser(JSON.parse(raw) as AuthUser);
-      } catch {
-        /* ignore */
-      }
-      setInitializing(false);
+      const restoreDemo = () => {
+        try {
+          const raw =
+            window.localStorage.getItem(DEMO_KEY) ?? window.sessionStorage.getItem(DEMO_KEY);
+          if (raw && active) setUser(JSON.parse(raw) as AuthUser);
+        } catch {
+          /* ignore */
+        }
+        setInitializing(false);
+      };
+      restoreDemo();
       return;
     }
 

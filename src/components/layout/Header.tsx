@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { PRIMARY_NAV, SITE } from "@/lib/site";
 import { useCart } from "@/lib/cart-context";
+import { useAuth } from "@/lib/auth/auth-context";
 import { useScrollPosition } from "@/hooks/useScrollPosition";
 import { cn } from "@/utils/cn";
 import { Container } from "@/components/ui/Container";
@@ -16,6 +17,7 @@ export function Header() {
   const pathname = usePathname();
   const scrolled = useScrollPosition(20);
   const { count, openCart } = useCart();
+  const { user } = useAuth();
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -78,9 +80,9 @@ export function Header() {
               <SearchIcon className="h-5 w-5" />
             </button>
             <Link
-              href="/account/login"
+              href={user ? "/account/profile" : "/account/login"}
               className="hidden h-9 w-9 place-items-center text-ink transition-colors hover:text-accent sm:grid"
-              aria-label="Account"
+              aria-label={user ? "My account" : "Sign in"}
             >
               <UserIcon className="h-5 w-5" />
             </Link>
