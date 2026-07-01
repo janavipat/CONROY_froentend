@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/utils/cn";
+import { clearAdminKey } from "@/lib/admin-auth";
 import { BagIcon, ArrowRightIcon, TruckIcon, UserIcon } from "@/components/ui/Icons";
 
 const NAV = [
@@ -13,6 +14,12 @@ const NAV = [
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const router = useRouter();
+
+  function logout() {
+    clearAdminKey();
+    router.replace("/admin/login");
+  }
 
   return (
     <aside className="hidden w-60 shrink-0 flex-col border-r border-line bg-white md:flex">
@@ -44,13 +51,21 @@ export function AdminSidebar() {
         })}
       </nav>
 
-      <Link
-        href="/"
-        className="m-3 flex items-center justify-between rounded-md border border-line px-3 py-2.5 text-sm text-ink-soft transition-colors hover:border-ink hover:text-ink"
-      >
-        View store
-        <ArrowRightIcon className="h-4 w-4" />
-      </Link>
+      <div className="m-3 space-y-2">
+        <Link
+          href="/"
+          className="flex items-center justify-between rounded-md border border-line px-3 py-2.5 text-sm text-ink-soft transition-colors hover:border-ink hover:text-ink"
+        >
+          View store
+          <ArrowRightIcon className="h-4 w-4" />
+        </Link>
+        <button
+          onClick={logout}
+          className="w-full rounded-md px-3 py-2 text-left text-sm text-stone transition-colors hover:text-accent"
+        >
+          Log out
+        </button>
+      </div>
     </aside>
   );
 }

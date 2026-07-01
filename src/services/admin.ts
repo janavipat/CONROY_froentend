@@ -83,6 +83,16 @@ export interface AdminCustomer {
   totalSpent: number;
 }
 
+/** Validates an admin key against the backend. */
+export async function adminVerifyKey(key: string): Promise<boolean> {
+  try {
+    await api.get("/admin/verify", { headers: { "x-admin-key": key } });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function adminListOrders(): Promise<AdminOrder[]> {
   const { data } = await api.get<ApiList<AdminOrder[]>>("/admin/orders");
   return data.data ?? [];
