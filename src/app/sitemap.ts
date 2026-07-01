@@ -12,6 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       { url: `${SITE.url}/about`, changeFrequency: "monthly", priority: 0.7 },
       { url: `${SITE.url}/contact`, changeFrequency: "monthly", priority: 0.6 },
       { url: `${SITE.url}/policy`, changeFrequency: "yearly", priority: 0.4 },
+      { url: `${SITE.url}/terms`, changeFrequency: "yearly", priority: 0.4 },
       { url: `${SITE.url}/search`, changeFrequency: "monthly", priority: 0.3 },
     ] as const
   ).map((r) => ({ ...r, lastModified: now }));

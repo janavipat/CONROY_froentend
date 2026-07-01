@@ -69,6 +69,9 @@ export function Footer() {
             <Link href="/policy" className="text-xs text-stone hover:text-ink">
               Store Policy
             </Link>
+            <Link href="/terms" className="text-xs text-stone hover:text-ink">
+              Terms &amp; Conditions
+            </Link>
             <a
               href={SITE.social.instagram}
               target="_blank"
