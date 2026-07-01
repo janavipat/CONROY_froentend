@@ -53,6 +53,46 @@ export async function adminDeleteProduct(handle: string) {
   return data as { ok: boolean; message: string };
 }
 
+export interface AdminOrderItem {
+  product_handle: string;
+  title: string;
+  size: string;
+  fit: string;
+  price: number;
+  quantity: number;
+}
+
+export interface AdminOrder {
+  id: string;
+  customerName: string | null;
+  email: string;
+  phone: string | null;
+  subtotal: number;
+  currency: string;
+  status: string;
+  paymentMethod: string;
+  createdAt: string;
+  items: AdminOrderItem[];
+}
+
+export interface AdminCustomer {
+  phone: string;
+  email: string | null;
+  joinedAt: string;
+  orderCount: number;
+  totalSpent: number;
+}
+
+export async function adminListOrders(): Promise<AdminOrder[]> {
+  const { data } = await api.get<ApiList<AdminOrder[]>>("/admin/orders");
+  return data.data ?? [];
+}
+
+export async function adminListCustomers(): Promise<AdminCustomer[]> {
+  const { data } = await api.get<ApiList<AdminCustomer[]>>("/admin/customers");
+  return data.data ?? [];
+}
+
 /** Uploads an image file to Supabase Storage via the backend; returns its URL. */
 export async function adminUploadImage(file: File): Promise<string> {
   const form = new FormData();

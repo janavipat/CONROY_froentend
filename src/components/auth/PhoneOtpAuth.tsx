@@ -27,13 +27,14 @@ const inputClass =
 const buttonClass =
   "flex h-12 w-full items-center justify-center gap-2 bg-ink text-[0.78rem] font-medium uppercase tracking-[0.14em] text-white transition-colors hover:bg-black disabled:opacity-50";
 
-export function PhoneOtpAuth() {
+export function PhoneOtpAuth({ collectEmail = false }: { collectEmail?: boolean }) {
   const { user, initializing, isConfigured, demoCode, sendOtp, verifyOtp, signOut } = useAuth();
   const { toast } = useToast();
 
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [country, setCountry] = useState<Country>(DEFAULT_COUNTRY);
   const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [remember, setRemember] = useState(true);
 
@@ -111,7 +112,7 @@ export function PhoneOtpAuth() {
       return;
     }
     setVerifying(true);
-    const { error } = await verifyOtp(e164, value);
+    const { error } = await verifyOtp(e164, value, collectEmail ? email.trim() : undefined);
     setVerifying(false);
     if (error) {
       setOtpError(error);
@@ -221,6 +222,23 @@ export function PhoneOtpAuth() {
               </div>
               {phoneError && <p className="mt-2 text-xs text-accent">{phoneError}</p>}
             </div>
+
+            {collectEmail && (
+              <div>
+                <label className="mb-2 block text-[0.7rem] font-medium uppercase tracking-[0.16em] text-stone">
+                  Email <span className="normal-case tracking-normal text-stone/70">(for order updates &amp; a welcome note)</span>
+                </label>
+                <input
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  disabled={sending}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className={inputClass}
+                />
+              </div>
+            )}
 
             <label className="flex cursor-pointer items-center gap-2.5 text-sm text-ink-soft">
               <input

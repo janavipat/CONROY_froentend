@@ -11,6 +11,7 @@ import { Accordion } from "@/components/ui/Accordion";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { AddToCartForm } from "@/components/product/AddToCartForm";
 import { ProductGrid } from "@/components/product/ProductGrid";
+import { ProductReviews } from "@/components/product/ProductReviews";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
 export function generateStaticParams() {
@@ -158,6 +159,9 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
           </div>
         </div>
       </Container>
+
+      {/* Ratings & reviews (below the product details) */}
+      <ProductReviews handle={product.handle} />
 
       {/* Related products */}
       <section className="border-t border-line py-16 lg:py-24">

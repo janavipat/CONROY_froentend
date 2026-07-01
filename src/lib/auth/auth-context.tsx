@@ -1,164 +1,84 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
-import {
-  getSupabase,
-  isSupabaseConfigured,
-  setRememberSession,
-} from "@/lib/supabase/client";
+import { startPhoneOtp, verifyPhoneOtp, type AuthUser } from "@/services/auth";
 
-export interface AuthUser {
-  id: string;
-  phone: string;
-}
+export type { AuthUser };
 
 interface AuthContextValue {
   user: AuthUser | null;
-  /** True while the initial session check runs (used for auto-login splash). */
+  /** True while the initial session check runs. */
   initializing: boolean;
-  /** False when running in demo mode (no Supabase keys). */
+  /** False when the last OTP was sent in mock/dev mode. */
   isConfigured: boolean;
-  /** Demo OTP shown to the user when not configured. */
+  /** OTP to enter in mock mode (shown as a hint). */
   demoCode: string;
   sendOtp: (phoneE164: string, remember: boolean) => Promise<{ error: string | null }>;
-  verifyOtp: (phoneE164: string, code: string) => Promise<{ error: string | null }>;
+  verifyOtp: (
+    phoneE164: string,
+    code: string,
+    email?: string,
+  ) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
 
-const DEMO_CODE = "123456";
-const DEMO_KEY = "conroy-demo-auth";
+const STORAGE_KEY = "conroy.auth";
+const DEFAULT_DEMO = "123456";
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-/** Maps raw Supabase auth errors to clean, human messages. Checks the stable
- *  error `code` first, then falls back to message text. Order matters: the
- *  server-config errors are checked BEFORE the "invalid number" heuristic,
- *  since "Unsupported phone provider" also contains the word "phone". */
-function friendlyError(err?: { code?: string; message?: string } | null): string {
-  const code = (err?.code ?? "").toLowerCase();
-  const m = (err?.message ?? "").toLowerCase();
-
-  // Server hasn't enabled phone/SMS sign-in yet (config, not user error).
-  if (code === "phone_provider_disabled" || code === "otp_disabled" || m.includes("provider"))
-    return "Phone sign-in isn't enabled on the server yet. (Supabase → Auth → Phone provider.)";
-  if (code === "sms_send_failed" || m.includes("sms"))
-    return "Couldn't send the SMS right now. Please try again shortly.";
-
-  // Rate limiting.
-  if (code.includes("rate") || m.includes("rate") || m.includes("too many") || m.includes("seconds"))
-    return "Too many attempts. Please wait a moment and try again.";
-
-  // OTP verification problems.
-  if (code === "otp_expired" || m.includes("expired"))
-    return "This code has expired. Please request a new one.";
-  if (
-    code === "otp_invalid" ||
-    (m.includes("invalid") && (m.includes("otp") || m.includes("token"))) ||
-    m.includes("token")
-  )
-    return "Incorrect code. Please check and try again.";
-
-  // Genuinely malformed phone number (be specific so provider errors don't match).
-  if (code === "validation_failed" || m.includes("invalid phone") || m.includes("invalid number"))
-    return "Please enter a valid mobile number.";
-
-  return err?.message || "Something went wrong. Please try again.";
+interface StoredSession {
+  user: AuthUser;
+  token?: string;
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [initializing, setInitializing] = useState(true);
-  const demoRemember = useRef(true);
+  const [lastSend, setLastSend] = useState<{ mock: boolean; code?: string } | null>(null);
+  const remember = useRef(true);
 
-  // Auto-login: restore an existing session on mount.
+  // Auto-login: restore a stored session on mount.
   useEffect(() => {
-    let active = true;
-    const supabase = getSupabase();
-
-    if (!supabase) {
-      // Demo mode — read a stored demo session.
-      const restoreDemo = () => {
-        try {
-          const raw =
-            window.localStorage.getItem(DEMO_KEY) ?? window.sessionStorage.getItem(DEMO_KEY);
-          if (raw && active) setUser(JSON.parse(raw) as AuthUser);
-        } catch {
-          /* ignore */
-        }
-        setInitializing(false);
-      };
-      restoreDemo();
-      return;
-    }
-
-    supabase.auth.getSession().then(({ data }) => {
-      if (!active) return;
-      const s = data.session;
-      if (s?.user) setUser({ id: s.user.id, phone: s.user.phone ?? "" });
-      setInitializing(false);
-    });
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!active) return;
-      setUser(session?.user ? { id: session.user.id, phone: session.user.phone ?? "" } : null);
-    });
-
-    return () => {
-      active = false;
-      sub.subscription.unsubscribe();
-    };
-  }, []);
-
-  const sendOtp = useCallback(async (phoneE164: string, remember: boolean) => {
-    setRememberSession(remember);
-    demoRemember.current = remember;
-    const supabase = getSupabase();
-
-    if (!supabase) {
-      await new Promise((r) => setTimeout(r, 700)); // simulate network
-      return { error: null };
-    }
-
-    const { error } = await supabase.auth.signInWithOtp({
-      phone: phoneE164,
-      options: { channel: "sms" },
-    });
-    return { error: error ? friendlyError(error) : null };
-  }, []);
-
-  const verifyOtp = useCallback(async (phoneE164: string, code: string) => {
-    const supabase = getSupabase();
-
-    if (!supabase) {
-      await new Promise((r) => setTimeout(r, 700));
-      if (code !== DEMO_CODE) return { error: "Incorrect code. (Demo code is 123456.)" };
-      const demoUser: AuthUser = { id: `demo-${phoneE164}`, phone: phoneE164 };
+    const restore = () => {
       try {
-        const store = demoRemember.current ? window.localStorage : window.sessionStorage;
-        store.setItem(DEMO_KEY, JSON.stringify(demoUser));
+        const raw = localStorage.getItem(STORAGE_KEY) ?? sessionStorage.getItem(STORAGE_KEY);
+        if (raw) setUser((JSON.parse(raw) as StoredSession).user);
       } catch {
         /* ignore */
       }
-      setUser(demoUser);
-      return { error: null };
-    }
+      setInitializing(false);
+    };
+    restore();
+  }, []);
 
-    const { data, error } = await supabase.auth.verifyOtp({
-      phone: phoneE164,
-      token: code,
-      type: "sms",
-    });
-    if (error) return { error: friendlyError(error) };
-    if (data.user) setUser({ id: data.user.id, phone: data.user.phone ?? phoneE164 });
+  const sendOtp = useCallback(async (phoneE164: string, rememberMe: boolean) => {
+    remember.current = rememberMe;
+    const res = await startPhoneOtp(phoneE164);
+    if (!res.ok) return { error: res.message };
+    setLastSend({ mock: res.mock ?? false, code: res.code });
+    return { error: null };
+  }, []);
+
+  const verifyOtp = useCallback(async (phoneE164: string, code: string, email?: string) => {
+    const res = await verifyPhoneOtp(phoneE164, code, email);
+    if (!res.ok || !res.user) return { error: res.message };
+
+    const session: StoredSession = { user: res.user, token: res.token };
+    try {
+      const store = remember.current ? window.localStorage : window.sessionStorage;
+      store.setItem(STORAGE_KEY, JSON.stringify(session));
+    } catch {
+      /* ignore */
+    }
+    setUser(res.user);
     return { error: null };
   }, []);
 
   const signOut = useCallback(async () => {
-    const supabase = getSupabase();
-    if (supabase) await supabase.auth.signOut();
     try {
-      window.localStorage.removeItem(DEMO_KEY);
-      window.sessionStorage.removeItem(DEMO_KEY);
+      window.localStorage.removeItem(STORAGE_KEY);
+      window.sessionStorage.removeItem(STORAGE_KEY);
     } catch {
       /* ignore */
     }
@@ -170,8 +90,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       value={{
         user,
         initializing,
-        isConfigured: isSupabaseConfigured,
-        demoCode: DEMO_CODE,
+        // Before any send we assume live; a mock send flips this to show the hint.
+        isConfigured: lastSend ? !lastSend.mock : true,
+        demoCode: lastSend?.code ?? DEFAULT_DEMO,
         sendOtp,
         verifyOtp,
         signOut,

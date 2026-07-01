@@ -62,6 +62,25 @@ export interface CartItem {
   quantity: number;
 }
 
+export interface Review {
+  id: string;
+  author: string;
+  rating: number;
+  title: string;
+  body: string;
+  images: string[];
+  createdAt: string;
+}
+
+export interface ReviewSummary {
+  average: number;
+  count: number;
+  /** Count of reviews per star (keys "5".."1"). */
+  breakdown: Record<string, number>;
+  /** All review photos, newest first. */
+  photos: string[];
+}
+
 export interface Testimonial {
   quote: string;
   author: string;

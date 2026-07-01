@@ -1,8 +1,19 @@
 import Link from "next/link";
 import { PhoneOtpAuth } from "@/components/auth/PhoneOtpAuth";
+import { cn } from "@/utils/cn";
 
 /** Clean, light, centered auth card in the CONROY house style. */
-export function LoginExperience() {
+export function LoginExperience({ mode = "signin" }: { mode?: "signin" | "signup" }) {
+  const isSignup = mode === "signup";
+
+  const tab = (active: boolean) =>
+    cn(
+      "-mb-px py-4 text-center font-display text-lg transition-colors",
+      active
+        ? "border-b-2 border-ink bg-white text-ink"
+        : "bg-mist text-stone hover:text-ink",
+    );
+
   return (
     <section className="bg-paper px-5 py-14 sm:py-20">
       <div className="mx-auto w-full max-w-md">
@@ -17,19 +28,25 @@ export function LoginExperience() {
         <div className="border border-line bg-white shadow-sm">
           {/* Tabs */}
           <div className="grid grid-cols-2 border-b border-line">
-            <span className="-mb-px border-b-2 border-ink bg-white py-4 text-center font-display text-lg text-ink">
-              Sign In
-            </span>
-            <Link
-              href="/account/register"
-              className="bg-mist py-4 text-center font-display text-lg text-stone transition-colors hover:text-ink"
-            >
-              Create Account
-            </Link>
+            {isSignup ? (
+              <Link href="/account/login" className={tab(false)}>
+                Sign In
+              </Link>
+            ) : (
+              <span className={tab(true)}>Sign In</span>
+            )}
+            {isSignup ? (
+              <span className={tab(true)}>Create Account</span>
+            ) : (
+              <Link href="/account/register" className={tab(false)}>
+                Create Account
+              </Link>
+            )}
           </div>
 
           <div className="p-6 sm:p-8">
-            <PhoneOtpAuth />
+            {/* Phone OTP powers both — signup just also collects an email. */}
+            <PhoneOtpAuth collectEmail={isSignup} />
           </div>
         </div>
 

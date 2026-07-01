@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useCart } from "@/lib/cart-context";
+import { useAuth } from "@/lib/auth/auth-context";
 import { createOrder, type PaymentMethod } from "@/services/orders";
 import { processPayment } from "@/lib/payments";
 import { formatCurrency } from "@/utils/format";
@@ -30,6 +31,7 @@ const METHODS: { id: PaymentMethod; title: string; desc: string; icon: typeof Sh
 
 export default function PaymentPage() {
   const { items, subtotal, count, clear } = useCart();
+  const { user } = useAuth();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -53,7 +55,7 @@ export default function PaymentPage() {
       return;
     }
 
-    const order = await createOrder(email, items, method);
+    const order = await createOrder(email, items, method, user?.phone);
     setProcessing(false);
     if (order.ok) {
       setDone({ orderId: order.orderId, method });

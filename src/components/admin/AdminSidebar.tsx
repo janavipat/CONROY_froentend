@@ -3,9 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/utils/cn";
-import { BagIcon, ArrowRightIcon } from "@/components/ui/Icons";
+import { BagIcon, ArrowRightIcon, TruckIcon, UserIcon } from "@/components/ui/Icons";
 
-const NAV = [{ label: "Products", href: "/admin/products", icon: BagIcon }];
+const NAV = [
+  { label: "Products", href: "/admin/products", icon: BagIcon },
+  { label: "Orders", href: "/admin/orders", icon: TruckIcon },
+  { label: "Customers", href: "/admin/customers", icon: UserIcon },
+];
 
 export function AdminSidebar() {
   const pathname = usePathname();

@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth/auth-context";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/motion/Reveal";
+import { MyOrders } from "./MyOrders";
 import {
   ArrowRightIcon,
   BagIcon,
@@ -27,7 +28,7 @@ const QUICK_LINKS = [
     icon: BagIcon,
     title: "Orders",
     body: "Track, return or buy things again.",
-    href: "/collections/all",
+    href: "#orders",
     cta: "View orders",
   },
   {
@@ -145,6 +146,11 @@ export function ProfileExperience() {
             <dd className="text-sm text-ink">Phone OTP</dd>
           </div>
         </dl>
+      </Reveal>
+
+      {/* Order history */}
+      <Reveal className="mt-12">
+        <MyOrders phone={user.phone} />
       </Reveal>
     </Container>
   );

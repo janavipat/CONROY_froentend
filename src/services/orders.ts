@@ -9,19 +9,41 @@ export interface CreateOrderResult {
   orderId?: string;
 }
 
+export interface OrderItem {
+  product_handle: string;
+  title: string;
+  size: string;
+  fit: string;
+  price: number;
+  quantity: number;
+}
+
+export interface Order {
+  id: string;
+  email: string;
+  phone: string | null;
+  subtotal: number;
+  currency: string;
+  status: string;
+  created_at: string;
+  items: OrderItem[];
+}
+
 /**
  * Places an order via the backend API. The server resolves authoritative prices
- * from Supabase, so we only send handle/size/quantity. Falls back to a local
- * confirmation when the backend is unavailable (demo mode).
+ * from Supabase, so we only send handle/size/quantity. When the shopper is
+ * signed in we attach their phone so the order shows up in their account.
  */
 export async function createOrder(
   email: string,
   items: CartItem[],
   paymentMethod: PaymentMethod = "online",
+  phone?: string | null,
 ): Promise<CreateOrderResult> {
   const payload = {
     email,
     paymentMethod,
+    phone: phone ?? undefined,
     items: items.map((i) => ({
       productHandle: i.productHandle,
       size: i.size,
@@ -38,5 +60,17 @@ export async function createOrder(
   } catch {
     // Backend offline — acknowledge locally so the demo checkout still completes.
     return { ok: true, message: "Order placed (demo mode — backend not connected)." };
+  }
+}
+
+/** Fetches the signed-in user's order history (by phone). */
+export async function fetchMyOrders(phone: string): Promise<Order[]> {
+  try {
+    const { data } = await api.get<{ ok: boolean; data: Order[] }>("/orders", {
+      params: { phone },
+    });
+    return data.data ?? [];
+  } catch {
+    return [];
   }
 }
