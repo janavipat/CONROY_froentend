@@ -27,6 +27,25 @@ export const createOrderSchema = z.object({
   items: z.array(orderItemSchema).min(1, "An order needs at least one item"),
 });
 
+// Razorpay: create a payment order (client sends only handle/size/qty; the
+// server computes the authoritative amount).
+export const razorpayOrderSchema = z.object({
+  items: z.array(orderItemSchema).min(1, "An order needs at least one item"),
+});
+
+// Razorpay: verify a completed payment and place the order. Includes the same
+// order fields as checkout plus the three values Razorpay Checkout returns.
+export const razorpayVerifySchema = z.object({
+  email: z.string().email("A valid email is required"),
+  fullName: z.string().min(1).max(160).optional(),
+  phone: z.string().max(40).optional(),
+  shippingAddress: z.string().max(1000).optional(),
+  items: z.array(orderItemSchema).min(1, "An order needs at least one item"),
+  razorpayOrderId: z.string().min(1),
+  razorpayPaymentId: z.string().min(1),
+  razorpaySignature: z.string().min(1),
+});
+
 // Product review (rating + feedback + photos). Images are URLs already uploaded.
 export const reviewSchema = z.object({
   author: z.string().min(1, "Please enter your name").max(80),

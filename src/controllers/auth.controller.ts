@@ -4,6 +4,9 @@ import { ApiError } from "../middleware/errors.js";
 import { env } from "../config/env.js";
 import { supabaseAdmin } from "../lib/supabase.js";
 import { sendWelcomeEmail } from "../lib/email.js";
+import { twilioConfigured, sendSms } from "../lib/twilio.js";
+import { whatsappConfigured, sendWhatsappOtp } from "../lib/whatsapp.js";
+import { generateOtp, saveOtp, checkOtp } from "../lib/otpStore.js";
 import { authSchema, phoneStartSchema, phoneVerifySchema } from "../validators/schemas.js";
 
 /** Builds a lightweight session for a verified phone number. */
@@ -114,8 +117,39 @@ export async function startPhoneOtp(req: Request, res: Response) {
     });
   }
 
-  // Real mode: Supabase phone auth sends the OTP via the configured provider
-  // (Twilio) and creates the user on first sign-in.
+  // WhatsApp Cloud API: send the OTP from your WhatsApp Business number (no SMS,
+  // so no India DLT). We generate + verify the code ourselves.
+  if (whatsappConfigured) {
+    const code = generateOtp();
+    // Send first — only store the code once WhatsApp has accepted the message.
+    await sendWhatsappOtp(e164, code);
+    saveOtp(e164, code);
+    return res.json({
+      ok: true,
+      mock: false,
+      phone: e164,
+      channel: "whatsapp",
+      message: "A verification code has been sent on WhatsApp.",
+    });
+  }
+
+  // Twilio-direct: we generate the OTP and send it via Twilio ourselves, using
+  // the sender (TWILIO_FROM / Messaging Service) configured in .env.
+  if (twilioConfigured) {
+    const code = generateOtp();
+    // Send first — only store the code once Twilio has accepted the SMS, so a
+    // failed send never leaves a code the user can't receive.
+    await sendSms(e164, `${code} is your CONROY verification code. It expires in 10 minutes.`);
+    saveOtp(e164, code);
+    return res.json({
+      ok: true,
+      mock: false,
+      phone: e164,
+      message: "A verification code has been sent by SMS.",
+    });
+  }
+
+  // Fallback: Supabase phone auth sends the OTP via its configured provider.
   const { error } = await supabaseAnon.auth.signInWithOtp({
     phone: e164,
     options: { channel: "sms" },
@@ -141,7 +175,21 @@ export async function verifyPhoneOtp(req: Request, res: Response) {
     });
   }
 
-  // Real mode: Supabase validates the OTP and returns a session.
+  // WhatsApp / Twilio-direct: verify against the code we generated + sent, then
+  // issue a lightweight session (same shape the mock path returns).
+  if (whatsappConfigured || twilioConfigured) {
+    const result = checkOtp(e164, code);
+    if (!result.ok) throw new ApiError(401, result.reason ?? "Invalid code.");
+    await onSignedIn(e164, email || undefined);
+    return res.json({
+      ok: true,
+      mock: false,
+      message: "Signed in.",
+      data: phoneSession(e164),
+    });
+  }
+
+  // Fallback: Supabase validates the OTP and returns a session.
   const { data, error } = await supabaseAnon.auth.verifyOtp({
     phone: e164,
     token: code,

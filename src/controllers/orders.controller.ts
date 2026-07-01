@@ -2,71 +2,33 @@ import type { Request, Response } from "express";
 import { supabaseAdmin } from "../lib/supabase.js";
 import { ApiError } from "../middleware/errors.js";
 import { createOrderSchema } from "../validators/schemas.js";
+import { resolveCart, persistOrder } from "../lib/pricing.js";
 
-/** POST /api/orders — creates an order; prices are resolved server-side. */
+/**
+ * POST /api/orders — creates an order; prices are resolved server-side.
+ * Online payments now flow through /api/payments/razorpay (create → verify),
+ * so this endpoint is primarily for Cash on Delivery. An "online" order that
+ * reaches here (e.g. demo mode with no Razorpay keys) is recorded as paid.
+ */
 export async function createOrder(req: Request, res: Response) {
   const input = createOrderSchema.parse(req.body);
 
-  // Resolve authoritative product data from the DB (never trust client prices).
-  const handles = [...new Set(input.items.map((i) => i.productHandle))];
-  const { data: products, error: pErr } = await supabaseAdmin
-    .from("products")
-    .select("handle, title, fit, price, currency, sizes")
-    .in("handle", handles);
-  if (pErr) throw new ApiError(500, pErr.message);
+  const cart = await resolveCart(input.items);
 
-  const byHandle = new Map((products ?? []).map((p) => [p.handle as string, p]));
-
-  const lineItems = input.items.map((item) => {
-    const product = byHandle.get(item.productHandle);
-    if (!product) throw new ApiError(400, `Unknown product: ${item.productHandle}`);
-    if (!(product.sizes as string[]).includes(item.size)) {
-      throw new ApiError(400, `Size ${item.size} is unavailable for ${product.title}`);
-    }
-    return {
-      product_handle: item.productHandle,
-      title: product.title as string,
-      size: item.size,
-      fit: product.fit as string,
-      price: product.price as number,
-      quantity: item.quantity,
-    };
+  const order = await persistOrder({
+    email: input.email,
+    fullName: input.fullName,
+    phone: input.phone,
+    shippingAddress: input.shippingAddress,
+    // COD orders await collection on delivery; online orders are paid.
+    status: input.paymentMethod === "cod" ? "cod_pending" : "paid",
+    cart,
   });
-
-  const currency = (products?.[0]?.currency as string) ?? "INR";
-  const subtotal = lineItems.reduce((sum, li) => sum + li.price * li.quantity, 0);
-
-  // Create the order header.
-  const { data: order, error: oErr } = await supabaseAdmin
-    .from("orders")
-    .insert({
-      email: input.email,
-      full_name: input.fullName ?? null,
-      phone: input.phone ?? null,
-      shipping_address: input.shippingAddress ?? null,
-      subtotal,
-      currency,
-      // COD orders await collection on delivery; online orders are paid.
-      status: input.paymentMethod === "cod" ? "cod_pending" : "paid",
-    })
-    .select()
-    .single();
-  if (oErr) throw new ApiError(500, oErr.message);
-
-  // Insert the line items.
-  const { error: iErr } = await supabaseAdmin
-    .from("order_items")
-    .insert(lineItems.map((li) => ({ ...li, order_id: order.id })));
-  if (iErr) {
-    // Roll back the header if items fail.
-    await supabaseAdmin.from("orders").delete().eq("id", order.id);
-    throw new ApiError(500, iErr.message);
-  }
 
   res.status(201).json({
     ok: true,
     message: "Order placed successfully.",
-    data: { ...order, items: lineItems },
+    data: order,
   });
 }
 

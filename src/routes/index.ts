@@ -6,6 +6,7 @@ import { getProduct, listProducts } from "../controllers/products.controller.js"
 import { getCollection, listCollections } from "../controllers/collections.controller.js";
 import { submitContact, subscribeNewsletter } from "../controllers/engagement.controller.js";
 import { createOrder, getOrder, listOrdersByPhone } from "../controllers/orders.controller.js";
+import { createPaymentOrder, verifyPayment } from "../controllers/payments.controller.js";
 import {
   login,
   me,
@@ -54,6 +55,10 @@ router.post("/newsletter", asyncHandler(subscribeNewsletter));
 router.post("/orders", asyncHandler(createOrder));
 router.get("/orders", asyncHandler(listOrdersByPhone));
 router.get("/orders/:id", asyncHandler(getOrder));
+
+// Payments (Razorpay online checkout: create order → verify signature → place)
+router.post("/payments/razorpay/order", asyncHandler(createPaymentOrder));
+router.post("/payments/razorpay/verify", asyncHandler(verifyPayment));
 
 // Auth (Supabase Auth)
 router.post("/auth/register", asyncHandler(register));

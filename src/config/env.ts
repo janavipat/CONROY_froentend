@@ -21,11 +21,33 @@ const EnvSchema = z.object({
   // Default country code applied to bare local numbers (India).
   OTP_DEFAULT_COUNTRY_CODE: z.string().default("+91"),
 
-  // MSG91 (OTP SMS provider). Auth key is SECRET — server-side only.
+  // WhatsApp Cloud API (OTP via WhatsApp — no SMS, so no India DLT needed).
+  // ACCESS_TOKEN is SECRET — server-side only. Free for ~1,000 conversations/mo.
+  WHATSAPP_ACCESS_TOKEN: z.string().default(""),
+  WHATSAPP_PHONE_NUMBER_ID: z.string().default(""),
+  WHATSAPP_TEMPLATE_NAME: z.string().default(""),
+  WHATSAPP_TEMPLATE_LANG: z.string().default("en_US"),
+  WHATSAPP_OTP_BUTTON: z.string().default("true"),
+
+  // Twilio (OTP SMS provider, sent directly from the backend). Auth token is
+  // SECRET — server-side only. TWILIO_FROM must be a Twilio-owned number (or use
+  // a Messaging Service SID); a personal mobile number can't be a sender.
+  TWILIO_ACCOUNT_SID: z.string().default(""),
+  TWILIO_AUTH_TOKEN: z.string().default(""),
+  TWILIO_FROM: z.string().default(""),
+  TWILIO_MESSAGING_SERVICE_SID: z.string().default(""),
+
+  // MSG91 (legacy OTP SMS provider — unused, kept for reference).
   MSG91_AUTH_KEY: z.string().default(""),
   MSG91_TEMPLATE_ID: z.string().default(""),
   MSG91_OTP_LENGTH: z.coerce.number().default(6),
   MSG91_OTP_EXPIRY_MIN: z.coerce.number().default(10),
+
+  // Razorpay (online payments). Both keys are needed for live checkout; unset →
+  // the storefront falls back to free demo checkout. KEY_SECRET is SECRET —
+  // server-side only (never expose it to the frontend). KEY_ID is public.
+  RAZORPAY_KEY_ID: z.string().default(""),
+  RAZORPAY_KEY_SECRET: z.string().default(""),
 
   // SMTP (welcome/transactional email). Unset → emails are logged, not sent.
   SMTP_HOST: z.string().default(""),
@@ -49,6 +71,18 @@ if (!parsed.success) {
 }
 
 const supabaseConfigured = parsed.data.SUPABASE_URL.startsWith("http");
+const twilioConfigured = Boolean(
+  parsed.data.TWILIO_ACCOUNT_SID &&
+    parsed.data.TWILIO_AUTH_TOKEN &&
+    (parsed.data.TWILIO_FROM || parsed.data.TWILIO_MESSAGING_SERVICE_SID),
+);
+const whatsappConfigured = Boolean(
+  parsed.data.WHATSAPP_ACCESS_TOKEN &&
+    parsed.data.WHATSAPP_PHONE_NUMBER_ID &&
+    parsed.data.WHATSAPP_TEMPLATE_NAME,
+);
+// A real OTP provider is available via WhatsApp, Twilio (direct), or Supabase.
+const realOtpProvider = whatsappConfigured || twilioConfigured || supabaseConfigured;
 
 if (!supabaseConfigured) {
   console.warn(
@@ -71,7 +105,7 @@ export const env = {
   supabaseConfigured,
   corsOrigins: parsed.data.CORS_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean),
   isProd: parsed.data.NODE_ENV === "production",
-  // OTP is sent by Supabase phone auth (via the provider configured in Supabase,
-  // e.g. Twilio). Force mock OTP unless Supabase is configured.
-  otpMock: parsed.data.OTP_MOCK !== "false" || !supabaseConfigured,
+  // OTP is sent either directly via Twilio (TWILIO_* set) or by Supabase phone
+  // auth. Force mock OTP unless a real provider is configured, or OTP_MOCK≠false.
+  otpMock: parsed.data.OTP_MOCK !== "false" || !realOtpProvider,
 };
