@@ -70,6 +70,21 @@ export async function createOrder(req: Request, res: Response) {
   });
 }
 
+/** GET /api/orders?phone=+91… — a signed-in user's order history. */
+export async function listOrdersByPhone(req: Request, res: Response) {
+  const phone = String(req.query.phone ?? "").trim();
+  if (!phone) throw new ApiError(400, "A phone query parameter is required.");
+
+  const { data, error } = await supabaseAdmin
+    .from("orders")
+    .select("*, items:order_items(*)")
+    .eq("phone", phone)
+    .order("created_at", { ascending: false });
+  if (error) throw new ApiError(500, error.message);
+
+  res.json({ ok: true, count: data?.length ?? 0, data: data ?? [] });
+}
+
 /** GET /api/orders/:id */
 export async function getOrder(req: Request, res: Response) {
   const { id } = req.params;

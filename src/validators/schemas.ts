@@ -27,6 +27,16 @@ export const createOrderSchema = z.object({
   items: z.array(orderItemSchema).min(1, "An order needs at least one item"),
 });
 
+// Product review (rating + feedback + photos). Images are URLs already uploaded.
+export const reviewSchema = z.object({
+  author: z.string().min(1, "Please enter your name").max(80),
+  rating: z.coerce.number().int().min(1, "Please pick a rating").max(5),
+  title: z.string().max(120).optional().default(""),
+  body: z.string().max(3000).optional().default(""),
+  images: z.array(z.string().url()).max(6).default([]),
+});
+export type ReviewInput = z.infer<typeof reviewSchema>;
+
 // Admin: create / update a product. Images are URLs (already uploaded to storage).
 export const adminProductSchema = z.object({
   title: z.string().min(1, "Name is required").max(160),
@@ -63,6 +73,8 @@ export const phoneStartSchema = z.object({
 export const phoneVerifySchema = z.object({
   phone: z.string().trim().min(8),
   code: z.string().trim().regex(/^[0-9]{4,8}$/, "Enter the code sent to your phone"),
+  // Optional email collected at signup — used for the welcome email.
+  email: z.string().email().optional().or(z.literal("")),
 });
 
 export type ContactInput = z.infer<typeof contactSchema>;

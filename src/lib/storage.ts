@@ -42,13 +42,14 @@ export async function uploadProductImage(
   originalName: string,
   contentType: string,
   seed: number,
+  folder = "products",
 ): Promise<UploadResult> {
   await ensureBucket();
 
   const ext = (originalName.split(".").pop() || "jpg").toLowerCase();
   const safe = slugifyName(originalName.replace(/\.[^.]+$/, "")) || "image";
-  // Caller-supplied seed keeps names unique without Date.now() (which is blocked).
-  const path = `products/${seed}-${safe}.${ext}`;
+  // Caller-supplied seed keeps names unique.
+  const path = `${folder}/${seed}-${safe}.${ext}`;
 
   const { error } = await supabaseAdmin.storage
     .from(PRODUCT_BUCKET)

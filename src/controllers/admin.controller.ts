@@ -114,3 +114,72 @@ export async function deleteProduct(req: Request, res: Response) {
   if (error) throw new ApiError(500, error.message);
   res.json({ ok: true, message: "Product deleted." });
 }
+
+/* ─────────────────────────── Admin: orders ──────────────────────────────── */
+
+function paymentMethodOf(status: string): string {
+  return status === "cod_pending" ? "Cash on Delivery" : "Online";
+}
+
+/** GET /api/admin/orders — every order with items + customer + payment method. */
+export async function listAllOrders(_req: Request, res: Response) {
+  const { data, error } = await supabaseAdmin
+    .from("orders")
+    .select("*, items:order_items(*)")
+    .order("created_at", { ascending: false });
+  if (error) throw new ApiError(500, error.message);
+
+  const orders = (data ?? []).map((o) => ({
+    id: o.id,
+    customerName: (o.full_name as string) || null,
+    email: o.email,
+    phone: o.phone,
+    subtotal: o.subtotal,
+    currency: o.currency,
+    status: o.status,
+    paymentMethod: paymentMethodOf(o.status as string),
+    createdAt: o.created_at,
+    items: o.items ?? [],
+  }));
+
+  res.json({ ok: true, count: orders.length, data: orders });
+}
+
+/* ────────────────────────── Admin: customers ────────────────────────────── */
+
+interface UserRow {
+  phone: string;
+  email: string | null;
+  created_at: string;
+}
+
+/** GET /api/admin/customers — signed-up customers + their order count & spend. */
+export async function listCustomers(_req: Request, res: Response) {
+  const { data: users, error } = await supabaseAdmin
+    .from("users")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) throw new ApiError(500, error.message);
+
+  // Aggregate orders per customer phone.
+  const { data: orders } = await supabaseAdmin.from("orders").select("phone, subtotal");
+  const stats = new Map<string, { count: number; spent: number }>();
+  for (const o of orders ?? []) {
+    const key = o.phone as string | null;
+    if (!key) continue;
+    const cur = stats.get(key) ?? { count: 0, spent: 0 };
+    cur.count += 1;
+    cur.spent += (o.subtotal as number) ?? 0;
+    stats.set(key, cur);
+  }
+
+  const customers = ((users ?? []) as UserRow[]).map((u) => ({
+    phone: u.phone,
+    email: u.email,
+    joinedAt: u.created_at,
+    orderCount: stats.get(u.phone)?.count ?? 0,
+    totalSpent: stats.get(u.phone)?.spent ?? 0,
+  }));
+
+  res.json({ ok: true, count: customers.length, data: customers });
+}

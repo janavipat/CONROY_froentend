@@ -4,7 +4,7 @@ import { asyncHandler } from "../middleware/asyncHandler.js";
 import { getProduct, listProducts } from "../controllers/products.controller.js";
 import { getCollection, listCollections } from "../controllers/collections.controller.js";
 import { submitContact, subscribeNewsletter } from "../controllers/engagement.controller.js";
-import { createOrder, getOrder } from "../controllers/orders.controller.js";
+import { createOrder, getOrder, listOrdersByPhone } from "../controllers/orders.controller.js";
 import {
   login,
   me,
@@ -15,9 +15,16 @@ import {
 import {
   createProduct,
   deleteProduct,
+  listAllOrders,
+  listCustomers,
   updateProduct,
   uploadImage,
 } from "../controllers/admin.controller.js";
+import {
+  createReview,
+  listReviews,
+  uploadReviewImage,
+} from "../controllers/reviews.controller.js";
 
 export const router = Router();
 
@@ -30,6 +37,11 @@ const upload = multer({
 // Catalog
 router.get("/products", asyncHandler(listProducts));
 router.get("/products/:handle", asyncHandler(getProduct));
+
+// Reviews (ratings + feedback + photos)
+router.get("/products/:handle/reviews", asyncHandler(listReviews));
+router.post("/products/:handle/reviews", asyncHandler(createReview));
+router.post("/reviews/upload", upload.single("file"), asyncHandler(uploadReviewImage));
 router.get("/collections", asyncHandler(listCollections));
 router.get("/collections/:handle", asyncHandler(getCollection));
 
@@ -39,6 +51,7 @@ router.post("/newsletter", asyncHandler(subscribeNewsletter));
 
 // Orders
 router.post("/orders", asyncHandler(createOrder));
+router.get("/orders", asyncHandler(listOrdersByPhone));
 router.get("/orders/:id", asyncHandler(getOrder));
 
 // Auth (Supabase Auth)
@@ -55,3 +68,5 @@ router.post("/admin/upload", upload.single("file"), asyncHandler(uploadImage));
 router.post("/admin/products", asyncHandler(createProduct));
 router.put("/admin/products/:handle", asyncHandler(updateProduct));
 router.delete("/admin/products/:handle", asyncHandler(deleteProduct));
+router.get("/admin/orders", asyncHandler(listAllOrders));
+router.get("/admin/customers", asyncHandler(listCustomers));

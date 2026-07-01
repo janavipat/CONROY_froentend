@@ -20,6 +20,19 @@ const EnvSchema = z.object({
   OTP_TEST_CODE: z.string().default("123456"),
   // Default country code applied to bare local numbers (India).
   OTP_DEFAULT_COUNTRY_CODE: z.string().default("+91"),
+
+  // MSG91 (OTP SMS provider). Auth key is SECRET — server-side only.
+  MSG91_AUTH_KEY: z.string().default(""),
+  MSG91_TEMPLATE_ID: z.string().default(""),
+  MSG91_OTP_LENGTH: z.coerce.number().default(6),
+  MSG91_OTP_EXPIRY_MIN: z.coerce.number().default(10),
+
+  // SMTP (welcome/transactional email). Unset → emails are logged, not sent.
+  SMTP_HOST: z.string().default(""),
+  SMTP_PORT: z.coerce.number().default(587),
+  SMTP_USER: z.string().default(""),
+  SMTP_PASS: z.string().default(""),
+  SMTP_FROM: z.string().default(""),
 });
 
 const parsed = EnvSchema.safeParse(process.env);
@@ -51,6 +64,10 @@ export const env = {
   supabaseConfigured,
   corsOrigins: parsed.data.CORS_ORIGINS.split(",").map((s) => s.trim()).filter(Boolean),
   isProd: parsed.data.NODE_ENV === "production",
-  // Force mock OTP whenever Supabase isn't configured (can't send real SMS).
-  otpMock: parsed.data.OTP_MOCK !== "false" || !supabaseConfigured,
+  // MSG91 is the OTP provider. Real OTP needs both the auth key and a template.
+  msg91Configured: Boolean(parsed.data.MSG91_AUTH_KEY && parsed.data.MSG91_TEMPLATE_ID),
+  // Force mock OTP unless MSG91 is configured (can't send real SMS otherwise).
+  otpMock:
+    parsed.data.OTP_MOCK !== "false" ||
+    !(parsed.data.MSG91_AUTH_KEY && parsed.data.MSG91_TEMPLATE_ID),
 };

@@ -2,7 +2,49 @@ import type { Request, Response } from "express";
 import { supabaseAnon } from "../lib/supabase.js";
 import { ApiError } from "../middleware/errors.js";
 import { env } from "../config/env.js";
+import { supabaseAdmin } from "../lib/supabase.js";
+import { msg91SendOtp, msg91VerifyOtp } from "../lib/msg91.js";
+import { sendWelcomeEmail } from "../lib/email.js";
 import { authSchema, phoneStartSchema, phoneVerifySchema } from "../validators/schemas.js";
+
+/** Builds a lightweight session for a verified phone number. */
+function phoneSession(e164: string) {
+  return {
+    user: { id: e164, phone: e164 },
+    session: { access_token: crypto.randomUUID(), token_type: "bearer" },
+  };
+}
+
+/**
+ * Records the customer on first sign-in and, if it's a brand-new signup with an
+ * email, sends the welcome email. Best-effort — never blocks login.
+ */
+async function onSignedIn(e164: string, email?: string): Promise<void> {
+  try {
+    // Insert-first: success == brand-new signup; 23505 == returning user.
+    const { error } = await supabaseAdmin
+      .from("users")
+      .insert({ phone: e164, email: email || null });
+
+    if (!error) {
+      if (email) {
+        // Fire-and-forget so a slow SMTP server never delays sign-in.
+        void sendWelcomeEmail(email).catch((err) =>
+          console.error("Welcome email failed:", err instanceof Error ? err.message : err),
+        );
+      }
+      return;
+    }
+
+    // Returning user — keep their email current; any other error (e.g. the
+    // users table not created yet) is ignored so login never breaks.
+    if (error.code === "23505" && email) {
+      await supabaseAdmin.from("users").update({ email }).eq("phone", e164);
+    }
+  } catch (err) {
+    console.error("User upsert skipped:", err instanceof Error ? err.message : err);
+  }
+}
 
 /** Normalises a phone number to E.164, applying the default country code. */
 function toE164(raw: string): string {
@@ -68,50 +110,43 @@ export async function startPhoneOtp(req: Request, res: Response) {
       ok: true,
       mock: true,
       phone: e164,
+      code: env.OTP_TEST_CODE,
       message: `Mock mode — enter ${env.OTP_TEST_CODE} to sign in (no SMS sent).`,
     });
   }
 
-  // Real mode: Supabase sends the OTP via the configured SMS provider and
-  // creates the user if they don't exist yet.
-  const { error } = await supabaseAnon.auth.signInWithOtp({
-    phone: e164,
-    options: { channel: "sms" },
-  });
-  if (error) throw new ApiError(400, error.message);
+  // Real mode: MSG91 generates and sends the OTP by SMS.
+  const mobile = e164.replace(/^\+/, "");
+  try {
+    await msg91SendOtp(mobile);
+  } catch (err) {
+    throw new ApiError(400, err instanceof Error ? err.message : "Could not send the OTP.");
+  }
 
-  res.json({ ok: true, phone: e164, message: "A verification code has been sent by SMS." });
+  res.json({ ok: true, mock: false, phone: e164, message: "A verification code has been sent by SMS." });
 }
 
 /** POST /api/auth/phone/verify — verifies the OTP and returns a session. */
 export async function verifyPhoneOtp(req: Request, res: Response) {
-  const { phone, code } = phoneVerifySchema.parse(req.body);
+  const { phone, code, email } = phoneVerifySchema.parse(req.body);
   const e164 = toE164(phone);
 
   if (env.otpMock) {
     if (code !== env.OTP_TEST_CODE) throw new ApiError(401, "Invalid code.");
-    // Return a mock session so the frontend flow works end-to-end in dev.
+    await onSignedIn(e164, email || undefined);
     return res.json({
       ok: true,
       mock: true,
       message: "Signed in (mock mode).",
-      data: {
-        user: { id: `mock-${e164}`, phone: e164 },
-        session: { access_token: "mock-access-token", token_type: "bearer" },
-      },
+      data: phoneSession(e164),
     });
   }
 
-  const { data, error } = await supabaseAnon.auth.verifyOtp({
-    phone: e164,
-    token: code,
-    type: "sms",
-  });
-  if (error) throw new ApiError(401, error.message);
+  // Real mode: MSG91 validates the OTP.
+  const mobile = e164.replace(/^\+/, "");
+  const valid = await msg91VerifyOtp(mobile, code);
+  if (!valid) throw new ApiError(401, "Incorrect or expired code.");
 
-  res.json({
-    ok: true,
-    message: "Signed in.",
-    data: { user: data.user, session: data.session },
-  });
+  await onSignedIn(e164, email || undefined);
+  res.json({ ok: true, mock: false, message: "Signed in.", data: phoneSession(e164) });
 }
