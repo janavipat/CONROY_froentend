@@ -331,8 +331,8 @@ export function PhoneOtpAuth({ collectEmail = false }: { collectEmail?: boolean 
 
       {!isConfigured && (
         <p className="mt-6 border border-dashed border-line bg-mist/60 px-3 py-2 text-center text-xs text-stone">
-          Demo mode — use code <span className="font-semibold text-ink">{demoCode}</span>. Add a
-          Supabase anon key for live SMS.
+          Demo mode — use code <span className="font-semibold text-ink">{demoCode}</span>. Configure
+          a WhatsApp/SMS provider in the backend for live OTP.
         </p>
       )}
     </div>

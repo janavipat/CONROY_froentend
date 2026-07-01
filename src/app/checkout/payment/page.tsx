@@ -7,7 +7,12 @@ import { useState } from "react";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth/auth-context";
 import { createOrder, type PaymentMethod } from "@/services/orders";
-import { processPayment } from "@/lib/payments";
+import {
+  createRazorpayOrder,
+  verifyRazorpayPayment,
+  loadRazorpayScript,
+  openRazorpayCheckout,
+} from "@/services/payments";
 import { formatCurrency } from "@/utils/format";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
@@ -40,6 +45,12 @@ export default function PaymentPage() {
   const [error, setError] = useState("");
   const [done, setDone] = useState<{ orderId?: string; method: PaymentMethod } | null>(null);
 
+  function finish(orderId: string | undefined, m: PaymentMethod) {
+    setProcessing(false);
+    setDone({ orderId, method: m });
+    clear();
+  }
+
   async function handlePay() {
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
       setError("Please enter a valid email for your order confirmation.");
@@ -48,20 +59,74 @@ export default function PaymentPage() {
     setError("");
     setProcessing(true);
 
-    const payment = await processPayment(method, subtotal);
-    if (!payment.ok) {
-      setProcessing(false);
-      setError(payment.message ?? "Payment failed. Please try again.");
-      return;
-    }
+    try {
+      // Cash on Delivery — no gateway, just record the order.
+      if (method === "cod") {
+        const order = await createOrder(email, items, "cod", user?.phone);
+        if (order.ok) finish(order.orderId, "cod");
+        else {
+          setProcessing(false);
+          setError(order.message);
+        }
+        return;
+      }
 
-    const order = await createOrder(email, items, method, user?.phone);
-    setProcessing(false);
-    if (order.ok) {
-      setDone({ orderId: order.orderId, method });
-      clear();
-    } else {
-      setError(order.message);
+      // Online — create a Razorpay order on the backend (amount is authoritative).
+      const rp = await createRazorpayOrder(items);
+
+      // Demo mode (no Razorpay keys configured) — record the order directly.
+      if (rp.mock || !rp.keyId || !rp.orderId) {
+        const order = await createOrder(email, items, "online", user?.phone);
+        if (order.ok) finish(order.orderId, "online");
+        else {
+          setProcessing(false);
+          setError(order.message);
+        }
+        return;
+      }
+
+      // Live Razorpay Checkout.
+      const ready = await loadRazorpayScript();
+      if (!ready) {
+        setProcessing(false);
+        setError("Couldn't load the payment gateway. Check your connection and retry.");
+        return;
+      }
+
+      const result = await openRazorpayCheckout({
+        keyId: rp.keyId,
+        orderId: rp.orderId,
+        amount: rp.amount ?? subtotal * 100,
+        currency: rp.currency ?? "INR",
+        name: "CONROY",
+        description: `Order · ${count} item${count === 1 ? "" : "s"}`,
+        prefill: { email, contact: user?.phone ?? undefined },
+      });
+
+      // Shopper closed the modal without paying.
+      if (!result) {
+        setProcessing(false);
+        return;
+      }
+
+      // Verify the signature server-side, then the order is placed as paid.
+      const verified = await verifyRazorpayPayment({
+        email,
+        items,
+        phone: user?.phone,
+        razorpayOrderId: result.razorpay_order_id,
+        razorpayPaymentId: result.razorpay_payment_id,
+        razorpaySignature: result.razorpay_signature,
+      });
+
+      if (verified.ok) finish(verified.orderId, "online");
+      else {
+        setProcessing(false);
+        setError(verified.message || "Payment verification failed. Please contact support.");
+      }
+    } catch (err) {
+      setProcessing(false);
+      setError(err instanceof Error ? err.message : "Payment failed. Please try again.");
     }
   }
 
