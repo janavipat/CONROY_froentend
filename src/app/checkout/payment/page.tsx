@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth/auth-context";
 import { createOrder, type PaymentMethod } from "@/services/orders";
@@ -13,6 +13,8 @@ import {
   loadRazorpayScript,
   openRazorpayCheckout,
 } from "@/services/payments";
+import { applyOffer, type ApplyOfferResult } from "@/services/offers";
+import { useToast } from "@/components/ui/Toast";
 import { formatCurrency } from "@/utils/format";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
@@ -37,6 +39,7 @@ const METHODS: { id: PaymentMethod; title: string; desc: string; icon: typeof Sh
 export default function PaymentPage() {
   const { items, subtotal, count, clear } = useCart();
   const { user } = useAuth();
+  const { toast } = useToast();
   const router = useRouter();
 
   const [email, setEmail] = useState("");
@@ -44,6 +47,47 @@ export default function PaymentPage() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState<{ orderId?: string; method: PaymentMethod } | null>(null);
+
+  // Offer / coupon
+  const [code, setCode] = useState("");
+  const [offer, setOffer] = useState<ApplyOfferResult | null>(null);
+  const [applying, setApplying] = useState(false);
+  const [couponMsg, setCouponMsg] = useState("");
+
+  // Stable key so the preview effect only re-runs when the cart truly changes.
+  const itemsKey = items.map((i) => `${i.productHandle}:${i.size}:${i.quantity}`).join("|");
+
+  // Auto-preview the active offer (no code) whenever the cart changes.
+  useEffect(() => {
+    let active = true;
+    async function run() {
+      if (items.length === 0) return;
+      const res = await applyOffer(items, code.trim() || undefined);
+      if (active) setOffer(res);
+    }
+    void run();
+    return () => {
+      active = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [itemsKey]);
+
+  async function applyCoupon() {
+    if (items.length === 0) return;
+    setApplying(true);
+    const res = await applyOffer(items, code.trim() || undefined);
+    setApplying(false);
+    setOffer(res);
+    if (res?.applied) {
+      setCouponMsg(res.message || "Offer applied.");
+      toast(`🎉 Offer applied — you saved ${formatCurrency(res.discount)}!`, "success");
+    } else {
+      setCouponMsg(res?.message || "This code isn't valid for your cart.");
+    }
+  }
+
+  const discount = offer?.discount ?? 0;
+  const total = Math.max(0, subtotal - discount);
 
   function finish(orderId: string | undefined, m: PaymentMethod) {
     setProcessing(false);
@@ -62,7 +106,7 @@ export default function PaymentPage() {
     try {
       // Cash on Delivery — no gateway, just record the order.
       if (method === "cod") {
-        const order = await createOrder(email, items, "cod", user?.phone);
+        const order = await createOrder(email, items, "cod", user?.phone, code);
         if (order.ok) finish(order.orderId, "cod");
         else {
           setProcessing(false);
@@ -72,11 +116,11 @@ export default function PaymentPage() {
       }
 
       // Online — create a Razorpay order on the backend (amount is authoritative).
-      const rp = await createRazorpayOrder(items);
+      const rp = await createRazorpayOrder(items, code);
 
       // Demo mode (no Razorpay keys configured) — record the order directly.
       if (rp.mock || !rp.keyId || !rp.orderId) {
-        const order = await createOrder(email, items, "online", user?.phone);
+        const order = await createOrder(email, items, "online", user?.phone, code);
         if (order.ok) finish(order.orderId, "online");
         else {
           setProcessing(false);
@@ -114,6 +158,7 @@ export default function PaymentPage() {
         email,
         items,
         phone: user?.phone,
+        code,
         razorpayOrderId: result.razorpay_order_id,
         razorpayPaymentId: result.razorpay_payment_id,
         razorpaySignature: result.razorpay_signature,
@@ -258,11 +303,50 @@ export default function PaymentPage() {
             ))}
           </ul>
 
+          {/* Coupon / offer code */}
+          <div className="mt-5 border-t border-line pt-5">
+            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-stone">
+              Have a coupon code?
+            </label>
+            <div className="flex gap-2">
+              <input
+                value={code}
+                onChange={(e) => {
+                  setCode(e.target.value.toUpperCase());
+                  setCouponMsg("");
+                }}
+                placeholder="Enter code"
+                className="h-11 flex-1 rounded-md border border-line bg-white px-3 text-sm uppercase text-ink placeholder:normal-case placeholder:text-stone focus:border-ink focus:outline-none"
+              />
+              <button
+                type="button"
+                onClick={applyCoupon}
+                disabled={applying || !code.trim()}
+                className="rounded-md border border-ink px-4 text-sm font-medium text-ink transition-colors hover:bg-ink hover:text-white disabled:opacity-40"
+              >
+                {applying ? "…" : "Apply"}
+              </button>
+            </div>
+            {couponMsg && (
+              <p className={cn("mt-2 text-xs", discount > 0 ? "text-green-700" : "text-accent")}>
+                {couponMsg}
+              </p>
+            )}
+          </div>
+
           <dl className="mt-5 space-y-2 border-t border-line pt-5 text-sm">
             <div className="flex justify-between">
               <dt className="text-ink-soft">Subtotal</dt>
               <dd className="text-ink">{formatCurrency(subtotal)}</dd>
             </div>
+            {discount > 0 && (
+              <div className="flex justify-between">
+                <dt className="text-ink-soft">
+                  Discount{offer?.offer?.title ? ` · ${offer.offer.title}` : ""}
+                </dt>
+                <dd className="text-green-700">− {formatCurrency(discount)}</dd>
+              </div>
+            )}
             <div className="flex justify-between">
               <dt className="text-ink-soft">Shipping</dt>
               <dd className="text-ink">Free</dd>
@@ -270,7 +354,7 @@ export default function PaymentPage() {
           </dl>
           <div className="mt-4 flex justify-between border-t border-line pt-4">
             <span className="font-display text-lg text-ink">Total</span>
-            <span className="font-display text-lg text-ink">{formatCurrency(subtotal)}</span>
+            <span className="font-display text-lg text-ink">{formatCurrency(total)}</span>
           </div>
 
           {error && <p className="mt-4 text-xs text-accent">{error}</p>}
@@ -280,7 +364,7 @@ export default function PaymentPage() {
               ? "Processing…"
               : method === "cod"
                 ? "Place order"
-                : `Pay ${formatCurrency(subtotal)}`}
+                : `Pay ${formatCurrency(total)}`}
           </Button>
           <button
             onClick={() => router.push("/cart")}

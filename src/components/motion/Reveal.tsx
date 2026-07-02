@@ -22,7 +22,7 @@ export function Reveal({
   children: ReactNode;
   index?: number;
   className?: string;
-  as?: "div" | "section" | "li" | "article" | "span";
+  as?: "div" | "section" | "li" | "article" | "span" | "figure";
 }) {
   const MotionTag = motion[as];
   return (

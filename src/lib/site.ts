@@ -87,21 +87,42 @@ export const SERVICE_FEATURES: ServiceFeature[] = [
 export const TESTIMONIALS: Testimonial[] = [
   {
     quote:
-      "The denim feels considered — soft from the first wear yet structured enough to hold its shape. It has become my everyday pair.",
-    author: "Aarav Mehta",
-    location: "Mumbai",
+      "My buying experience was smooth and hassle-free. The quality exceeded expectations and delivery was on time.",
+    author: "Karan Patel",
+    location: "Verified buyer",
+    rating: 5,
+    timeframe: "1 week ago",
   },
   {
     quote:
-      "Quiet, refined and beautifully made. CONROY understands that real luxury whispers. The fit is impeccable.",
-    author: "Ishita Rao",
-    location: "Bengaluru",
+      "Very satisfied with my purchase. The product looks premium and performs exactly as described.",
+    author: "Rahul Shah",
+    location: "Verified buyer",
+    rating: 4,
+    timeframe: "1 week ago",
   },
   {
     quote:
-      "Finally, jeans that balance comfort and tailoring. The fabric weight and finishing are a clear step above.",
-    author: "Kabir Singh",
-    location: "Delhi",
+      "Amazing experience from ordering to delivery. Everything was well packed and arrived in perfect condition.",
+    author: "Priya Mehta",
+    location: "Verified buyer",
+    rating: 4,
+    timeframe: "4 weeks ago",
+  },
+  {
+    quote:
+      "One of the best purchases I've made recently. Easy ordering process, fast delivery, and excellent quality.",
+    author: "Nimay Sharma",
+    location: "Verified buyer",
+    rating: 5,
+    timeframe: "2 weeks ago",
+  },
+  {
+    quote: "Well packed and arrived in perfect condition.",
+    author: "Umang Sinh",
+    location: "Verified buyer",
+    rating: 5,
+    timeframe: "6 weeks ago",
   },
 ];
 

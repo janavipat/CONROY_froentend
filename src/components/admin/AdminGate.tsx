@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getAdminKey, clearAdminKey } from "@/lib/admin-auth";
 import { adminVerifyKey } from "@/services/admin";
+import { Loader } from "@/components/ui/Loader";
 
 /** Blocks admin content until a valid admin key is present. */
 export function AdminGate({ children }: { children: React.ReactNode }) {
@@ -36,7 +37,7 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
   if (state === "checking") {
     return (
       <div className="grid min-h-[50vh] place-items-center">
-        <div className="h-7 w-7 animate-spin rounded-full border-2 border-line border-t-ink" />
+        <Loader label="Verifying" />
       </div>
     );
   }

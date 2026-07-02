@@ -46,16 +46,33 @@ export function Footer() {
         </div>
 
         {/* Contact strip */}
-        <div className="mt-14 grid gap-4 border-t border-line pt-8 text-sm text-ink-soft sm:grid-cols-3">
-          <a href={SITE.contact.phoneHref} className="flex items-center gap-2 hover:text-ink">
-            <PhoneIcon className="h-4 w-4" /> {SITE.contact.phone}
-          </a>
-          <a href={`mailto:${SITE.contact.email}`} className="flex items-center gap-2 hover:text-ink">
-            <MailIcon className="h-4 w-4" /> {SITE.contact.email}
-          </a>
-          <span className="flex items-center gap-2">
-            <ClockIcon className="h-4 w-4" /> {SITE.contact.hours}
-          </span>
+        <div className="mt-14 grid gap-3 border-t border-line pt-10 sm:grid-cols-3">
+          {[
+            { Icon: PhoneIcon, label: "Call us", value: SITE.contact.phone, href: SITE.contact.phoneHref },
+            { Icon: MailIcon, label: "Email", value: SITE.contact.email, href: `mailto:${SITE.contact.email}` },
+            { Icon: ClockIcon, label: "Hours", value: SITE.contact.hours },
+          ].map(({ Icon, label, value, href }) => {
+            const inner = (
+              <>
+                <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full border border-line bg-white text-ink transition-colors group-hover:border-ink">
+                  <Icon className="h-4.5 w-4.5" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[0.65rem] uppercase tracking-wide text-stone">{label}</span>
+                  <span className="block truncate text-sm text-ink">{value}</span>
+                </span>
+              </>
+            );
+            return href ? (
+              <a key={label} href={href} className="group flex items-center gap-3">
+                {inner}
+              </a>
+            ) : (
+              <div key={label} className="flex items-center gap-3">
+                {inner}
+              </div>
+            );
+          })}
         </div>
       </Container>
 
@@ -77,9 +94,9 @@ export function Footer() {
               target="_blank"
               rel="noreferrer"
               aria-label="Instagram"
-              className="text-ink transition-colors hover:text-stone"
+              className="grid h-9 w-9 place-items-center rounded-full border border-line text-ink transition-colors hover:border-ink hover:bg-ink hover:text-white"
             >
-              <InstagramIcon className="h-5 w-5" />
+              <InstagramIcon className="h-4.5 w-4.5" />
             </a>
           </div>
         </Container>

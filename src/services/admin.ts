@@ -93,6 +93,31 @@ export async function adminVerifyKey(key: string): Promise<boolean> {
   }
 }
 
+export interface AdminStats {
+  revenue: number;
+  orderCount: number;
+  paidCount: number;
+  codCount: number;
+  productCount: number;
+  customerCount: number;
+  returnCount: number;
+  pendingReturns: number;
+  activeOffer: string | null;
+  recentOrders: {
+    id: string;
+    customerName: string | null;
+    email: string;
+    total: number;
+    status: string;
+    createdAt: string;
+  }[];
+}
+
+export async function adminGetStats(): Promise<AdminStats> {
+  const { data } = await api.get<ApiList<AdminStats>>("/admin/stats");
+  return data.data;
+}
+
 export async function adminListOrders(): Promise<AdminOrder[]> {
   const { data } = await api.get<ApiList<AdminOrder[]>>("/admin/orders");
   return data.data ?? [];
@@ -101,6 +126,46 @@ export async function adminListOrders(): Promise<AdminOrder[]> {
 export async function adminListCustomers(): Promise<AdminCustomer[]> {
   const { data } = await api.get<ApiList<AdminCustomer[]>>("/admin/customers");
   return data.data ?? [];
+}
+
+export interface AdminReturnItem {
+  product_handle: string;
+  title: string;
+  size: string;
+  price: number;
+  quantity: number;
+}
+
+export type AdminReturnStatus =
+  | "requested"
+  | "approved"
+  | "rejected"
+  | "refunded"
+  | "replaced"
+  | "completed";
+
+export interface AdminReturn {
+  id: string;
+  orderId: string;
+  orderRef: string;
+  customerName: string | null;
+  email: string;
+  phone: string | null;
+  reason: string;
+  resolution: "refund" | "replacement";
+  status: AdminReturnStatus;
+  createdAt: string;
+  items: AdminReturnItem[];
+}
+
+export async function adminListReturns(): Promise<AdminReturn[]> {
+  const { data } = await api.get<ApiList<AdminReturn[]>>("/admin/returns");
+  return data.data ?? [];
+}
+
+export async function adminUpdateReturnStatus(id: string, status: AdminReturnStatus) {
+  const { data } = await api.patch(`/admin/returns/${id}`, { status });
+  return data as { ok: boolean; message: string };
 }
 
 /** Uploads an image file to Supabase Storage via the backend; returns its URL. */

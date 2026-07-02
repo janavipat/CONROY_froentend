@@ -114,13 +114,23 @@ export default function AboutPage() {
       </section>
 
       {/* Quote band */}
-      <section className="bg-ink py-20 text-center text-cream lg:py-28">
+      <section className="bg-sage py-20 lg:py-28">
         <Container>
-          <Reveal>
-            <p className="mx-auto max-w-3xl font-display text-2xl italic leading-snug text-white sm:text-3xl lg:text-4xl">
-              “Clothing meant to be lived in, passed down, and appreciated — not for a season, but
-              for a lifetime.”
-            </p>
+          <Reveal className="mx-auto flex max-w-3xl flex-col items-center text-center">
+            <span aria-hidden className="font-display text-6xl leading-none text-accent/30 sm:text-7xl">
+              &ldquo;
+            </span>
+            <blockquote className="-mt-3 font-display text-[1.7rem] leading-[1.4] text-ink sm:text-3xl lg:text-[2.4rem] lg:leading-[1.35]">
+              Clothing meant to be lived in, passed down, and appreciated — not for a
+              season, but for a lifetime.
+            </blockquote>
+            <div className="mt-8 flex items-center gap-4">
+              <span className="h-px w-10 bg-ink/20" />
+              <span className="text-[0.7rem] uppercase tracking-[0.28em] text-stone">
+                The CONROY promise
+              </span>
+              <span className="h-px w-10 bg-ink/20" />
+            </div>
           </Reveal>
         </Container>
       </section>

@@ -24,7 +24,7 @@ export default function AdminLoginPage() {
     setLoading(false);
     if (ok) {
       setAdminKey(key.trim());
-      router.replace("/admin/products");
+      router.replace("/admin");
     } else {
       setError("Invalid admin key. Please try again.");
     }

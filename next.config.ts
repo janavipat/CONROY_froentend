@@ -26,6 +26,8 @@ const nextConfig: NextConfig = {
   },
   poweredByHeader: false,
   reactStrictMode: true,
+  // Hide the floating Next.js dev indicator ("N" badge) shown on every page.
+  devIndicators: false,
 };
 
 export default nextConfig;

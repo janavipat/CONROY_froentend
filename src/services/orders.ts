@@ -39,11 +39,13 @@ export async function createOrder(
   items: CartItem[],
   paymentMethod: PaymentMethod = "online",
   phone?: string | null,
+  code?: string,
 ): Promise<CreateOrderResult> {
   const payload = {
     email,
     paymentMethod,
     phone: phone ?? undefined,
+    code: code?.trim() || undefined,
     items: items.map((i) => ({
       productHandle: i.productHandle,
       size: i.size,

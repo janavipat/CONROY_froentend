@@ -1,12 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import type { Order } from "@/services/orders";
 import { fetchMyOrders } from "@/services/orders";
+import {
+  fetchMyReturns,
+  returnStatusBadge,
+  type ReturnRecord,
+} from "@/services/returns";
+import { ReturnDialog } from "@/components/account/ReturnDialog";
 import { formatCurrency } from "@/utils/format";
 import { Button } from "@/components/ui/Button";
-import { BagIcon } from "@/components/ui/Icons";
+import { Loader } from "@/components/ui/Loader";
+import { BagIcon, ReturnIcon } from "@/components/ui/Icons";
 import { cn } from "@/utils/cn";
 
 function formatDate(iso: string): string {
@@ -34,21 +41,42 @@ function statusLabel(status: string): { text: string; cls: string } {
   }
 }
 
+// Orders eligible for a return request (delivered/paid — not cancelled).
+const RETURNABLE = new Set(["paid", "cod_pending"]);
+
 export function MyOrders({ phone }: { phone: string }) {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [returns, setReturns] = useState<ReturnRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [returnFor, setReturnFor] = useState<Order | null>(null);
+
+  const load = useCallback(async () => {
+    const [o, r] = await Promise.all([fetchMyOrders(phone), fetchMyReturns(phone)]);
+    setOrders(o);
+    setReturns(r);
+    setLoading(false);
+  }, [phone]);
 
   useEffect(() => {
     let active = true;
-    fetchMyOrders(phone).then((o) => {
+    async function run() {
+      const [o, r] = await Promise.all([fetchMyOrders(phone), fetchMyReturns(phone)]);
       if (!active) return;
       setOrders(o);
+      setReturns(r);
       setLoading(false);
-    });
+    }
+    void run();
     return () => {
       active = false;
     };
   }, [phone]);
+
+  // Latest return per order (most recent request wins for the badge).
+  const returnByOrder = new Map<string, ReturnRecord>();
+  for (const r of returns) {
+    if (!returnByOrder.has(r.order_id)) returnByOrder.set(r.order_id, r);
+  }
 
   return (
     <section id="orders" className="scroll-mt-24">
@@ -56,7 +84,7 @@ export function MyOrders({ phone }: { phone: string }) {
 
       {loading ? (
         <div className="mt-4 grid place-items-center rounded-media border border-line bg-white py-12">
-          <div className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-ink" />
+          <Loader label="Loading orders" />
         </div>
       ) : orders.length === 0 ? (
         <div className="mt-4 flex flex-col items-center gap-3 rounded-media border border-line bg-white py-12 text-center">
@@ -113,10 +141,53 @@ export function MyOrders({ phone }: { phone: string }) {
                     </li>
                   ))}
                 </ul>
+
+                {/* Return / replacement */}
+                {(() => {
+                  const ret = returnByOrder.get(order.id);
+                  if (ret) {
+                    const rb = returnStatusBadge(ret.status);
+                    return (
+                      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-line pt-3 text-xs">
+                        <span
+                          className={cn("rounded-full px-2.5 py-1 font-medium", rb.cls)}
+                        >
+                          {rb.text}
+                        </span>
+                        <span className="text-stone">
+                          {ret.resolution === "replacement" ? "Replacement" : "Refund"} ·{" "}
+                          {ret.items.reduce((s, i) => s + i.quantity, 0)} item(s) · {ret.reason}
+                        </span>
+                      </div>
+                    );
+                  }
+                  if (RETURNABLE.has(order.status)) {
+                    return (
+                      <div className="mt-3 border-t border-line pt-3">
+                        <button
+                          onClick={() => setReturnFor(order)}
+                          className="inline-flex items-center gap-1.5 text-xs font-medium text-ink underline-offset-4 hover:underline"
+                        >
+                          <ReturnIcon className="h-4 w-4" /> Return or replace items
+                        </button>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </li>
             );
           })}
         </ul>
+      )}
+
+      {returnFor && (
+        <ReturnDialog
+          order={returnFor}
+          open={Boolean(returnFor)}
+          onClose={() => setReturnFor(null)}
+          onSubmitted={load}
+        />
       )}
     </section>
   );
