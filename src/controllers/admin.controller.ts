@@ -129,26 +129,42 @@ export async function listAllOrders(_req: Request, res: Response) {
     .order("created_at", { ascending: false });
   if (error) throw new ApiError(500, error.message);
 
-  const orders = (data ?? []).map((o) => {
-    const discount = (o.discount as number) ?? 0;
-    return {
-      id: o.id,
-      customerName: (o.full_name as string) || null,
-      email: o.email,
-      phone: o.phone,
-      subtotal: o.subtotal,
-      discount,
-      total: (o.subtotal as number) - discount,
-      offerCode: (o.offer_code as string) || null,
-      currency: o.currency,
-      status: o.status,
-      paymentMethod: paymentMethodOf(o.status as string),
-      createdAt: o.created_at,
-      items: o.items ?? [],
-    };
-  });
+  const orders = (data ?? []).map(mapAdminOrder);
 
   res.json({ ok: true, count: orders.length, data: orders });
+}
+
+/** Shared mapper: a raw orders row (with joined items) → admin order shape. */
+function mapAdminOrder(o: Record<string, unknown>) {
+  const discount = (o.discount as number) ?? 0;
+  return {
+    id: o.id as string,
+    customerName: (o.full_name as string) || null,
+    email: o.email as string,
+    phone: (o.phone as string) || null,
+    shippingAddress: (o.shipping_address as string) || null,
+    subtotal: (o.subtotal as number) ?? 0,
+    discount,
+    total: ((o.subtotal as number) ?? 0) - discount,
+    offerCode: (o.offer_code as string) || null,
+    currency: (o.currency as string) || "INR",
+    status: o.status as string,
+    paymentMethod: paymentMethodOf(o.status as string),
+    createdAt: o.created_at as string,
+    items: (o.items as unknown[]) ?? [],
+  };
+}
+
+/** GET /api/admin/orders/:id — full detail for one order. */
+export async function getAdminOrder(req: Request, res: Response) {
+  const { id } = req.params;
+  const { data, error } = await supabaseAdmin
+    .from("orders")
+    .select("*, items:order_items(*)")
+    .eq("id", id)
+    .single();
+  if (error || !data) throw new ApiError(404, "Order not found.");
+  res.json({ ok: true, data: mapAdminOrder(data) });
 }
 
 /* ────────────────────────── Admin: customers ────────────────────────────── */

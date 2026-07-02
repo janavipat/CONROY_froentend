@@ -5,6 +5,7 @@ import { requireAdmin } from "../middleware/adminAuth.js";
 import { getProduct, listProducts } from "../controllers/products.controller.js";
 import { getCollection, listCollections } from "../controllers/collections.controller.js";
 import { submitContact, subscribeNewsletter } from "../controllers/engagement.controller.js";
+import { trackVisit, getLiveVisitors } from "../controllers/analytics.controller.js";
 import { createOrder, getOrder, listOrdersByPhone } from "../controllers/orders.controller.js";
 import { createPaymentOrder, verifyPayment } from "../controllers/payments.controller.js";
 import { createReturn, listReturnsByPhone } from "../controllers/returns.controller.js";
@@ -29,6 +30,7 @@ import {
   deleteProduct,
   getStats,
   listAllOrders,
+  getAdminOrder,
   listAllReturns,
   listCustomers,
   updateProduct,
@@ -63,6 +65,9 @@ router.get("/collections/:handle", asyncHandler(getCollection));
 // Engagement
 router.post("/contact", asyncHandler(submitContact));
 router.post("/newsletter", asyncHandler(subscribeNewsletter));
+
+// Analytics — public heartbeat from storefront visitors (live-visitor tracking)
+router.post("/track", asyncHandler(trackVisit));
 
 // Orders
 router.post("/orders", asyncHandler(createOrder));
@@ -100,7 +105,9 @@ router.post("/admin/products", asyncHandler(createProduct));
 router.put("/admin/products/:handle", asyncHandler(updateProduct));
 router.delete("/admin/products/:handle", asyncHandler(deleteProduct));
 router.get("/admin/stats", asyncHandler(getStats));
+router.get("/admin/live", asyncHandler(getLiveVisitors));
 router.get("/admin/orders", asyncHandler(listAllOrders));
+router.get("/admin/orders/:id", asyncHandler(getAdminOrder));
 router.get("/admin/customers", asyncHandler(listCustomers));
 router.get("/admin/returns", asyncHandler(listAllReturns));
 router.patch("/admin/returns/:id", asyncHandler(updateReturnStatus));
