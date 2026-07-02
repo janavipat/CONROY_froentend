@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { adminGetStats, type AdminStats } from "@/services/admin";
+import { LiveVisitors } from "@/components/admin/LiveVisitors";
 import { formatCurrency } from "@/utils/format";
 import { cn } from "@/utils/cn";
 import {
@@ -218,6 +219,8 @@ export function Dashboard() {
                 transition={{ delay: 0.45, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                 className="space-y-4"
               >
+                <LiveVisitors />
+
                 <div className="rounded-media border border-line bg-white p-5">
                   <div className="flex items-center gap-3">
                     <span className="grid h-10 w-10 place-items-center rounded-full bg-mist text-ink">

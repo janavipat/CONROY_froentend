@@ -10,16 +10,30 @@ import {
   ArrowRightIcon,
   TruckIcon,
   UserIcon,
-  ReturnIcon,
   StarIcon,
   GridIcon,
 } from "@/components/ui/Icons";
 
-const NAV = [
+interface NavChild {
+  label: string;
+  href: string;
+}
+interface NavItem {
+  label: string;
+  href: string;
+  icon: typeof GridIcon;
+  children?: NavChild[];
+}
+
+const NAV: NavItem[] = [
   { label: "Dashboard", href: "/admin", icon: GridIcon },
   { label: "Products", href: "/admin/products", icon: BagIcon },
-  { label: "Orders", href: "/admin/orders", icon: TruckIcon },
-  { label: "Returns", href: "/admin/returns", icon: ReturnIcon },
+  {
+    label: "Orders",
+    href: "/admin/orders",
+    icon: TruckIcon,
+    children: [{ label: "Returns", href: "/admin/returns" }],
+  },
   { label: "Offers", href: "/admin/offers", icon: StarIcon },
   { label: "Customers", href: "/admin/customers", icon: UserIcon },
 ];
@@ -27,6 +41,10 @@ const NAV = [
 export function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+
+  // "/admin" must match exactly, else it'd highlight for every sub-route.
+  const isActive = (href: string) =>
+    href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
 
   function logout() {
     clearAdminKey();
@@ -46,28 +64,53 @@ export function AdminSidebar() {
 
       <nav className="flex-1 space-y-0.5 px-3 py-4">
         {NAV.map((item) => {
-          // "/admin" must match exactly, else it'd highlight for every sub-route.
-          const active =
-            item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
+          const active = isActive(item.href);
+          const childActive = item.children?.some((c) => isActive(c.href)) ?? false;
+          const sectionOpen = active || childActive;
+
           return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "group relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors",
-                active ? "text-white" : "text-ink-soft hover:bg-mist hover:text-ink",
+            <div key={item.href}>
+              <Link
+                href={item.href}
+                className={cn(
+                  "group relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors",
+                  active ? "text-white" : "text-ink-soft hover:bg-mist hover:text-ink",
+                )}
+              >
+                {active && (
+                  <motion.span
+                    layoutId="adminActivePill"
+                    className="absolute inset-0 rounded-md bg-ink"
+                    transition={{ type: "spring", stiffness: 400, damping: 34 }}
+                  />
+                )}
+                <item.icon className="relative z-10 h-4.5 w-4.5 transition-transform duration-200 group-hover:scale-110" />
+                <span className="relative z-10">{item.label}</span>
+              </Link>
+
+              {/* Sub-items (e.g. Returns under Orders) — shown when the section is active */}
+              {item.children && sectionOpen && (
+                <div className="mt-0.5 space-y-0.5">
+                  {item.children.map((child) => {
+                    const cActive = isActive(child.href);
+                    return (
+                      <Link
+                        key={child.href}
+                        href={child.href}
+                        className={cn(
+                          "relative ml-[1.35rem] flex items-center rounded-md border-l border-line py-2 pl-4 pr-3 text-sm transition-colors",
+                          cActive
+                            ? "border-ink font-medium text-ink"
+                            : "text-stone hover:text-ink",
+                        )}
+                      >
+                        {child.label}
+                      </Link>
+                    );
+                  })}
+                </div>
               )}
-            >
-              {active && (
-                <motion.span
-                  layoutId="adminActivePill"
-                  className="absolute inset-0 rounded-md bg-ink"
-                  transition={{ type: "spring", stiffness: 400, damping: 34 }}
-                />
-              )}
-              <item.icon className="relative z-10 h-4.5 w-4.5 transition-transform duration-200 group-hover:scale-110" />
-              <span className="relative z-10">{item.label}</span>
-            </Link>
+            </div>
           );
         })}
       </nav>

@@ -67,7 +67,11 @@ export interface AdminOrder {
   customerName: string | null;
   email: string;
   phone: string | null;
+  shippingAddress: string | null;
   subtotal: number;
+  discount: number;
+  total: number;
+  offerCode: string | null;
   currency: string;
   status: string;
   paymentMethod: string;
@@ -118,9 +122,41 @@ export async function adminGetStats(): Promise<AdminStats> {
   return data.data;
 }
 
+/* ---- Live visitors ------------------------------------------------------ */
+
+export interface LiveLocation {
+  countryCode: string;
+  country: string;
+  flag: string;
+  count: number;
+  cities: string[];
+}
+
+export interface LivePage {
+  path: string;
+  count: number;
+}
+
+export interface LiveData {
+  live: number;
+  totalSessions: number;
+  locations: LiveLocation[];
+  pages: LivePage[];
+}
+
+export async function adminGetLive(): Promise<LiveData> {
+  const { data } = await api.get<ApiList<LiveData>>("/admin/live");
+  return data.data;
+}
+
 export async function adminListOrders(): Promise<AdminOrder[]> {
   const { data } = await api.get<ApiList<AdminOrder[]>>("/admin/orders");
   return data.data ?? [];
+}
+
+export async function adminGetOrder(id: string): Promise<AdminOrder> {
+  const { data } = await api.get<ApiList<AdminOrder>>(`/admin/orders/${id}`);
+  return data.data;
 }
 
 export async function adminListCustomers(): Promise<AdminCustomer[]> {
