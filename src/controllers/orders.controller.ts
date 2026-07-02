@@ -3,6 +3,7 @@ import { supabaseAdmin } from "../lib/supabase.js";
 import { ApiError } from "../middleware/errors.js";
 import { createOrderSchema } from "../validators/schemas.js";
 import { resolveCart, persistOrder } from "../lib/pricing.js";
+import { computeDiscount } from "../lib/offers.js";
 
 /**
  * POST /api/orders — creates an order; prices are resolved server-side.
@@ -14,6 +15,8 @@ export async function createOrder(req: Request, res: Response) {
   const input = createOrderSchema.parse(req.body);
 
   const cart = await resolveCart(input.items);
+  // Re-apply the active offer server-side (never trust a client-sent discount).
+  const offer = await computeDiscount(cart.lineItems, cart.subtotal, input.code);
 
   const order = await persistOrder({
     email: input.email,
@@ -23,6 +26,8 @@ export async function createOrder(req: Request, res: Response) {
     // COD orders await collection on delivery; online orders are paid.
     status: input.paymentMethod === "cod" ? "cod_pending" : "paid",
     cart,
+    discount: offer.discount,
+    offerCode: offer.code,
   });
 
   res.status(201).json({

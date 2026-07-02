@@ -24,13 +24,78 @@ export const createOrderSchema = z.object({
   phone: z.string().max(40).optional(),
   shippingAddress: z.string().max(1000).optional(),
   paymentMethod: z.enum(["online", "cod"]).default("online"),
+  code: z.string().max(40).optional(),
   items: z.array(orderItemSchema).min(1, "An order needs at least one item"),
+});
+
+// Offers / discounts.
+export const OFFER_TYPES = ["all_products", "product", "order_above", "code"] as const;
+
+export const offerSchema = z
+  .object({
+    title: z.string().min(1, "Give the offer a name").max(160),
+    type: z.enum(OFFER_TYPES),
+    discountType: z.enum(["percent", "flat"]).default("percent"),
+    discountValue: z.coerce.number().int().nonnegative("Discount must be 0 or more"),
+    productHandle: z.string().max(160).optional().nullable(),
+    minOrderAmount: z.coerce.number().int().nonnegative().optional().nullable(),
+    code: z.string().max(40).optional().nullable(),
+    active: z.boolean().default(false),
+  })
+  .superRefine((v, ctx) => {
+    if (v.discountType === "percent" && v.discountValue > 100) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["discountValue"], message: "Percent can't exceed 100" });
+    }
+    if (v.type === "product" && !v.productHandle) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["productHandle"], message: "Pick a product" });
+    }
+    if (v.type === "order_above" && !v.minOrderAmount) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["minOrderAmount"], message: "Set a minimum order amount" });
+    }
+    if (v.type === "code" && !v.code?.trim()) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, path: ["code"], message: "Enter a coupon code" });
+    }
+  });
+export type OfferInput = z.infer<typeof offerSchema>;
+
+export const applyOfferSchema = z.object({
+  items: z.array(orderItemSchema).min(1, "Cart is empty"),
+  code: z.string().max(40).optional(),
+});
+
+// Order return / replacement. The client sends which order + items (handle,
+// size, quantity) to return; the server snapshots authoritative titles/prices.
+export const returnItemSchema = z.object({
+  productHandle: z.string().min(1),
+  size: z.string().min(1),
+  quantity: z.number().int().positive().max(99),
+});
+
+export const createReturnSchema = z.object({
+  orderId: z.string().uuid("A valid order id is required"),
+  reason: z.string().min(1, "Please choose a reason").max(500),
+  resolution: z.enum(["refund", "replacement"]).default("refund"),
+  items: z.array(returnItemSchema).min(1, "Select at least one item to return"),
+});
+
+export const RETURN_STATUSES = [
+  "requested",
+  "approved",
+  "rejected",
+  "refunded",
+  "replaced",
+  "completed",
+] as const;
+
+export const updateReturnStatusSchema = z.object({
+  status: z.enum(RETURN_STATUSES),
 });
 
 // Razorpay: create a payment order (client sends only handle/size/qty; the
 // server computes the authoritative amount).
 export const razorpayOrderSchema = z.object({
   items: z.array(orderItemSchema).min(1, "An order needs at least one item"),
+  code: z.string().max(40).optional(),
 });
 
 // Razorpay: verify a completed payment and place the order. Includes the same
@@ -41,6 +106,7 @@ export const razorpayVerifySchema = z.object({
   phone: z.string().max(40).optional(),
   shippingAddress: z.string().max(1000).optional(),
   items: z.array(orderItemSchema).min(1, "An order needs at least one item"),
+  code: z.string().max(40).optional(),
   razorpayOrderId: z.string().min(1),
   razorpayPaymentId: z.string().min(1),
   razorpaySignature: z.string().min(1),

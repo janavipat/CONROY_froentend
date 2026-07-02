@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 import { ApiError } from "../middleware/errors.js";
 import { resolveCart, persistOrder } from "../lib/pricing.js";
+import { computeDiscount } from "../lib/offers.js";
 import {
   razorpayConfigured,
   createRazorpayOrder,
@@ -19,23 +20,28 @@ import { razorpayOrderSchema, razorpayVerifySchema } from "../validators/schemas
  * frontend can fall back to the free demo checkout.
  */
 export async function createPaymentOrder(req: Request, res: Response) {
-  const { items } = razorpayOrderSchema.parse(req.body);
+  const { items, code } = razorpayOrderSchema.parse(req.body);
   const cart = await resolveCart(items);
 
   if (cart.subtotal <= 0) throw new ApiError(400, "Order total must be greater than zero.");
+
+  // Apply the active offer server-side; charge the net amount.
+  const offer = await computeDiscount(cart.lineItems, cart.subtotal, code);
+  const payable = Math.max(0, cart.subtotal - offer.discount);
 
   if (!razorpayConfigured) {
     return res.json({
       ok: true,
       mock: true,
-      amount: cart.subtotal * 100,
+      amount: payable * 100,
       currency: cart.currency,
+      discount: offer.discount,
       message: "Razorpay not configured — demo checkout.",
     });
   }
 
   const receipt = `conroy_${Date.now()}`;
-  const order = await createRazorpayOrder(cart.subtotal, cart.currency, receipt);
+  const order = await createRazorpayOrder(payable, cart.currency, receipt);
 
   res.json({
     ok: true,
@@ -44,6 +50,7 @@ export async function createPaymentOrder(req: Request, res: Response) {
     orderId: order.id,
     amount: order.amount,
     currency: order.currency,
+    discount: offer.discount,
   });
 }
 
@@ -68,6 +75,7 @@ export async function verifyPayment(req: Request, res: Response) {
   if (!valid) throw new ApiError(400, "Payment verification failed. Signature mismatch.");
 
   const cart = await resolveCart(input.items);
+  const offer = await computeDiscount(cart.lineItems, cart.subtotal, input.code);
 
   const order = await persistOrder({
     email: input.email,
@@ -76,6 +84,8 @@ export async function verifyPayment(req: Request, res: Response) {
     shippingAddress: input.shippingAddress,
     status: "paid",
     cart,
+    discount: offer.discount,
+    offerCode: offer.code,
     payment: {
       provider: "razorpay",
       razorpay_order_id: input.razorpayOrderId,

@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import { supabaseAdmin } from "../lib/supabase.js";
 import { ApiError } from "../middleware/errors.js";
 import { uploadProductImage } from "../lib/storage.js";
-import { adminProductSchema } from "../validators/schemas.js";
+import { adminProductSchema, updateReturnStatusSchema } from "../validators/schemas.js";
 
 function slugify(value: string): string {
   return value
@@ -129,18 +129,24 @@ export async function listAllOrders(_req: Request, res: Response) {
     .order("created_at", { ascending: false });
   if (error) throw new ApiError(500, error.message);
 
-  const orders = (data ?? []).map((o) => ({
-    id: o.id,
-    customerName: (o.full_name as string) || null,
-    email: o.email,
-    phone: o.phone,
-    subtotal: o.subtotal,
-    currency: o.currency,
-    status: o.status,
-    paymentMethod: paymentMethodOf(o.status as string),
-    createdAt: o.created_at,
-    items: o.items ?? [],
-  }));
+  const orders = (data ?? []).map((o) => {
+    const discount = (o.discount as number) ?? 0;
+    return {
+      id: o.id,
+      customerName: (o.full_name as string) || null,
+      email: o.email,
+      phone: o.phone,
+      subtotal: o.subtotal,
+      discount,
+      total: (o.subtotal as number) - discount,
+      offerCode: (o.offer_code as string) || null,
+      currency: o.currency,
+      status: o.status,
+      paymentMethod: paymentMethodOf(o.status as string),
+      createdAt: o.created_at,
+      items: o.items ?? [],
+    };
+  });
 
   res.json({ ok: true, count: orders.length, data: orders });
 }
@@ -182,4 +188,114 @@ export async function listCustomers(_req: Request, res: Response) {
   }));
 
   res.json({ ok: true, count: customers.length, data: customers });
+}
+
+/* ─────────────────────────── Admin: dashboard ───────────────────────────── */
+
+/** GET /api/admin/stats — overview metrics for the admin dashboard. */
+export async function getStats(_req: Request, res: Response) {
+  // Orders (source of revenue + recent activity).
+  const { data: ordersData } = await supabaseAdmin
+    .from("orders")
+    .select("*")
+    .order("created_at", { ascending: false });
+  const orders = ordersData ?? [];
+
+  const netOf = (o: Record<string, unknown>) =>
+    ((o.subtotal as number) ?? 0) - ((o.discount as number) ?? 0);
+
+  const revenue = orders.reduce((sum, o) => sum + netOf(o), 0);
+  const paidCount = orders.filter((o) => o.status === "paid").length;
+  const codCount = orders.filter((o) => o.status === "cod_pending").length;
+  const recentOrders = orders.slice(0, 6).map((o) => ({
+    id: o.id,
+    customerName: (o.full_name as string) || null,
+    email: o.email,
+    total: netOf(o),
+    status: o.status,
+    createdAt: o.created_at,
+  }));
+
+  // Product count.
+  const { count: productCount } = await supabaseAdmin
+    .from("products")
+    .select("*", { count: "exact", head: true });
+
+  // Customer count (users table may not exist yet).
+  const { count: customerCount } = await supabaseAdmin
+    .from("users")
+    .select("*", { count: "exact", head: true });
+
+  // Returns (table may not exist yet).
+  const { data: returnsData } = await supabaseAdmin.from("returns").select("status");
+  const returnCount = returnsData?.length ?? 0;
+  const pendingReturns = (returnsData ?? []).filter((r) => r.status === "requested").length;
+
+  // Active offer (table may not exist yet).
+  const { data: offer } = await supabaseAdmin
+    .from("offers")
+    .select("title")
+    .eq("active", true)
+    .limit(1)
+    .maybeSingle();
+
+  res.json({
+    ok: true,
+    data: {
+      revenue,
+      orderCount: orders.length,
+      paidCount,
+      codCount,
+      productCount: productCount ?? 0,
+      customerCount: customerCount ?? 0,
+      returnCount,
+      pendingReturns,
+      activeOffer: (offer?.title as string) ?? null,
+      recentOrders,
+    },
+  });
+}
+
+/* ─────────────────────────── Admin: returns ─────────────────────────────── */
+
+/** GET /api/admin/returns — every return with items + the short order ref. */
+export async function listAllReturns(_req: Request, res: Response) {
+  const { data, error } = await supabaseAdmin
+    .from("returns")
+    .select("*, items:return_items(*)")
+    .order("created_at", { ascending: false });
+  if (error) throw new ApiError(500, error.message);
+
+  const returns = (data ?? []).map((r) => ({
+    id: r.id,
+    orderId: r.order_id,
+    orderRef: String(r.order_id).slice(0, 8).toUpperCase(),
+    customerName: (r.full_name as string) || null,
+    email: r.email,
+    phone: r.phone,
+    reason: r.reason,
+    resolution: r.resolution,
+    status: r.status,
+    createdAt: r.created_at,
+    items: r.items ?? [],
+  }));
+
+  res.json({ ok: true, count: returns.length, data: returns });
+}
+
+/** PATCH /api/admin/returns/:id — updates a return's processing status. */
+export async function updateReturnStatus(req: Request, res: Response) {
+  const { id } = req.params;
+  const { status } = updateReturnStatusSchema.parse(req.body);
+
+  const { data, error } = await supabaseAdmin
+    .from("returns")
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq("id", id)
+    .select()
+    .maybeSingle();
+  if (error) throw new ApiError(500, error.message);
+  if (!data) throw new ApiError(404, `Return not found: ${id}`);
+
+  res.json({ ok: true, message: "Return status updated.", data });
 }

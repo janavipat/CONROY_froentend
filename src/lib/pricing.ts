@@ -76,6 +76,8 @@ export async function persistOrder(params: {
   shippingAddress?: string | null;
   status: string;
   cart: ResolvedCart;
+  discount?: number;
+  offerCode?: string | null;
   payment?: {
     provider: string;
     razorpay_order_id?: string;
@@ -123,5 +125,19 @@ export async function persistOrder(params: {
     }
   }
 
-  return { ...order, items: cart.lineItems };
+  // Best-effort: store the discount + coupon. Ignored if offers.sql not run.
+  let discount = 0;
+  if (params.discount && params.discount > 0) {
+    discount = params.discount;
+    const { error: dErr } = await supabaseAdmin
+      .from("orders")
+      .update({ discount, offer_code: params.offerCode ?? null })
+      .eq("id", order.id);
+    if (dErr) {
+      console.warn("Discount not stored (run offers.sql):", dErr.message);
+      discount = 0;
+    }
+  }
+
+  return { ...order, discount, offer_code: params.offerCode ?? null, items: cart.lineItems };
 }
