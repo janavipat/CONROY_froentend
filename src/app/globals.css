@@ -7,22 +7,23 @@
  * gently rounded (8px) media.
  */
 @theme {
-  /* Neutrals */
+  /* Neutrals — cool off-white base with a navy ink */
   --color-white: #ffffff;
-  --color-paper: #f6f6f4; /* soft off-white alt section */
-  --color-mist: #f3f3f3; /* light grey (image backdrops) */
-  --color-ink: #000000; /* headings — true black */
-  --color-ink-soft: #2e2e2e; /* body text */
-  --color-stone: #767676; /* muted text */
-  --color-line: #e7e7e7; /* hairline borders */
+  --color-paper: #f4f5f1; /* off-white alt section */
+  --color-mist: #eef1f4; /* light cool grey (image backdrops) */
+  --color-ink: #15243c; /* headings — deep navy */
+  --color-ink-soft: #44566a; /* body text — slate */
+  --color-stone: #8a94a3; /* muted text — cool grey */
+  --color-line: #e3e6ea; /* hairline borders */
 
-  /* Pastel section blocks (from offduty's scheme palette) */
-  --color-sky: #e1edf5; /* pale blue */
-  --color-sage: #eef1ea; /* pale green */
-  --color-cream: #eef1ea; /* alias kept for existing usages → sage */
+  /* Blue-tinted section blocks */
+  --color-sky: #e6eff6; /* pale blue */
+  --color-sage: #eaf0f5; /* pale blue-grey (name kept for existing usages) */
+  --color-cream: #eaf0f5; /* alias kept for existing usages → sage */
 
   /* Accent */
-  --color-accent: #1d3686; /* navy */
+  --color-accent: #23507e; /* royal blue */
+  --color-gold: #a98545; /* warm classic accent (badges, highlights) */
 
   /* Semantic */
   --color-background: var(--color-white);
@@ -32,7 +33,7 @@
   --font-sans:
     system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial,
     sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-  --font-serif: var(--font-sans);
+  --font-serif: var(--font-playfair), Georgia, "Times New Roman", serif;
 
   /* Shape */
   --radius-pill: 9999px;
@@ -69,11 +70,11 @@
     letter-spacing: 0;
   }
 
-  /* Headings — system sans, medium weight, tight tracking, normal case. */
+  /* Headings — classic serif display (Cormorant Garamond) over navy ink. */
   .font-display {
-    font-family: var(--font-sans);
-    font-weight: 500;
-    letter-spacing: -0.02em;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    letter-spacing: -0.005em;
     color: var(--color-ink);
   }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { TESTIMONIALS } from "@/lib/site";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/motion/Reveal";
@@ -21,13 +21,16 @@ function Stars({ rating }: { rating: number }) {
 export function Testimonials() {
   const trackRef = useRef<HTMLDivElement>(null);
   const [index, setIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
 
   function goTo(i: number) {
     const track = trackRef.current;
     if (!track) return;
     const card = track.children[i] as HTMLElement | undefined;
-    card?.scrollIntoView({ behavior: "smooth", inline: "center", block: "nearest" });
+    if (!card) return;
+    // Scroll the track horizontally only — never scrollIntoView, which would
+    // move the whole page vertically to reveal the card.
+    const left = card.offsetLeft - (track.clientWidth - card.offsetWidth) / 2;
+    track.scrollTo({ left: Math.max(0, left), behavior: "smooth" });
   }
 
   function step(dir: number) {
@@ -37,14 +40,6 @@ export function Testimonials() {
       return next;
     });
   }
-
-  // Auto-advance (pauses on hover / focus within the slider).
-  useEffect(() => {
-    if (paused) return;
-    const id = setInterval(() => step(1), 4500);
-    return () => clearInterval(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paused]);
 
   // Keep the active dot in sync when the user swipes/scrolls manually.
   function onScroll() {
@@ -98,10 +93,6 @@ export function Testimonials() {
         <div
           ref={trackRef}
           onScroll={onScroll}
-          onMouseEnter={() => setPaused(true)}
-          onMouseLeave={() => setPaused(false)}
-          onFocusCapture={() => setPaused(true)}
-          onBlurCapture={() => setPaused(false)}
           className="mt-10 flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {TESTIMONIALS.map((t) => (
