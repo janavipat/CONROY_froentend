@@ -15,6 +15,9 @@ export interface AdminProductPayload {
   fit: string;
   price: number;
   currency: string;
+  stock: number;
+  sku: string;
+  status: "active" | "draft" | "archived";
   sizes: string[];
   details: string[];
   badge?: string | null;
@@ -205,6 +208,86 @@ export async function adminUpdateReturnStatus(id: string, status: AdminReturnSta
 }
 
 /** Uploads an image file to Supabase Storage via the backend; returns its URL. */
+/* ---- Inventory ---------------------------------------------------------- */
+
+export type ProductStatus = "active" | "draft" | "archived";
+
+export interface InventoryItem {
+  id: string;
+  handle: string;
+  title: string;
+  sku: string;
+  stock: number;
+  status: ProductStatus;
+  price: number;
+  currency: string;
+}
+
+export async function adminListInventory(): Promise<InventoryItem[]> {
+  const { data } = await api.get<ApiList<InventoryItem[]>>("/admin/inventory");
+  return data.data ?? [];
+}
+
+export async function adminUpdateInventory(
+  handle: string,
+  patch: { stock?: number; sku?: string; status?: ProductStatus },
+) {
+  const { data } = await api.patch(`/admin/inventory/${handle}`, patch);
+  return data as { ok: boolean; message: string };
+}
+
+/* ---- Collections -------------------------------------------------------- */
+
+export interface AdminCollection {
+  handle: string;
+  title: string;
+  subtitle: string;
+  description: string;
+  image: string;
+  productCount: number;
+}
+
+export interface AdminCollectionPayload {
+  title: string;
+  handle?: string;
+  subtitle: string;
+  description: string;
+  image: string;
+}
+
+export async function adminListCollections(): Promise<AdminCollection[]> {
+  const { data } = await api.get<ApiList<AdminCollection[]>>("/admin/collections");
+  return data.data ?? [];
+}
+
+export async function adminCreateCollection(payload: AdminCollectionPayload) {
+  const { data } = await api.post("/admin/collections", payload);
+  return data as { ok: boolean; message: string; data: { handle: string } };
+}
+
+export async function adminUpdateCollection(handle: string, payload: AdminCollectionPayload) {
+  const { data } = await api.put(`/admin/collections/${handle}`, payload);
+  return data as { ok: boolean; message: string };
+}
+
+export async function adminDeleteCollection(handle: string) {
+  const { data } = await api.delete(`/admin/collections/${handle}`);
+  return data as { ok: boolean; message: string };
+}
+
+/** Fetches the product handles currently in a collection (via the public endpoint). */
+export async function adminGetCollectionProducts(handle: string): Promise<string[]> {
+  const { data } = await api.get<{ ok: boolean; data: { products: { handle: string }[] } }>(
+    `/collections/${handle}`,
+  );
+  return (data.data.products ?? []).map((p) => p.handle);
+}
+
+export async function adminSetCollectionProducts(handle: string, productHandles: string[]) {
+  const { data } = await api.put(`/admin/collections/${handle}/products`, { productHandles });
+  return data as { ok: boolean; message: string };
+}
+
 export async function adminUploadImage(file: File): Promise<string> {
   const form = new FormData();
   form.append("file", file);

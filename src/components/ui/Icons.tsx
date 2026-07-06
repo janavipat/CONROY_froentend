@@ -40,6 +40,20 @@ export const GridIcon = (p: IconProps) => (
   </svg>
 );
 
+export const LayersIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M12 3 3 8l9 5 9-5-9-5Z" />
+    <path d="m3 13 9 5 9-5" />
+  </svg>
+);
+
+export const BoxIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M21 8 12 3 3 8v8l9 5 9-5V8Z" />
+    <path d="m3 8 9 5 9-5M12 13v8" />
+  </svg>
+);
+
 export const BagIcon = (p: IconProps) => (
   <svg {...base} {...p}>
     <path d="M6 8h12l-1 12H7L6 8Z" />

@@ -32,6 +32,8 @@ export interface Product {
   collections: string[];
   details: string[];
   stock: number;
+  sku?: string;
+  status?: "active" | "draft" | "archived";
   rating: number;
   reviewCount: number;
   badge?: string;

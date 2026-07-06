@@ -33,6 +33,9 @@ export function ProductForm({ initial }: { initial?: Product }) {
   const [description, setDescription] = useState(initial?.description ?? "");
   const [badge, setBadge] = useState(initial?.badge ?? "");
   const [sizes, setSizes] = useState<string[]>(initial?.sizes ?? []);
+  const [stock, setStock] = useState(String(initial?.stock ?? "0"));
+  const [sku, setSku] = useState(initial?.sku ?? "");
+  const [status, setStatus] = useState<"active" | "draft" | "archived">(initial?.status ?? "active");
   const [details, setDetails] = useState<string[]>(initial?.details?.length ? initial.details : [""]);
   const [images, setImages] = useState<ProductImageInput[]>(
     initial?.images.map((i) => ({ src: i.src, alt: i.alt })) ?? [],
@@ -79,6 +82,9 @@ export function ProductForm({ initial }: { initial?: Product }) {
       fit: fit.trim(),
       price: Math.round(priceNum),
       currency: initial?.currency ?? "INR",
+      stock: Math.max(0, Math.round(Number(stock) || 0)),
+      sku: sku.trim(),
+      status,
       sizes,
       details: details.map((d) => d.trim()).filter(Boolean),
       badge: badge.trim() || null,
@@ -236,6 +242,42 @@ export function ProductForm({ initial }: { initial?: Product }) {
               {s}
             </button>
           ))}
+        </div>
+      </section>
+
+      {/* Inventory */}
+      <section className="mt-6 grid gap-5 rounded-media border border-line bg-white p-5 sm:grid-cols-3">
+        <div>
+          <label className={label}>Stock</label>
+          <input
+            type="number"
+            min={0}
+            value={stock}
+            onChange={(e) => setStock(e.target.value)}
+            placeholder="0"
+            className={field}
+          />
+        </div>
+        <div>
+          <label className={label}>SKU</label>
+          <input
+            value={sku}
+            onChange={(e) => setSku(e.target.value)}
+            placeholder="CNRY-BLK-01"
+            className={field}
+          />
+        </div>
+        <div>
+          <label className={label}>Status</label>
+          <select
+            value={status}
+            onChange={(e) => setStatus(e.target.value as "active" | "draft" | "archived")}
+            className={cn(field, "capitalize")}
+          >
+            <option value="active">Active</option>
+            <option value="draft">Draft</option>
+            <option value="archived">Archived</option>
+          </select>
         </div>
       </section>
 

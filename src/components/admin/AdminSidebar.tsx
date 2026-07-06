@@ -27,7 +27,15 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   { label: "Dashboard", href: "/admin", icon: GridIcon },
-  { label: "Products", href: "/admin/products", icon: BagIcon },
+  {
+    label: "Products",
+    href: "/admin/products",
+    icon: BagIcon,
+    children: [
+      { label: "Collections", href: "/admin/collections" },
+      { label: "Inventory", href: "/admin/inventory" },
+    ],
+  },
   {
     label: "Orders",
     href: "/admin/orders",
