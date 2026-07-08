@@ -226,6 +226,23 @@ export async function listCustomers(_req: Request, res: Response) {
   res.json({ ok: true, count: customers.length, data: customers });
 }
 
+/* ─────────────────────────── Admin: marketing ───────────────────────────── */
+
+/** GET /api/admin/subscribers — newsletter subscribers. */
+export async function listSubscribers(_req: Request, res: Response) {
+  const { data, error } = await supabaseAdmin
+    .from("newsletter_subscribers")
+    .select("email, created_at")
+    .order("created_at", { ascending: false });
+  if (error) throw new ApiError(500, error.message);
+
+  res.json({
+    ok: true,
+    count: data?.length ?? 0,
+    data: (data ?? []).map((s) => ({ email: s.email, joinedAt: s.created_at })),
+  });
+}
+
 /* ─────────────────────────── Admin: inventory ───────────────────────────── */
 
 /** GET /api/admin/inventory — every product's stock / SKU / status. */

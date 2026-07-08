@@ -13,7 +13,14 @@ import {
   setCollectionProducts,
 } from "../controllers/collections.controller.js";
 import { submitContact, subscribeNewsletter } from "../controllers/engagement.controller.js";
-import { trackVisit, getLiveVisitors } from "../controllers/analytics.controller.js";
+import {
+  trackVisit,
+  getLiveVisitors,
+  recordPageView,
+  recordCartAdd,
+  getAnalytics,
+} from "../controllers/analytics.controller.js";
+import { toggleLike, listLikes } from "../controllers/wishlist.controller.js";
 import { createOrder, getOrder, listOrdersByPhone } from "../controllers/orders.controller.js";
 import { createPaymentOrder, verifyPayment } from "../controllers/payments.controller.js";
 import { createReturn, listReturnsByPhone } from "../controllers/returns.controller.js";
@@ -42,6 +49,7 @@ import {
   listAllReturns,
   listCustomers,
   listInventory,
+  listSubscribers,
   updateInventory,
   updateProduct,
   updateReturnStatus,
@@ -78,6 +86,12 @@ router.post("/newsletter", asyncHandler(subscribeNewsletter));
 
 // Analytics — public heartbeat from storefront visitors (live-visitor tracking)
 router.post("/track", asyncHandler(trackVisit));
+router.post("/analytics/pageview", asyncHandler(recordPageView));
+router.post("/analytics/cart-add", asyncHandler(recordCartAdd));
+
+// Wishlist / likes (public)
+router.post("/wishlist/toggle", asyncHandler(toggleLike));
+router.get("/wishlist", asyncHandler(listLikes));
 
 // Orders
 router.post("/orders", asyncHandler(createOrder));
@@ -125,9 +139,11 @@ router.delete("/admin/collections/:handle", asyncHandler(deleteCollection));
 router.put("/admin/collections/:handle/products", asyncHandler(setCollectionProducts));
 router.get("/admin/stats", asyncHandler(getStats));
 router.get("/admin/live", asyncHandler(getLiveVisitors));
+router.get("/admin/analytics", asyncHandler(getAnalytics));
 router.get("/admin/orders", asyncHandler(listAllOrders));
 router.get("/admin/orders/:id", asyncHandler(getAdminOrder));
 router.get("/admin/customers", asyncHandler(listCustomers));
+router.get("/admin/subscribers", asyncHandler(listSubscribers));
 router.get("/admin/returns", asyncHandler(listAllReturns));
 router.patch("/admin/returns/:id", asyncHandler(updateReturnStatus));
 router.get("/admin/offers", asyncHandler(listOffers));
