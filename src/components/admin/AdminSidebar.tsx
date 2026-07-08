@@ -10,8 +10,11 @@ import {
   ArrowRightIcon,
   TruckIcon,
   UserIcon,
-  StarIcon,
   GridIcon,
+  ChartIcon,
+  MegaphoneIcon,
+  TagIcon,
+  CogIcon,
 } from "@/components/ui/Icons";
 
 interface NavChild {
@@ -25,8 +28,18 @@ interface NavItem {
   children?: NavChild[];
 }
 
+// Shopify-style information architecture: top-level sections with sub-items.
 const NAV: NavItem[] = [
-  { label: "Dashboard", href: "/admin", icon: GridIcon },
+  { label: "Home", href: "/admin", icon: GridIcon },
+  {
+    label: "Orders",
+    href: "/admin/orders",
+    icon: TruckIcon,
+    children: [
+      { label: "Returns", href: "/admin/returns" },
+      { label: "Abandoned checkouts", href: "/admin/orders/abandoned" },
+    ],
+  },
   {
     label: "Products",
     href: "/admin/products",
@@ -36,15 +49,14 @@ const NAV: NavItem[] = [
       { label: "Inventory", href: "/admin/inventory" },
     ],
   },
-  {
-    label: "Orders",
-    href: "/admin/orders",
-    icon: TruckIcon,
-    children: [{ label: "Returns", href: "/admin/returns" }],
-  },
-  { label: "Offers", href: "/admin/offers", icon: StarIcon },
   { label: "Customers", href: "/admin/customers", icon: UserIcon },
+  { label: "Marketing", href: "/admin/marketing", icon: MegaphoneIcon },
+  { label: "Discounts", href: "/admin/offers", icon: TagIcon },
+  { label: "Analytics", href: "/admin/analytics", icon: ChartIcon },
 ];
+
+// Pinned at the very bottom, like Shopify's Settings.
+const SETTINGS_ITEM = { label: "Settings", href: "/admin/settings", icon: CogIcon };
 
 export function AdminSidebar() {
   const pathname = usePathname();
@@ -124,6 +136,18 @@ export function AdminSidebar() {
       </nav>
 
       <div className="m-3 space-y-2">
+        <Link
+          href={SETTINGS_ITEM.href}
+          className={cn(
+            "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors",
+            isActive(SETTINGS_ITEM.href)
+              ? "bg-ink text-white"
+              : "text-ink-soft hover:bg-mist hover:text-ink",
+          )}
+        >
+          <SETTINGS_ITEM.icon className="h-4.5 w-4.5" />
+          {SETTINGS_ITEM.label}
+        </Link>
         <Link
           href="/"
           className="flex items-center justify-between rounded-md border border-line px-3 py-2.5 text-sm text-ink-soft transition-colors hover:border-ink hover:text-ink"

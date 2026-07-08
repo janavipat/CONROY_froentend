@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { Product } from "@/types";
 import { useCart } from "@/lib/cart-context";
 import { useToast } from "@/components/ui/Toast";
+import { trackCartAdd } from "@/services/analytics";
 import { cn } from "@/utils/cn";
 import { Button } from "@/components/ui/Button";
 import { CheckIcon, MinusIcon, PlusIcon } from "@/components/ui/Icons";
@@ -42,6 +43,7 @@ export function AddToCartForm({ product, compact = false }: { product: Product; 
       fit: product.fit,
       quantity,
     });
+    trackCartAdd(product.handle); // analytics: added-to-cart event
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
   }

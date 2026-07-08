@@ -3,20 +3,7 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { api } from "@/services/api";
-
-/** Stable per-tab session id. */
-function sessionId(): string {
-  try {
-    let id = sessionStorage.getItem("conroy.sid");
-    if (!id) {
-      id = Math.random().toString(36).slice(2) + Date.now().toString(36);
-      sessionStorage.setItem("conroy.sid", id);
-    }
-    return id;
-  } catch {
-    return "anon";
-  }
-}
+import { sessionId, trackPageView } from "@/services/analytics";
 
 /**
  * Sends a lightweight heartbeat to the backend so the admin dashboard can show
@@ -47,9 +34,18 @@ export function VisitorBeacon() {
     };
     document.addEventListener("visibilitychange", onVisible);
 
+    // Time-on-page: record a page view with its duration when the visitor
+    // leaves this path (navigates away or closes the tab).
+    const start = performance.now();
+    const path = pathname || "/";
+    const flush = () => trackPageView(path, Math.round(performance.now() - start));
+    window.addEventListener("pagehide", flush);
+
     return () => {
       clearInterval(interval);
       document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("pagehide", flush);
+      flush();
     };
   }, [pathname]);
 

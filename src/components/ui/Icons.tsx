@@ -40,6 +40,40 @@ export const GridIcon = (p: IconProps) => (
   </svg>
 );
 
+export const MegaphoneIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M3 11v2a1 1 0 0 0 1 1h2l3 4V6L6 10H4a1 1 0 0 0-1 1Z" />
+    <path d="M9 6l10-3v18L9 18" />
+  </svg>
+);
+
+export const TagIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M3 3h7l11 11-7 7L3 10V3Z" />
+    <circle cx="7.5" cy="7.5" r="1.2" />
+  </svg>
+);
+
+export const CogIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <circle cx="12" cy="12" r="3" />
+    <path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" />
+  </svg>
+);
+
+export const ChartIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M3 3v18h18" />
+    <path d="M7 15l3-4 3 2 4-6" />
+  </svg>
+);
+
+export const HeartIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" />
+  </svg>
+);
+
 export const LayersIcon = (p: IconProps) => (
   <svg {...base} {...p}>
     <path d="M12 3 3 8l9 5 9-5-9-5Z" />

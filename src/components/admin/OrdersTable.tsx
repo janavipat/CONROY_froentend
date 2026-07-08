@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import type { AdminOrder } from "@/services/admin";
 import { adminListOrders } from "@/services/admin";
 import { formatCurrency } from "@/utils/format";
+import { printPackingSlips } from "@/lib/packing-slip";
 import { cn } from "@/utils/cn";
 import { SearchIcon, ChevronRightIcon } from "@/components/ui/Icons";
 
@@ -180,8 +181,14 @@ export function OrdersTable() {
         </div>
 
         {selected.size > 0 && (
-          <div className="border-b border-line bg-mist/60 px-4 py-2 text-xs text-ink-soft">
-            {selected.size} selected
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-line bg-mist/60 px-4 py-2">
+            <span className="text-xs text-ink-soft">{selected.size} selected</span>
+            <button
+              onClick={() => printPackingSlips(orders.filter((o) => selected.has(o.id)))}
+              className="rounded-md bg-ink px-3 py-1.5 text-xs font-medium text-white transition-opacity hover:opacity-90"
+            >
+              Print packing slips
+            </button>
           </div>
         )}
 

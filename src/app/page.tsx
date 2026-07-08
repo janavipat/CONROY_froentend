@@ -1,5 +1,7 @@
 import dynamic from "next/dynamic";
 import { Hero } from "@/sections/Hero";
+import { CollectionShowcase } from "@/sections/CollectionShowcase";
+import { CampaignBanner } from "@/sections/CampaignBanner";
 import { FeaturedProducts } from "@/sections/FeaturedProducts";
 import { Philosophy } from "@/sections/Philosophy";
 import { ServiceFeatures } from "@/sections/ServiceFeatures";
@@ -14,6 +16,8 @@ export default function HomePage() {
   return (
     <>
       <Hero />
+      <CollectionShowcase />
+      <CampaignBanner />
       <FeaturedProducts />
       <Philosophy />
       <ServiceFeatures />

@@ -152,6 +152,38 @@ export async function adminGetLive(): Promise<LiveData> {
   return data.data;
 }
 
+/* ---- Analytics ---------------------------------------------------------- */
+
+export interface AnalyticsPage {
+  path: string;
+  views: number;
+  uniqueVisitors: number;
+  avgSeconds: number;
+}
+export interface AnalyticsAbandoned {
+  handle: string;
+  title: string;
+  added: number;
+  purchased: number;
+  notBought: number;
+}
+export interface AnalyticsLiked {
+  handle: string;
+  title: string;
+  likes: number;
+}
+export interface AdminAnalytics {
+  totalPageViews: number;
+  topPages: AnalyticsPage[];
+  abandoned: AnalyticsAbandoned[];
+  mostLiked: AnalyticsLiked[];
+}
+
+export async function adminGetAnalytics(): Promise<AdminAnalytics> {
+  const { data } = await api.get<ApiList<AdminAnalytics>>("/admin/analytics");
+  return data.data;
+}
+
 export async function adminListOrders(): Promise<AdminOrder[]> {
   const { data } = await api.get<ApiList<AdminOrder[]>>("/admin/orders");
   return data.data ?? [];
@@ -164,6 +196,16 @@ export async function adminGetOrder(id: string): Promise<AdminOrder> {
 
 export async function adminListCustomers(): Promise<AdminCustomer[]> {
   const { data } = await api.get<ApiList<AdminCustomer[]>>("/admin/customers");
+  return data.data ?? [];
+}
+
+export interface AdminSubscriber {
+  email: string;
+  joinedAt: string;
+}
+
+export async function adminListSubscribers(): Promise<AdminSubscriber[]> {
+  const { data } = await api.get<ApiList<AdminSubscriber[]>>("/admin/subscribers");
   return data.data ?? [];
 }
 
