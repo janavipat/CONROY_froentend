@@ -14,6 +14,7 @@ import {
   ChartIcon,
   MegaphoneIcon,
   TagIcon,
+  ReceiptIcon,
   CogIcon,
 } from "@/components/ui/Icons";
 
@@ -50,6 +51,7 @@ const NAV: NavItem[] = [
     ],
   },
   { label: "Customers", href: "/admin/customers", icon: UserIcon },
+  { label: "Accounts", href: "/admin/accounts", icon: ReceiptIcon },
   { label: "Marketing", href: "/admin/marketing", icon: MegaphoneIcon },
   { label: "Discounts", href: "/admin/offers", icon: TagIcon },
   { label: "Analytics", href: "/admin/analytics", icon: ChartIcon },
