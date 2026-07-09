@@ -28,6 +28,7 @@ import {
 import {
   createProduct,
   deleteProduct,
+  getAccounts,
   getStats,
   listAllOrders,
   getAdminOrder,
@@ -109,6 +110,7 @@ router.get("/admin/live", asyncHandler(getLiveVisitors));
 router.get("/admin/orders", asyncHandler(listAllOrders));
 router.get("/admin/orders/:id", asyncHandler(getAdminOrder));
 router.get("/admin/customers", asyncHandler(listCustomers));
+router.get("/admin/accounts", asyncHandler(getAccounts));
 router.get("/admin/returns", asyncHandler(listAllReturns));
 router.patch("/admin/returns/:id", asyncHandler(updateReturnStatus));
 router.get("/admin/offers", asyncHandler(listOffers));
