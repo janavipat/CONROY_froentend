@@ -273,6 +273,63 @@ export async function adminListCustomers(): Promise<AdminCustomer[]> {
   return data.data ?? [];
 }
 
+/* ---- Accounts (accounting overview) ------------------------------------- */
+
+export interface AccountsSummary {
+  buyerCount: number;
+  orderCount: number;
+  grossSales: number;
+  totalDiscount: number;
+  netRevenue: number;
+  paidRevenue: number;
+  codRevenue: number;
+  paidCount: number;
+  codCount: number;
+  avgOrderValue: number;
+  returnCount: number;
+  refundedAmount: number;
+  pendingRefunds: number;
+  netMargin: number;
+  currency: string;
+}
+
+export interface AccountsCustomer {
+  name: string | null;
+  email: string;
+  phone: string | null;
+  orderCount: number;
+  grossSpent: number;
+  discount: number;
+  netSpent: number;
+  refunded: number;
+  netMargin: number;
+  lastOrderAt: string;
+}
+
+export interface AccountsReturn {
+  id: string;
+  orderRef: string;
+  name: string | null;
+  email: string;
+  phone: string | null;
+  resolution: string;
+  status: string;
+  reason: string;
+  value: number;
+  createdAt: string;
+}
+
+export interface AdminAccounts {
+  summary: AccountsSummary;
+  customers: AccountsCustomer[];
+  returns: AccountsReturn[];
+}
+
+export async function adminGetAccounts(): Promise<AdminAccounts> {
+  const { data } = await api.get<ApiList<AdminAccounts>>("/admin/accounts");
+  return data.data;
+}
+
 export interface AdminSubscriber {
   email: string;
   joinedAt: string;
