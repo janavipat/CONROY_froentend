@@ -13,6 +13,24 @@ const fieldClass =
   "h-12 w-full rounded-md border border-line bg-white px-3.5 text-sm text-ink placeholder:text-stone/60 transition-colors focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10";
 const labelClass = "mb-1.5 block text-xs font-medium uppercase tracking-wide text-stone";
 
+// CONROY support line — enquiries open a pre-filled WhatsApp chat to this number.
+const CONTACT_WHATSAPP_NUMBER = "919998009904";
+
+/** Builds a wa.me click-to-chat URL with the enquiry pre-filled. */
+function whatsappUrl(values: ContactFormValues): string {
+  const lines = [
+    "New enquiry from the CONROY website",
+    "",
+    `Name: ${values.name}`,
+    `Email: ${values.email}`,
+    values.phone ? `Phone: ${values.phone}` : "",
+    `Subject: ${values.subject}`,
+    "",
+    values.message,
+  ].filter(Boolean);
+  return `https://wa.me/${CONTACT_WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.join("\n"))}`;
+}
+
 export function ContactForm() {
   const {
     register,
@@ -24,11 +42,16 @@ export function ContactForm() {
   const [done, setDone] = useState<string | null>(null);
 
   async function onValid(values: ContactFormValues) {
+    // Open WhatsApp synchronously inside the click gesture so it isn't popup-blocked.
+    // This delivers the enquiry straight to the CONROY support number.
+    window.open(whatsappUrl(values), "_blank", "noopener,noreferrer");
+
+    // Persist the enquiry too, so it always lands in the admin inbox.
     const res = await submitContactForm(values);
     if (res.ok) {
-      setDone(res.message);
+      setDone("Your enquiry has been sent to us on WhatsApp. We'll reply shortly.");
       reset();
-      toast("Message sent — we'll be in touch soon.", "success");
+      toast("Opening WhatsApp — tap send to reach us.", "success");
     } else {
       toast(res.message || "Something went wrong. Please try again.", "error");
     }
@@ -122,9 +145,14 @@ export function ContactForm() {
         {errors.message && <p className="mt-1.5 text-xs text-accent">{errors.message.message}</p>}
       </div>
 
-      <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={isSubmitting}>
-        {isSubmitting ? "Sending…" : "Send message"}
-      </Button>
+      <div className="space-y-2">
+        <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={isSubmitting}>
+          {isSubmitting ? "Sending…" : "Send message"}
+        </Button>
+        <p className="text-xs text-stone">
+          Opens WhatsApp to send your enquiry to <span className="text-ink">+91 99980 09904</span>.
+        </p>
+      </div>
     </form>
   );
 }

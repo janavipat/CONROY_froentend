@@ -22,31 +22,39 @@ export interface Order {
   id: string;
   email: string;
   phone: string | null;
+  full_name?: string | null;
+  shipping_address?: string | null;
   subtotal: number;
+  discount?: number;
   currency: string;
   status: string;
   created_at: string;
   items: OrderItem[];
 }
 
+export interface OrderInput {
+  email: string;
+  items: CartItem[];
+  paymentMethod?: PaymentMethod;
+  phone?: string | null;
+  fullName?: string;
+  shippingAddress?: string;
+  code?: string;
+}
+
 /**
  * Places an order via the backend API. The server resolves authoritative prices
- * from Supabase, so we only send handle/size/quantity. When the shopper is
- * signed in we attach their phone so the order shows up in their account.
+ * from Supabase, so we only send handle/size/quantity plus the delivery details.
  */
-export async function createOrder(
-  email: string,
-  items: CartItem[],
-  paymentMethod: PaymentMethod = "online",
-  phone?: string | null,
-  code?: string,
-): Promise<CreateOrderResult> {
+export async function createOrder(input: OrderInput): Promise<CreateOrderResult> {
   const payload = {
-    email,
-    paymentMethod,
-    phone: phone ?? undefined,
-    code: code?.trim() || undefined,
-    items: items.map((i) => ({
+    email: input.email,
+    paymentMethod: input.paymentMethod ?? "online",
+    phone: input.phone ?? undefined,
+    fullName: input.fullName?.trim() || undefined,
+    shippingAddress: input.shippingAddress?.trim() || undefined,
+    code: input.code?.trim() || undefined,
+    items: input.items.map((i) => ({
       productHandle: i.productHandle,
       size: i.size,
       quantity: i.quantity,

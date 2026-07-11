@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   adminListReturns,
   adminUpdateReturnStatus,
+  adminDeleteReturn,
   type AdminReturn,
   type AdminReturnStatus,
 } from "@/services/admin";
@@ -74,6 +75,18 @@ export function ReturnsTable() {
       setError("Could not update the return status. Please retry.");
     } finally {
       setSavingId(null);
+    }
+  }
+
+  async function removeReturn(id: string) {
+    if (!window.confirm("Delete this return request? This cannot be undone.")) return;
+    const prev = returns;
+    setReturns((rs) => rs.filter((r) => r.id !== id));
+    try {
+      await adminDeleteReturn(id);
+    } catch {
+      setReturns(prev);
+      setError("Could not delete the return. Please retry.");
     }
   }
 
@@ -166,6 +179,12 @@ export function ReturnsTable() {
                   ))}
                 </select>
                 {savingId === r.id && <span className="text-xs text-stone">Saving…</span>}
+                <button
+                  onClick={() => removeReturn(r.id)}
+                  className="ml-auto rounded-md border border-line px-2.5 py-1.5 text-xs text-stone transition-colors hover:border-accent hover:text-accent"
+                >
+                  Delete
+                </button>
               </div>
             </li>
           ))}

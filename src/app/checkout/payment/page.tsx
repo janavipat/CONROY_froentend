@@ -36,6 +36,9 @@ const METHODS: { id: PaymentMethod; title: string; desc: string; icon: typeof Sh
   },
 ];
 
+const addrField =
+  "h-12 w-full rounded-md border border-line bg-white px-3 text-[15px] text-ink placeholder:text-stone focus:border-ink focus:outline-none";
+
 export default function PaymentPage() {
   const { items, subtotal, count, clear } = useCart();
   const { user } = useAuth();
@@ -47,6 +50,21 @@ export default function PaymentPage() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState<{ orderId?: string; method: PaymentMethod } | null>(null);
+
+  // Delivery address
+  const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [line1, setLine1] = useState("");
+  const [line2, setLine2] = useState("");
+  const [city, setCity] = useState("");
+  const [stateName, setStateName] = useState("");
+  const [pincode, setPincode] = useState("");
+
+  // Prefill the phone from the signed-in account (last 10 digits).
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if (user?.phone) setPhone((p) => p || user.phone!.replace(/\D/g, "").slice(-10));
+  }, [user?.phone]);
 
   // Offer / coupon
   const [code, setCode] = useState("");
@@ -95,18 +113,53 @@ export default function PaymentPage() {
     clear();
   }
 
+  function validate(): string | null {
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return "Please enter a valid email.";
+    if (fullName.trim().length < 2) return "Please enter the full name.";
+    if (!/^[0-9]{10}$/.test(phone.replace(/\D/g, ""))) return "Enter a valid 10-digit phone number.";
+    if (line1.trim().length < 4) return "Please enter the address (house / street).";
+    if (city.trim().length < 2) return "Please enter the city.";
+    if (stateName.trim().length < 2) return "Please enter the state.";
+    if (!/^[0-9]{6}$/.test(pincode.trim())) return "Enter a valid 6-digit pincode.";
+    return null;
+  }
+
+  /** A single formatted delivery address string for the order + packing slip. */
+  function composedAddress(): string {
+    const parts = [line1.trim(), line2.trim(), `${city.trim()}, ${stateName.trim()} ${pincode.trim()}`]
+      .filter(Boolean)
+      .join(", ");
+    return `${parts}. Ph: ${phone.replace(/\D/g, "")}`;
+  }
+
   async function handlePay() {
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
-      setError("Please enter a valid email for your order confirmation.");
+    const problem = validate();
+    if (problem) {
+      setError(problem);
+      toast(problem, "error");
       return;
     }
     setError("");
     setProcessing(true);
 
+    // Order phone: keep the account phone for history when signed in, else the
+    // delivery phone. Name + address always come from this form.
+    const orderPhone = user?.phone ?? `+91${phone.replace(/\D/g, "")}`;
+    const shippingAddress = composedAddress();
+    const name = fullName.trim();
+
     try {
       // Cash on Delivery — no gateway, just record the order.
       if (method === "cod") {
-        const order = await createOrder(email, items, "cod", user?.phone, code);
+        const order = await createOrder({
+          email,
+          items,
+          paymentMethod: "cod",
+          phone: orderPhone,
+          fullName: name,
+          shippingAddress,
+          code,
+        });
         if (order.ok) finish(order.orderId, "cod");
         else {
           setProcessing(false);
@@ -120,7 +173,15 @@ export default function PaymentPage() {
 
       // Demo mode (no Razorpay keys configured) — record the order directly.
       if (rp.mock || !rp.keyId || !rp.orderId) {
-        const order = await createOrder(email, items, "online", user?.phone, code);
+        const order = await createOrder({
+          email,
+          items,
+          paymentMethod: "online",
+          phone: orderPhone,
+          fullName: name,
+          shippingAddress,
+          code,
+        });
         if (order.ok) finish(order.orderId, "online");
         else {
           setProcessing(false);
@@ -144,7 +205,7 @@ export default function PaymentPage() {
         currency: rp.currency ?? "INR",
         name: "CONROY",
         description: `Order · ${count} item${count === 1 ? "" : "s"}`,
-        prefill: { email, contact: user?.phone ?? undefined },
+        prefill: { email, contact: orderPhone },
       });
 
       // Shopper closed the modal without paying.
@@ -157,7 +218,9 @@ export default function PaymentPage() {
       const verified = await verifyRazorpayPayment({
         email,
         items,
-        phone: user?.phone,
+        phone: orderPhone,
+        fullName: name,
+        shippingAddress,
         code,
         razorpayOrderId: result.razorpay_order_id,
         razorpayPaymentId: result.razorpay_payment_id,
@@ -237,6 +300,64 @@ export default function PaymentPage() {
               placeholder="Email for order confirmation"
               className="mt-3 h-12 w-full rounded-md border border-line bg-white px-3 text-[15px] text-ink placeholder:text-stone focus:border-ink focus:outline-none"
             />
+          </section>
+
+          {/* Delivery address */}
+          <section className="mt-8">
+            <h2 className="font-display text-xl text-ink">Delivery address</h2>
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <input
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Full name *"
+                autoComplete="name"
+                className={addrField}
+              />
+              <input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                placeholder="Phone number *"
+                inputMode="numeric"
+                autoComplete="tel"
+                className={addrField}
+              />
+              <input
+                value={line1}
+                onChange={(e) => setLine1(e.target.value)}
+                placeholder="Flat / House no, Building, Street *"
+                autoComplete="address-line1"
+                className={cn(addrField, "sm:col-span-2")}
+              />
+              <input
+                value={line2}
+                onChange={(e) => setLine2(e.target.value)}
+                placeholder="Area / Landmark (optional)"
+                autoComplete="address-line2"
+                className={cn(addrField, "sm:col-span-2")}
+              />
+              <input
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                placeholder="City *"
+                autoComplete="address-level2"
+                className={addrField}
+              />
+              <input
+                value={stateName}
+                onChange={(e) => setStateName(e.target.value)}
+                placeholder="State *"
+                autoComplete="address-level1"
+                className={addrField}
+              />
+              <input
+                value={pincode}
+                onChange={(e) => setPincode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                placeholder="Pincode *"
+                inputMode="numeric"
+                autoComplete="postal-code"
+                className={addrField}
+              />
+            </div>
           </section>
 
           <section className="mt-8">

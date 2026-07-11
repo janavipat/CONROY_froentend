@@ -46,6 +46,8 @@ export async function verifyRazorpayPayment(payload: {
   email: string;
   items: CartItem[];
   phone?: string | null;
+  fullName?: string;
+  shippingAddress?: string;
   code?: string;
   razorpayOrderId: string;
   razorpayPaymentId: string;
@@ -56,6 +58,8 @@ export async function verifyRazorpayPayment(payload: {
     {
       email: payload.email,
       phone: payload.phone ?? undefined,
+      fullName: payload.fullName?.trim() || undefined,
+      shippingAddress: payload.shippingAddress?.trim() || undefined,
       code: payload.code?.trim() || undefined,
       items: toApiItems(payload.items),
       razorpayOrderId: payload.razorpayOrderId,

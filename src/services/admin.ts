@@ -172,8 +172,82 @@ export interface AnalyticsLiked {
   title: string;
   likes: number;
 }
-export interface AdminAnalytics {
+export interface AnalyticsSummary {
+  totalCustomers: number;
+  totalOrders: number;
+  totalRevenue: number;
+  totalReturned: number;
+  netRevenue: number;
+  avgOrderValue: number;
+  totalVisitors: number;
   totalPageViews: number;
+  totalTimeSec: number;
+  avgSessionSec: number;
+  bounceRate: number;
+}
+
+export interface RevenuePoint {
+  date: string;
+  value: number;
+}
+export interface OrdersPoint {
+  date: string;
+  count: number;
+}
+export interface StatusSlice {
+  status: string;
+  count: number;
+}
+export interface PageActivityRow {
+  path: string;
+  visits: number;
+  uniqueVisitors: number;
+  totalSec: number;
+  lastVisit: string;
+}
+
+export interface CustomerOrder {
+  id: string;
+  date: string;
+  products: { title: string; quantity: number }[];
+  quantity: number;
+  amount: number;
+  paymentStatus: string;
+  deliveryStatus: string;
+}
+export interface CustomerReturn {
+  id: string;
+  orderId: string;
+  date: string;
+  products: { title: string; quantity: number }[];
+  reason: string;
+  refundAmount: number;
+  refundStatus: string;
+}
+export interface AnalyticsCustomer {
+  key: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  orders: number;
+  items: number;
+  grossValue: number;
+  returnedAmount: number;
+  netPurchase: number;
+  avgOrder: number;
+  lastOrder: string;
+  status: string;
+  orderList: CustomerOrder[];
+  returnList: CustomerReturn[];
+}
+
+export interface AdminAnalytics {
+  summary: AnalyticsSummary;
+  revenueByDay: RevenuePoint[];
+  ordersByDay: OrdersPoint[];
+  statusBreakdown: StatusSlice[];
+  pageActivity: PageActivityRow[];
+  customers: AnalyticsCustomer[];
   topPages: AnalyticsPage[];
   abandoned: AnalyticsAbandoned[];
   mostLiked: AnalyticsLiked[];
@@ -207,6 +281,30 @@ export interface AdminSubscriber {
 export async function adminListSubscribers(): Promise<AdminSubscriber[]> {
   const { data } = await api.get<ApiList<AdminSubscriber[]>>("/admin/subscribers");
   return data.data ?? [];
+}
+
+export interface AdminContact {
+  id: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  subject: string;
+  message: string;
+  handled?: boolean;
+  created_at: string;
+}
+
+export async function adminListContacts(): Promise<AdminContact[]> {
+  const { data } = await api.get<ApiList<AdminContact[]>>("/admin/contacts");
+  return data.data ?? [];
+}
+
+export async function adminSetContactHandled(id: string, handled: boolean): Promise<void> {
+  await api.patch(`/admin/contacts/${id}`, { handled });
+}
+
+export async function adminDeleteContact(id: string): Promise<void> {
+  await api.delete(`/admin/contacts/${id}`);
 }
 
 export interface AdminReturnItem {
@@ -247,6 +345,10 @@ export async function adminListReturns(): Promise<AdminReturn[]> {
 export async function adminUpdateReturnStatus(id: string, status: AdminReturnStatus) {
   const { data } = await api.patch(`/admin/returns/${id}`, { status });
   return data as { ok: boolean; message: string };
+}
+
+export async function adminDeleteReturn(id: string): Promise<void> {
+  await api.delete(`/admin/returns/${id}`);
 }
 
 /** Uploads an image file to Supabase Storage via the backend; returns its URL. */

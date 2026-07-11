@@ -15,6 +15,7 @@ import {
   MegaphoneIcon,
   TagIcon,
   CogIcon,
+  HeadsetIcon,
 } from "@/components/ui/Icons";
 
 interface NavChild {
@@ -50,6 +51,7 @@ const NAV: NavItem[] = [
     ],
   },
   { label: "Customers", href: "/admin/customers", icon: UserIcon },
+  { label: "Messages", href: "/admin/contacts", icon: HeadsetIcon },
   { label: "Marketing", href: "/admin/marketing", icon: MegaphoneIcon },
   { label: "Discounts", href: "/admin/offers", icon: TagIcon },
   { label: "Analytics", href: "/admin/analytics", icon: ChartIcon },
