@@ -3,9 +3,31 @@ import multer from "multer";
 import { asyncHandler } from "../middleware/asyncHandler.js";
 import { requireAdmin } from "../middleware/adminAuth.js";
 import { getProduct, listProducts } from "../controllers/products.controller.js";
-import { getCollection, listCollections } from "../controllers/collections.controller.js";
-import { submitContact, subscribeNewsletter } from "../controllers/engagement.controller.js";
-import { trackVisit, getLiveVisitors } from "../controllers/analytics.controller.js";
+import {
+  getCollection,
+  listCollections,
+  listAdminCollections,
+  createCollection,
+  updateCollection,
+  deleteCollection,
+  setCollectionProducts,
+} from "../controllers/collections.controller.js";
+import {
+  submitContact,
+  subscribeNewsletter,
+  listContacts,
+  setContactHandled,
+  deleteContact,
+} from "../controllers/engagement.controller.js";
+import {
+  trackVisit,
+  getLiveVisitors,
+  recordPageView,
+  recordCartAdd,
+  getAnalytics,
+} from "../controllers/analytics.controller.js";
+import { toggleLike, listLikes } from "../controllers/wishlist.controller.js";
+import { whatsappHealth, whatsappTest } from "../controllers/whatsappHealth.controller.js";
 import { createOrder, getOrder, listOrdersByPhone } from "../controllers/orders.controller.js";
 import { createPaymentOrder, verifyPayment } from "../controllers/payments.controller.js";
 import { createReturn, listReturnsByPhone } from "../controllers/returns.controller.js";
@@ -34,8 +56,12 @@ import {
   getAdminOrder,
   listAllReturns,
   listCustomers,
+  listInventory,
+  listSubscribers,
+  updateInventory,
   updateProduct,
   updateReturnStatus,
+  deleteReturn,
   uploadImage,
 } from "../controllers/admin.controller.js";
 import {
@@ -69,6 +95,12 @@ router.post("/newsletter", asyncHandler(subscribeNewsletter));
 
 // Analytics — public heartbeat from storefront visitors (live-visitor tracking)
 router.post("/track", asyncHandler(trackVisit));
+router.post("/analytics/pageview", asyncHandler(recordPageView));
+router.post("/analytics/cart-add", asyncHandler(recordCartAdd));
+
+// Wishlist / likes (public)
+router.post("/wishlist/toggle", asyncHandler(toggleLike));
+router.get("/wishlist", asyncHandler(listLikes));
 
 // Orders
 router.post("/orders", asyncHandler(createOrder));
@@ -105,14 +137,31 @@ router.post("/admin/upload", upload.single("file"), asyncHandler(uploadImage));
 router.post("/admin/products", asyncHandler(createProduct));
 router.put("/admin/products/:handle", asyncHandler(updateProduct));
 router.delete("/admin/products/:handle", asyncHandler(deleteProduct));
+// Inventory
+router.get("/admin/inventory", asyncHandler(listInventory));
+router.patch("/admin/inventory/:handle", asyncHandler(updateInventory));
+// Collections
+router.get("/admin/collections", asyncHandler(listAdminCollections));
+router.post("/admin/collections", asyncHandler(createCollection));
+router.put("/admin/collections/:handle", asyncHandler(updateCollection));
+router.delete("/admin/collections/:handle", asyncHandler(deleteCollection));
+router.put("/admin/collections/:handle/products", asyncHandler(setCollectionProducts));
 router.get("/admin/stats", asyncHandler(getStats));
 router.get("/admin/live", asyncHandler(getLiveVisitors));
+router.get("/admin/analytics", asyncHandler(getAnalytics));
+router.get("/admin/whatsapp/health", asyncHandler(whatsappHealth));
+router.post("/admin/whatsapp/test", asyncHandler(whatsappTest));
 router.get("/admin/orders", asyncHandler(listAllOrders));
 router.get("/admin/orders/:id", asyncHandler(getAdminOrder));
 router.get("/admin/customers", asyncHandler(listCustomers));
 router.get("/admin/accounts", asyncHandler(getAccounts));
+router.get("/admin/subscribers", asyncHandler(listSubscribers));
+router.get("/admin/contacts", asyncHandler(listContacts));
+router.patch("/admin/contacts/:id", asyncHandler(setContactHandled));
+router.delete("/admin/contacts/:id", asyncHandler(deleteContact));
 router.get("/admin/returns", asyncHandler(listAllReturns));
 router.patch("/admin/returns/:id", asyncHandler(updateReturnStatus));
+router.delete("/admin/returns/:id", asyncHandler(deleteReturn));
 router.get("/admin/offers", asyncHandler(listOffers));
 router.post("/admin/offers", asyncHandler(createOffer));
 router.put("/admin/offers/:id", asyncHandler(updateOffer));
