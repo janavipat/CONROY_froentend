@@ -178,11 +178,16 @@ export const phoneStartSchema = z.object({
     .string()
     .trim()
     .regex(/^\+?[0-9\s-]{8,16}$/, "Enter a valid phone number"),
+  // "signin" (must already have an account) or "signup" (must be a new number).
+  mode: z.enum(["signin", "signup"]).default("signin"),
 });
 
 export const phoneVerifySchema = z.object({
   phone: z.string().trim().min(8),
   code: z.string().trim().regex(/^[0-9]{4,8}$/, "Enter the code sent to your phone"),
+  mode: z.enum(["signin", "signup"]).default("signin"),
+  // Full name is required to create an account (signup).
+  fullName: z.string().trim().min(1).max(120).optional(),
   // Optional email collected at signup — used for the welcome email.
   email: z.string().email().optional().or(z.literal("")),
 });
