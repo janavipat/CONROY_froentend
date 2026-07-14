@@ -319,9 +319,24 @@ export interface AccountsReturn {
   createdAt: string;
 }
 
+export interface AccountsPayment {
+  id: string;
+  orderRef: string;
+  name: string | null;
+  email: string;
+  phone: string | null;
+  method: string;
+  amount: number;
+  status: string;
+  paid: boolean;
+  razorpayPaymentId: string | null;
+  createdAt: string;
+}
+
 export interface AdminAccounts {
   summary: AccountsSummary;
   customers: AccountsCustomer[];
+  payments: AccountsPayment[];
   returns: AccountsReturn[];
 }
 

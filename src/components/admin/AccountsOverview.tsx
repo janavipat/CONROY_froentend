@@ -32,6 +32,21 @@ function returnStatusCls(status: string): string {
   }
 }
 
+function payStatusCls(status: string): string {
+  switch (status) {
+    case "Paid":
+      return "bg-emerald-100 text-emerald-700";
+    case "Unpaid (COD)":
+      return "bg-amber-100 text-amber-700";
+    case "Refunded":
+      return "bg-violet-100 text-violet-700";
+    case "Cancelled":
+      return "bg-rose-100 text-rose-700";
+    default:
+      return "bg-stone-100 text-stone-600";
+  }
+}
+
 export function AccountsOverview() {
   const [data, setData] = useState<AdminAccounts | null>(null);
   const [loading, setLoading] = useState(true);
@@ -174,6 +189,75 @@ export function AccountsOverview() {
               )}
             </section>
 
+            {/* Payments: customer · method · amount · paid or not */}
+            <section className="overflow-hidden rounded-media border border-line bg-white">
+              <div className="flex items-center justify-between border-b border-line px-5 py-4">
+                <div>
+                  <h2 className="font-display text-lg text-ink">Payments</h2>
+                  <p className="text-xs text-stone">
+                    Per order — payment method and whether it&apos;s been paid.
+                  </p>
+                </div>
+                <span className="text-xs text-stone">
+                  {s.paidCount} paid · {s.codCount} COD
+                </span>
+              </div>
+
+              {/* Header (desktop) */}
+              <div className="hidden grid-cols-[1.7fr_1.2fr_1fr_1fr_1.1fr] gap-4 border-b border-line px-5 py-3 text-xs uppercase tracking-wide text-stone sm:grid">
+                <span>Customer</span>
+                <span>Payment method</span>
+                <span className="text-right">Amount</span>
+                <span>Status</span>
+                <span className="text-right">Date</span>
+              </div>
+
+              {data.payments.length === 0 ? (
+                <p className="py-16 text-center text-stone">No orders yet.</p>
+              ) : (
+                <ul className="divide-y divide-line">
+                  {data.payments.map((p) => (
+                    <li
+                      key={p.id}
+                      className="grid grid-cols-2 gap-2 px-4 py-3 text-sm sm:grid-cols-[1.7fr_1.2fr_1fr_1fr_1.1fr] sm:gap-4 sm:px-5"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate font-medium text-ink">
+                          {p.name || p.email || p.phone || "Guest"}
+                        </span>
+                        <span className="block truncate text-xs text-stone">
+                          #{p.orderRef} · {p.email || p.phone || "—"}
+                        </span>
+                      </span>
+                      <span className="min-w-0 text-ink-soft">
+                        <span className="block truncate">{p.method}</span>
+                        {p.razorpayPaymentId && (
+                          <span className="block truncate text-xs text-stone">
+                            {p.razorpayPaymentId}
+                          </span>
+                        )}
+                      </span>
+                      <span className="text-ink sm:text-right">
+                        <span className="text-stone sm:hidden">Amount: </span>
+                        {formatCurrency(p.amount, currency)}
+                      </span>
+                      <span>
+                        <span
+                          className={cn(
+                            "inline-block rounded-full px-2 py-0.5 text-[0.65rem] font-medium",
+                            payStatusCls(p.status),
+                          )}
+                        >
+                          {p.status}
+                        </span>
+                      </span>
+                      <span className="text-stone sm:text-right">{formatDate(p.createdAt)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
             {/* All return orders */}
             <section className="overflow-hidden rounded-media border border-line bg-white">
               <div className="flex items-center justify-between border-b border-line px-5 py-4">
@@ -254,9 +338,9 @@ export function AccountsOverview() {
                 <p className="py-16 text-center text-stone">No purchases yet.</p>
               ) : (
                 <ul className="divide-y divide-line">
-                  {data.customers.map((c) => (
+                  {data.customers.map((c, i) => (
                     <li
-                      key={c.email || c.phone || c.name || Math.random()}
+                      key={c.email || c.phone || c.name || `cust-${i}`}
                       className="grid grid-cols-2 gap-2 px-4 py-3 text-sm sm:grid-cols-[1.8fr_0.6fr_1fr_1fr_1fr_1fr] sm:gap-4 sm:px-5"
                     >
                       <span className="min-w-0">
