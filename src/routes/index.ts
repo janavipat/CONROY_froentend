@@ -55,6 +55,7 @@ import {
   getAdminOrder,
   listAllReturns,
   listCustomers,
+  getAccounts,
   listInventory,
   listSubscribers,
   updateInventory,
@@ -153,6 +154,7 @@ router.post("/admin/whatsapp/test", asyncHandler(whatsappTest));
 router.get("/admin/orders", asyncHandler(listAllOrders));
 router.get("/admin/orders/:id", asyncHandler(getAdminOrder));
 router.get("/admin/customers", asyncHandler(listCustomers));
+router.get("/admin/accounts", asyncHandler(getAccounts));
 router.get("/admin/subscribers", asyncHandler(listSubscribers));
 router.get("/admin/contacts", asyncHandler(listContacts));
 router.patch("/admin/contacts/:id", asyncHandler(setContactHandled));
