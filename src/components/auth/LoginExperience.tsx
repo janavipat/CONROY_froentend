@@ -45,8 +45,8 @@ export function LoginExperience({ mode = "signin" }: { mode?: "signin" | "signup
           </div>
 
           <div className="p-6 sm:p-8">
-            {/* Phone OTP powers both — signup just also collects an email. */}
-            <PhoneOtpAuth collectEmail={isSignup} />
+            {/* Phone OTP powers both — signup also collects name + email. */}
+            <PhoneOtpAuth mode={mode} />
           </div>
         </div>
 

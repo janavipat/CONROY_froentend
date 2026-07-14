@@ -25,10 +25,15 @@ function errMsg(err: unknown, fallback: string): string {
   return typeof m === "string" ? m : fallback;
 }
 
-/** Requests an OTP (sent by MSG91, or mocked in dev) to the phone number. */
-export async function startPhoneOtp(phoneE164: string): Promise<StartResult> {
+export type AuthMode = "signin" | "signup";
+
+/** Requests an OTP (sent by WhatsApp/SMS, or mocked in dev) to the phone number. */
+export async function startPhoneOtp(
+  phoneE164: string,
+  mode: AuthMode = "signin",
+): Promise<StartResult> {
   try {
-    const { data } = await api.post("/auth/phone/start", { phone: phoneE164 });
+    const { data } = await api.post("/auth/phone/start", { phone: phoneE164, mode });
     return { ok: true, message: data.message, mock: data.mock, code: data.code };
   } catch (err) {
     return { ok: false, message: errMsg(err, "Couldn't send the code. Please try again.") };
@@ -39,10 +44,16 @@ export async function startPhoneOtp(phoneE164: string): Promise<StartResult> {
 export async function verifyPhoneOtp(
   phoneE164: string,
   code: string,
-  email?: string,
+  opts?: { mode?: AuthMode; email?: string; fullName?: string },
 ): Promise<VerifyResult> {
   try {
-    const { data } = await api.post("/auth/phone/verify", { phone: phoneE164, code, email });
+    const { data } = await api.post("/auth/phone/verify", {
+      phone: phoneE164,
+      code,
+      mode: opts?.mode ?? "signin",
+      email: opts?.email || undefined,
+      fullName: opts?.fullName || undefined,
+    });
     return {
       ok: true,
       message: data.message,

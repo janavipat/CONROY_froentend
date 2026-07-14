@@ -404,6 +404,13 @@ export async function adminUpdateReturnStatus(id: string, status: AdminReturnSta
   return data as { ok: boolean; message: string };
 }
 
+/** Applies a status to many returns at once (parallel single-updates). */
+export async function adminBulkUpdateReturnStatus(ids: string[], status: AdminReturnStatus) {
+  const results = await Promise.allSettled(ids.map((id) => adminUpdateReturnStatus(id, status)));
+  const failed = results.filter((r) => r.status === "rejected").length;
+  return { ok: failed === 0, updated: ids.length - failed, failed };
+}
+
 export async function adminDeleteReturn(id: string): Promise<void> {
   await api.delete(`/admin/returns/${id}`);
 }

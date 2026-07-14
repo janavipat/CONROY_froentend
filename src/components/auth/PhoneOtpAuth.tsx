@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/lib/auth/auth-context";
+import type { AuthMode } from "@/services/auth";
 import { useToast } from "@/components/ui/Toast";
 import { DEFAULT_COUNTRY, type Country } from "@/lib/countries";
 import { CountryPicker } from "@/components/auth/CountryPicker";
@@ -11,7 +12,9 @@ import { OtpInput } from "@/components/auth/OtpInput";
 import { CheckIcon, ChevronLeftIcon } from "@/components/ui/Icons";
 import { cn } from "@/utils/cn";
 
-const RESEND_SECONDS = 30;
+// Matches the backend OTP validity (otpStore TTL = 1 minute), so the countdown
+// the shopper sees lines up with when the code actually expires.
+const RESEND_SECONDS = 60;
 
 function Spinner({ className }: { className?: string }) {
   return (
@@ -27,12 +30,16 @@ const inputClass =
 const buttonClass =
   "flex h-12 w-full items-center justify-center gap-2 bg-ink text-[0.78rem] font-medium uppercase tracking-[0.14em] text-white transition-colors hover:bg-black disabled:opacity-50";
 
-export function PhoneOtpAuth({ collectEmail = false }: { collectEmail?: boolean }) {
+export function PhoneOtpAuth({ mode = "signin" }: { mode?: AuthMode }) {
   const { user, initializing, isConfigured, demoCode, sendOtp, verifyOtp, signOut } = useAuth();
   const { toast } = useToast();
 
+  const isSignup = mode === "signup";
+  const collectEmail = isSignup;
+
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [country, setCountry] = useState<Country>(DEFAULT_COUNTRY);
+  const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
@@ -40,6 +47,7 @@ export function PhoneOtpAuth({ collectEmail = false }: { collectEmail?: boolean 
 
   const [sending, setSending] = useState(false);
   const [verifying, setVerifying] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
   const [otpError, setOtpError] = useState<string | null>(null);
   const [resendIn, setResendIn] = useState(0);
@@ -73,10 +81,22 @@ export function PhoneOtpAuth({ collectEmail = false }: { collectEmail?: boolean 
     return true;
   }
 
+  function validateName(): boolean {
+    if (!isSignup) return true;
+    if (!name.trim()) {
+      setNameError("Please enter your name");
+      return false;
+    }
+    setNameError(null);
+    return true;
+  }
+
   async function handleSend() {
-    if (!validatePhone()) return;
+    const okName = validateName();
+    const okPhone = validatePhone();
+    if (!okName || !okPhone) return;
     setSending(true);
-    const { error } = await sendOtp(e164, remember);
+    const { error } = await sendOtp(e164, remember, mode);
     setSending(false);
     if (error) {
       setPhoneError(error);
@@ -93,7 +113,7 @@ export function PhoneOtpAuth({ collectEmail = false }: { collectEmail?: boolean 
   async function handleResend() {
     if (resendIn > 0 || sending) return;
     setSending(true);
-    const { error } = await sendOtp(e164, remember);
+    const { error } = await sendOtp(e164, remember, mode);
     setSending(false);
     if (error) {
       toast(error, "error");
@@ -112,7 +132,11 @@ export function PhoneOtpAuth({ collectEmail = false }: { collectEmail?: boolean 
       return;
     }
     setVerifying(true);
-    const { error } = await verifyOtp(e164, value, collectEmail ? email.trim() : undefined);
+    const { error } = await verifyOtp(e164, value, {
+      mode,
+      email: collectEmail ? email.trim() : undefined,
+      fullName: isSignup ? name.trim() : undefined,
+    });
     setVerifying(false);
     if (error) {
       setOtpError(error);
@@ -120,7 +144,7 @@ export function PhoneOtpAuth({ collectEmail = false }: { collectEmail?: boolean 
       toast(error, "error");
       return;
     }
-    toast("Signed in successfully", "success");
+    toast(isSignup ? "Account created successfully" : "Signed in successfully", "success");
   }
 
   function changeNumber() {
@@ -186,8 +210,31 @@ export function PhoneOtpAuth({ collectEmail = false }: { collectEmail?: boolean 
             className="space-y-5"
           >
             <p className="text-sm leading-relaxed text-ink-soft">
-              Enter your mobile number and we&apos;ll send you a one-time verification code.
+              {isSignup
+                ? "Create your account — enter your name and mobile number to get a one-time verification code."
+                : "Enter your mobile number and we'll send you a one-time verification code."}
             </p>
+
+            {isSignup && (
+              <div>
+                <label className="mb-2 block text-[0.7rem] font-medium uppercase tracking-[0.16em] text-stone">
+                  Full name
+                </label>
+                <input
+                  type="text"
+                  autoComplete="name"
+                  value={name}
+                  disabled={sending}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (nameError) setNameError(null);
+                  }}
+                  placeholder="Your name"
+                  className={cn(inputClass, nameError && "border-accent")}
+                />
+                {nameError && <p className="mt-2 text-xs text-accent">{nameError}</p>}
+              </div>
+            )}
 
             <div>
               <div className="mb-2 flex items-center justify-between">
@@ -304,6 +351,8 @@ export function PhoneOtpAuth({ collectEmail = false }: { collectEmail?: boolean 
                 <>
                   <Spinner /> Verifying…
                 </>
+              ) : isSignup ? (
+                "Verify & Create account"
               ) : (
                 "Verify & Sign in"
               )}
