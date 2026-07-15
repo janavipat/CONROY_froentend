@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Playfair_Display } from "next/font/google";
+import { Playfair_Display, EB_Garamond } from "next/font/google";
 import "./globals.css";
 import { SITE } from "@/lib/site";
 import { StoreChrome } from "@/components/layout/StoreChrome";
@@ -11,6 +11,14 @@ const playfair = Playfair_Display({
   variable: "--font-playfair",
   subsets: ["latin"],
   weight: ["500", "600", "700"],
+  display: "swap",
+});
+
+// EB Garamond — a timeless old-style serif for body & UI (classic, refined).
+const ebGaramond = EB_Garamond({
+  variable: "--font-eb-garamond",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
   display: "swap",
 });
 
@@ -61,7 +69,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${playfair.variable} h-full antialiased`}>
+    <html lang="en" className={`${playfair.variable} ${ebGaramond.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-white">
         <Providers>
           <StoreChrome>{children}</StoreChrome>

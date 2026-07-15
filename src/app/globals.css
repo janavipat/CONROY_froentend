@@ -29,11 +29,11 @@
   --color-background: var(--color-white);
   --color-foreground: var(--color-ink-soft);
 
-  /* Typography — conroy.global's stack (Founders Grotesk / RL_DroidKufi are
-     commercial fonts, so most users fall back to Helvetica/Arial, same as the
-     live site). */
+  /* Typography — classic luxury pairing: EB Garamond (old-style serif) for body
+     & UI, Playfair Display (high-contrast serif) for display headings. Both
+     self-hosted via next/font — a timeless, editorial, non-modern feel. */
   --font-sans:
-    "RL_DroidKufi", "Founders Grotesk text Regular", Helvetica, Arial, sans-serif;
+    var(--font-eb-garamond), "Iowan Old Style", "Palatino Linotype", Georgia, serif;
   --font-serif: var(--font-playfair), Georgia, "Times New Roman", serif;
 
   /* Shape */
@@ -71,11 +71,11 @@
     letter-spacing: 0;
   }
 
-  /* Headings — same grotesk stack as the body, matching conroy.global. */
+  /* Display headings — Playfair Display, a high-contrast luxury serif. */
   .font-display {
-    font-family: var(--font-sans);
+    font-family: var(--font-serif);
     font-weight: 600;
-    letter-spacing: -0.005em;
+    letter-spacing: -0.01em;
     color: var(--color-ink);
   }
 
