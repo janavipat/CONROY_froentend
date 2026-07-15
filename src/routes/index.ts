@@ -26,6 +26,12 @@ import {
   recordCartAdd,
   getAnalytics,
 } from "../controllers/analytics.controller.js";
+import {
+  submitChatMessage,
+  listChatMessages,
+  setChatMessageStatus,
+  deleteChatMessage,
+} from "../controllers/chat.controller.js";
 import { toggleLike, listLikes } from "../controllers/wishlist.controller.js";
 import { whatsappHealth, whatsappTest } from "../controllers/whatsappHealth.controller.js";
 import { createOrder, getOrder, listOrdersByPhone } from "../controllers/orders.controller.js";
@@ -93,6 +99,9 @@ router.get("/collections/:handle", asyncHandler(getCollection));
 router.post("/contact", asyncHandler(submitContact));
 router.post("/newsletter", asyncHandler(subscribeNewsletter));
 
+// Chat widget — public message submission from the storefront bubble.
+router.post("/chat", asyncHandler(submitChatMessage));
+
 // Analytics — public heartbeat from storefront visitors (live-visitor tracking)
 router.post("/track", asyncHandler(trackVisit));
 router.post("/analytics/pageview", asyncHandler(recordPageView));
@@ -159,6 +168,10 @@ router.get("/admin/subscribers", asyncHandler(listSubscribers));
 router.get("/admin/contacts", asyncHandler(listContacts));
 router.patch("/admin/contacts/:id", asyncHandler(setContactHandled));
 router.delete("/admin/contacts/:id", asyncHandler(deleteContact));
+// Chat widget inbox
+router.get("/admin/chat", asyncHandler(listChatMessages));
+router.patch("/admin/chat/:id", asyncHandler(setChatMessageStatus));
+router.delete("/admin/chat/:id", asyncHandler(deleteChatMessage));
 router.get("/admin/returns", asyncHandler(listAllReturns));
 router.patch("/admin/returns/:id", asyncHandler(updateReturnStatus));
 router.delete("/admin/returns/:id", asyncHandler(deleteReturn));

@@ -12,6 +12,22 @@ export const newsletterSchema = z.object({
   email: z.string().email("A valid email is required"),
 });
 
+/**
+ * Chat widget submission. Name/email are optional — the bubble is open to
+ * anonymous visitors, so only the message itself is required.
+ */
+export const chatMessageSchema = z.object({
+  name: z.string().max(120).optional().or(z.literal("")),
+  email: z.string().email("A valid email is required").optional().or(z.literal("")),
+  message: z.string().min(1, "Message is required").max(5000),
+});
+
+export const CHAT_STATUSES = ["new", "read", "replied", "closed"] as const;
+
+export const chatStatusSchema = z.object({
+  status: z.enum(CHAT_STATUSES),
+});
+
 export const orderItemSchema = z.object({
   productHandle: z.string().min(1),
   size: z.string().min(1),
