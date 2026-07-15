@@ -17,6 +17,7 @@ import {
   ReceiptIcon,
   CogIcon,
   HeadsetIcon,
+  ChatIcon,
 } from "@/components/ui/Icons";
 
 interface NavChild {
@@ -53,6 +54,7 @@ const NAV: NavItem[] = [
   },
   { label: "Customers", href: "/admin/customers", icon: UserIcon },
   { label: "Messages", href: "/admin/contacts", icon: HeadsetIcon },
+  { label: "Chat Messages", href: "/admin/chat", icon: ChatIcon },
   { label: "Accounts", href: "/admin/accounts", icon: ReceiptIcon },
   { label: "Marketing", href: "/admin/marketing", icon: MegaphoneIcon },
   { label: "Discounts", href: "/admin/offers", icon: TagIcon },

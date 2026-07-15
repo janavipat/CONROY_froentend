@@ -68,6 +68,19 @@ export const ChartIcon = (p: IconProps) => (
   </svg>
 );
 
+export const ChatIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.3 9.3 0 0 1-3.3-.6L3 21l1.7-4.5A8.2 8.2 0 0 1 3.6 11.5a8.4 8.4 0 0 1 9-8.4 8.4 8.4 0 0 1 8.4 8.4Z" />
+  </svg>
+);
+
+export const SendIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M21 3 10.5 13.5" />
+    <path d="M21 3l-6.7 18-3.8-7.5L3 9.7 21 3Z" />
+  </svg>
+);
+
 export const ReceiptIcon = (p: IconProps) => (
   <svg {...base} {...p}>
     <path d="M5 3h14v18l-3-1.5L13 21l-3-1.5L7 21l-2-1.5V3Z" />

@@ -379,6 +379,36 @@ export async function adminDeleteContact(id: string): Promise<void> {
   await api.delete(`/admin/contacts/${id}`);
 }
 
+/* ---- Chat messages (storefront chat widget) ----------------------------- */
+
+export type ChatStatus = "new" | "read" | "replied" | "closed";
+
+export const CHAT_STATUSES: ChatStatus[] = ["new", "read", "replied", "closed"];
+
+export interface AdminChatMessage {
+  id: string;
+  /** Null when an anonymous visitor didn't supply one. */
+  name: string | null;
+  /** Null when an anonymous visitor didn't supply one. */
+  email: string | null;
+  message: string;
+  status: ChatStatus;
+  createdAt: string;
+}
+
+export async function adminListChatMessages(): Promise<AdminChatMessage[]> {
+  const { data } = await api.get<ApiList<AdminChatMessage[]>>("/admin/chat");
+  return data.data ?? [];
+}
+
+export async function adminSetChatStatus(id: string, status: ChatStatus): Promise<void> {
+  await api.patch(`/admin/chat/${id}`, { status });
+}
+
+export async function adminDeleteChatMessage(id: string): Promise<void> {
+  await api.delete(`/admin/chat/${id}`);
+}
+
 export interface AdminReturnItem {
   product_handle: string;
   title: string;
