@@ -2,6 +2,7 @@
 
 import { CartProvider } from "@/lib/cart-context";
 import { CartDrawer } from "@/components/layout/CartDrawer";
+import { ConnectionStatus } from "@/components/ui/ConnectionStatus";
 import { ToastProvider } from "@/components/ui/Toast";
 import { AuthProvider } from "@/lib/auth/auth-context";
 import { WishlistProvider } from "@/lib/wishlist-context";
@@ -15,6 +16,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <CartProvider>
             {children}
             <CartDrawer />
+            <ConnectionStatus />
           </CartProvider>
         </WishlistProvider>
       </AuthProvider>
