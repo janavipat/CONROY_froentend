@@ -156,8 +156,11 @@ create policy "anon_insert_newsletter" on public.newsletter_subscribers for inse
 create table if not exists public.users (
   phone       text primary key,
   email       text,
+  full_name   text,
   created_at  timestamptz not null default now()
 );
+-- Backfill for stores created before names were collected at signup.
+alter table public.users add column if not exists full_name text;
 
 alter table public.users enable row level security;
 -- Writes happen through the API (service role); no anon policies needed.

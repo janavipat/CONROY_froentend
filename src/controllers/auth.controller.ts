@@ -18,33 +18,65 @@ function phoneSession(e164: string) {
 }
 
 /**
- * Records the customer on first sign-in and, if it's a brand-new signup with an
- * email, sends the welcome email. Best-effort — never blocks login.
+ * Looks up whether an account already exists for this phone number.
+ * `error: true` means the lookup itself failed (e.g. table missing) — callers
+ * should fail open in that case so a transient DB issue never locks people out.
  */
-async function onSignedIn(e164: string, email?: string): Promise<void> {
-  try {
-    // Insert-first: success == brand-new signup; 23505 == returning user.
+async function accountExists(e164: string): Promise<{ exists: boolean; error: boolean }> {
+  const { data, error } = await supabaseAdmin
+    .from("users")
+    .select("phone")
+    .eq("phone", e164)
+    .maybeSingle();
+  if (error) {
+    console.warn("User lookup failed:", error.message);
+    return { exists: false, error: true };
+  }
+  return { exists: Boolean(data), error: false };
+}
+
+/**
+ * Persists the account after a verified OTP.
+ *  - signup: creates the row (name required). Rejects if the number already
+ *    has an account (one signup per number).
+ *  - signin: the row must already exist; refuses otherwise. Keeps email current.
+ * Sends the welcome email once, on brand-new signups.
+ */
+async function finalizeAuth(
+  e164: string,
+  opts: { mode: "signin" | "signup"; email?: string; fullName?: string },
+): Promise<void> {
+  const email = opts.email || null;
+
+  if (opts.mode === "signup") {
     const { error } = await supabaseAdmin
       .from("users")
-      .insert({ phone: e164, email: email || null });
+      .insert({ phone: e164, email, full_name: opts.fullName || null });
 
-    if (!error) {
-      if (email) {
-        // Fire-and-forget so a slow SMTP server never delays sign-in.
-        void sendWelcomeEmail(email).catch((err) =>
-          console.error("Welcome email failed:", err instanceof Error ? err.message : err),
-        );
+    if (error) {
+      // 23505 = unique violation → this number already signed up.
+      if (error.code === "23505") {
+        throw new ApiError(409, "This number is already registered. Please sign in instead.");
       }
-      return;
+      // Any other error (e.g. full_name column missing) — retry without name so
+      // a not-yet-migrated DB still lets people register.
+      const retry = await supabaseAdmin.from("users").insert({ phone: e164, email });
+      if (retry.error && retry.error.code === "23505") {
+        throw new ApiError(409, "This number is already registered. Please sign in instead.");
+      }
     }
 
-    // Returning user — keep their email current; any other error (e.g. the
-    // users table not created yet) is ignored so login never breaks.
-    if (error.code === "23505" && email) {
-      await supabaseAdmin.from("users").update({ email }).eq("phone", e164);
+    if (opts.email) {
+      void sendWelcomeEmail(opts.email).catch((err) =>
+        console.error("Welcome email failed:", err instanceof Error ? err.message : err),
+      );
     }
-  } catch (err) {
-    console.error("User upsert skipped:", err instanceof Error ? err.message : err);
+    return;
+  }
+
+  // signin — keep email fresh; existence is enforced by the caller.
+  if (email) {
+    await supabaseAdmin.from("users").update({ email }).eq("phone", e164);
   }
 }
 
@@ -103,8 +135,20 @@ export async function me(req: Request, res: Response) {
 
 /** POST /api/auth/phone/start — sends an OTP to the phone (SMS). */
 export async function startPhoneOtp(req: Request, res: Response) {
-  const { phone } = phoneStartSchema.parse(req.body);
+  const { phone, mode } = phoneStartSchema.parse(req.body);
   const e164 = toE164(phone);
+
+  // Gate before spending an OTP: signup needs a new number, signin an existing
+  // one. Fail open only if the lookup itself errors (never lock users out).
+  const { exists, error: lookupError } = await accountExists(e164);
+  if (!lookupError) {
+    if (mode === "signup" && exists) {
+      throw new ApiError(409, "This number is already registered. Please sign in instead.");
+    }
+    if (mode === "signin" && !exists) {
+      throw new ApiError(404, "No account found for this number. Please create an account first.");
+    }
+  }
 
   if (env.otpMock) {
     // Dev mode: no SMS is sent; any number is accepted with OTP_TEST_CODE.
@@ -161,16 +205,32 @@ export async function startPhoneOtp(req: Request, res: Response) {
 
 /** POST /api/auth/phone/verify — verifies the OTP and returns a session. */
 export async function verifyPhoneOtp(req: Request, res: Response) {
-  const { phone, code, email } = phoneVerifySchema.parse(req.body);
+  const { phone, code, email, mode, fullName } = phoneVerifySchema.parse(req.body);
   const e164 = toE164(phone);
+
+  // Re-enforce the signin/signup rules at verify time (defense in depth).
+  if (mode === "signup" && !fullName) {
+    throw new ApiError(400, "Please enter your name to create an account.");
+  }
+  const { exists, error: lookupError } = await accountExists(e164);
+  if (!lookupError) {
+    if (mode === "signup" && exists) {
+      throw new ApiError(409, "This number is already registered. Please sign in instead.");
+    }
+    if (mode === "signin" && !exists) {
+      throw new ApiError(404, "No account found for this number. Please create an account first.");
+    }
+  }
+
+  const successMsg = mode === "signup" ? "Account created." : "Signed in.";
 
   if (env.otpMock) {
     if (code !== env.OTP_TEST_CODE) throw new ApiError(401, "Invalid code.");
-    await onSignedIn(e164, email || undefined);
+    await finalizeAuth(e164, { mode, email: email || undefined, fullName });
     return res.json({
       ok: true,
       mock: true,
-      message: "Signed in (mock mode).",
+      message: `${successMsg} (mock mode).`,
       data: phoneSession(e164),
     });
   }
@@ -180,11 +240,11 @@ export async function verifyPhoneOtp(req: Request, res: Response) {
   if (whatsappConfigured || twilioConfigured) {
     const result = checkOtp(e164, code);
     if (!result.ok) throw new ApiError(401, result.reason ?? "Invalid code.");
-    await onSignedIn(e164, email || undefined);
+    await finalizeAuth(e164, { mode, email: email || undefined, fullName });
     return res.json({
       ok: true,
       mock: false,
-      message: "Signed in.",
+      message: successMsg,
       data: phoneSession(e164),
     });
   }
@@ -197,11 +257,11 @@ export async function verifyPhoneOtp(req: Request, res: Response) {
   });
   if (error) throw new ApiError(401, error.message);
 
-  await onSignedIn(e164, email || undefined);
+  await finalizeAuth(e164, { mode, email: email || undefined, fullName });
   res.json({
     ok: true,
     mock: false,
-    message: "Signed in.",
+    message: successMsg,
     data: {
       user: { id: data.user?.id ?? e164, phone: data.user?.phone ?? e164 },
       session: {

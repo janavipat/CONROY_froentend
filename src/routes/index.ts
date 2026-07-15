@@ -56,6 +56,7 @@ import {
   getAdminOrder,
   listAllReturns,
   listCustomers,
+  getAccounts,
   listInventory,
   listSubscribers,
   updateInventory,

@@ -578,3 +578,202 @@ export async function deleteReturn(req: Request, res: Response) {
   if (error) throw new ApiError(500, error.message);
   res.json({ ok: true, message: "Return request deleted." });
 }
+
+/* ─────────────────────────────── Accounts ───────────────────────────────── */
+
+type Row = Record<string, unknown>;
+const num = (v: unknown) => (typeof v === "number" ? v : 0);
+const str = (v: unknown) => (typeof v === "string" ? v : "");
+
+/** Net billed amount for an order = subtotal − discount. */
+function orderNet(o: Row): number {
+  return num(o.subtotal) - num(o.discount);
+}
+/** How the order was paid. Razorpay reference ⇒ online, else cash on delivery. */
+function paymentMethod(o: Row): string {
+  return o.payment_provider === "razorpay" ? "Online (Razorpay)" : "Cash on delivery";
+}
+/** Human label + paid flag from the order status. */
+function paymentState(o: Row): { label: string; paid: boolean } {
+  switch (str(o.status)) {
+    case "paid":
+      return { label: "Paid", paid: true };
+    case "refunded":
+      return { label: "Refunded", paid: true };
+    case "cod_pending":
+      return { label: "Unpaid (COD)", paid: false };
+    case "cancelled":
+      return { label: "Cancelled", paid: false };
+    default:
+      return { label: "Pending", paid: false };
+  }
+}
+/** Sum of a return's line items (price × qty). */
+function returnValue(r: Row): number {
+  const items = (r.items as Row[]) ?? [];
+  return items.reduce((s, it) => s + num(it.price) * num(it.quantity), 0);
+}
+
+const RETURN_SETTLED = new Set(["refunded", "replaced", "completed"]);
+const RETURN_PENDING = new Set(["requested", "approved"]);
+
+/**
+ * GET /api/admin/accounts — accounting overview:
+ *  - summary: total order amount (net revenue), total return amount, split by
+ *    paid vs COD, and net margin.
+ *  - customers: per-buyer billing + refunds + margin.
+ *  - payments: per-order ledger with payment method + paid/unpaid + Razorpay id.
+ *  - returns: every return with its refund value.
+ * Uses select("*") so it degrades gracefully if optional columns are absent.
+ */
+export async function getAccounts(_req: Request, res: Response) {
+  const { data: ordersRaw } = await supabaseAdmin
+    .from("orders")
+    .select("*, items:order_items(price, quantity)")
+    .order("created_at", { ascending: false });
+  const { data: returnsRaw } = await supabaseAdmin
+    .from("returns")
+    .select("*, items:return_items(price, quantity)")
+    .order("created_at", { ascending: false });
+
+  const orders = (ordersRaw ?? []) as Row[];
+  const returns = (returnsRaw ?? []) as Row[];
+  const currency = str(orders[0]?.currency) || "INR";
+
+  // Revenue is computed on everything except cancelled orders.
+  const active = orders.filter((o) => str(o.status) !== "cancelled");
+
+  let grossSales = 0;
+  let totalDiscount = 0;
+  let paidRevenue = 0;
+  let codRevenue = 0;
+  let paidCount = 0;
+  let codCount = 0;
+  for (const o of active) {
+    grossSales += num(o.subtotal);
+    totalDiscount += num(o.discount);
+    const net = orderNet(o);
+    const { paid } = paymentState(o);
+    if (paid) {
+      paidRevenue += net;
+      paidCount += 1;
+    } else if (o.payment_provider !== "razorpay") {
+      codRevenue += net;
+      codCount += 1;
+    }
+  }
+  const netRevenue = grossSales - totalDiscount;
+
+  let refundedAmount = 0;
+  let pendingRefunds = 0;
+  for (const r of returns) {
+    const v = returnValue(r);
+    if (RETURN_SETTLED.has(str(r.status))) refundedAmount += v;
+    else if (RETURN_PENDING.has(str(r.status))) pendingRefunds += v;
+  }
+
+  // Per-customer aggregation (keyed by phone, else email).
+  interface Cust {
+    name: string | null;
+    email: string;
+    phone: string | null;
+    orderCount: number;
+    grossSpent: number;
+    discount: number;
+    netSpent: number;
+    refunded: number;
+    lastOrderAt: string;
+  }
+  const custMap = new Map<string, Cust>();
+  for (const o of active) {
+    const key = str(o.phone) || str(o.email) || "guest";
+    const net = orderNet(o);
+    const created = str(o.created_at);
+    const c =
+      custMap.get(key) ??
+      ({
+        name: str(o.full_name) || null,
+        email: str(o.email),
+        phone: str(o.phone) || null,
+        orderCount: 0,
+        grossSpent: 0,
+        discount: 0,
+        netSpent: 0,
+        refunded: 0,
+        lastOrderAt: created,
+      } satisfies Cust);
+    c.orderCount += 1;
+    c.grossSpent += num(o.subtotal);
+    c.discount += num(o.discount);
+    c.netSpent += net;
+    if (!c.name && str(o.full_name)) c.name = str(o.full_name);
+    if (created > c.lastOrderAt) c.lastOrderAt = created;
+    custMap.set(key, c);
+  }
+  for (const r of returns) {
+    if (!RETURN_SETTLED.has(str(r.status))) continue;
+    const key = str(r.phone) || str(r.email) || "guest";
+    const c = custMap.get(key);
+    if (c) c.refunded += returnValue(r);
+  }
+  const customers = [...custMap.values()]
+    .map((c) => ({ ...c, netMargin: c.netSpent - c.refunded }))
+    .sort((a, b) => b.netSpent - a.netSpent);
+
+  const returnsList = returns.map((r) => ({
+    id: str(r.id),
+    orderRef: str(r.order_id).slice(0, 8).toUpperCase(),
+    name: str(r.full_name) || null,
+    email: str(r.email),
+    phone: str(r.phone) || null,
+    resolution: str(r.resolution),
+    status: str(r.status),
+    reason: str(r.reason),
+    value: returnValue(r),
+    createdAt: str(r.created_at),
+  }));
+
+  // Per-order payment ledger: customer · method · amount · paid/unpaid · ref.
+  const payments = orders.map((o) => {
+    const state = paymentState(o);
+    return {
+      id: str(o.id),
+      orderRef: str(o.id).slice(0, 8).toUpperCase(),
+      name: str(o.full_name) || null,
+      email: str(o.email),
+      phone: str(o.phone) || null,
+      method: paymentMethod(o),
+      amount: orderNet(o),
+      status: state.label,
+      paid: state.paid,
+      razorpayPaymentId: str(o.razorpay_payment_id) || null,
+      createdAt: str(o.created_at),
+    };
+  });
+
+  res.json({
+    ok: true,
+    data: {
+      summary: {
+        buyerCount: custMap.size,
+        orderCount: active.length,
+        grossSales,
+        totalDiscount,
+        netRevenue,
+        paidRevenue,
+        codRevenue,
+        paidCount,
+        codCount,
+        avgOrderValue: active.length ? Math.round(netRevenue / active.length) : 0,
+        returnCount: returns.length,
+        refundedAmount,
+        pendingRefunds,
+        netMargin: netRevenue - refundedAmount,
+        currency,
+      },
+      customers,
+      payments,
+      returns: returnsList,
+    },
+  });
+}
