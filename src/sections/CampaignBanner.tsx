@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useRef } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { Container } from "@/components/ui/Container";
 
 const IMAGE =
@@ -19,6 +19,9 @@ export function CampaignBanner() {
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start end", "end start"] });
   // Parallax: the image drifts slower than the page as you scroll past.
   const y = useTransform(scrollYProgress, [0, 1], ["-14%", "14%"]);
+  // With reduced motion, start in the final state so the copy is never stuck
+  // invisible waiting on a reveal that won't play.
+  const reduce = useReducedMotion();
 
   return (
     <section
@@ -33,12 +36,17 @@ export function CampaignBanner() {
         </div>
       </motion.div>
 
-      {/* Cinematic vignette */}
-      <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/35 to-ink/50" />
+      {/* Navy scrim — deep behind the copy on the left so the headline stays
+          readable, easing off to the right so the photograph is still visible.
+          A flat wash strong enough to read as navy would hide the image. */}
+      <div className="absolute inset-0 bg-gradient-to-r from-ink/95 via-ink/70 to-ink/25" />
+
+      {/* Gentle top/bottom vignette for depth. */}
+      <div className="absolute inset-0 bg-gradient-to-t from-ink/45 via-transparent to-ink/25" />
 
       <Container className="relative z-10 py-24">
         <motion.div
-          initial={{ opacity: 0, y: 36 }}
+          initial={reduce ? { opacity: 1, y: 0 } : { opacity: 0, y: 36 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-120px" }}
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
@@ -46,7 +54,7 @@ export function CampaignBanner() {
         >
           <motion.p
             className="text-[0.72rem] font-medium uppercase tracking-[0.3em] text-white/70"
-            initial={{ opacity: 0, y: 14 }}
+            initial={reduce ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.15, duration: 0.7 }}

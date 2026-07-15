@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRef } from "react";
-import { motion, useScroll, useTransform, type Variants } from "framer-motion";
+import { motion, useReducedMotion, useScroll, useTransform, type Variants } from "framer-motion";
 import { PRODUCTS } from "@/lib/products";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
@@ -28,6 +28,9 @@ export function Philosophy() {
   const { scrollYProgress } = useScroll({ target: imgRef, offset: ["start end", "end start"] });
   // Image drifts as you scroll past — cinematic parallax.
   const y = useTransform(scrollYProgress, [0, 1], ["-9%", "9%"]);
+  // Never hide content behind a reveal that won't play: with reduced motion we
+  // start in the final state instead of at opacity 0.
+  const reduce = useReducedMotion();
 
   return (
     <section className="overflow-hidden bg-sage py-16 sm:py-20 lg:py-28">
@@ -36,7 +39,7 @@ export function Philosophy() {
           {/* Image — parallax + ambient Ken Burns motion (video-like) */}
           <div ref={imgRef}>
             <motion.div
-              initial={{ opacity: 0, scale: 1.04 }}
+              initial={reduce ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 1.04 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true, margin: "-80px" }}
               transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
@@ -65,7 +68,7 @@ export function Philosophy() {
           {/* Text — staggered reveal */}
           <motion.div
             variants={container}
-            initial="hidden"
+            initial={reduce ? "visible" : "hidden"}
             whileInView="visible"
             viewport={{ once: true, margin: "-80px" }}
           >

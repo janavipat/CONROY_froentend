@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, type Variants } from "framer-motion";
+import { motion, useReducedMotion, type Variants } from "framer-motion";
 import type { ReactNode } from "react";
 
 const variants: Variants = {
@@ -24,6 +24,16 @@ export function Reveal({
   className?: string;
   as?: "div" | "section" | "li" | "article" | "span" | "figure";
 }) {
+  const reduce = useReducedMotion();
+
+  // Content must never depend on an animation to be visible: if the visitor
+  // prefers reduced motion, render it plainly in its final state rather than
+  // starting at opacity 0 and waiting for a reveal that will never play.
+  if (reduce) {
+    const Tag = as;
+    return <Tag className={className}>{children}</Tag>;
+  }
+
   const MotionTag = motion[as];
   return (
     <MotionTag
