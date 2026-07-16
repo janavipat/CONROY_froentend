@@ -14,6 +14,47 @@ export const whatsappConfigured = Boolean(
 
 const GRAPH_VERSION = "v21.0";
 
+/** Network attempts before giving up (Graph API occasionally resets TLS). */
+const MAX_ATTEMPTS = 3;
+const TIMEOUT_MS = 15_000;
+
+/**
+ * POSTs JSON to the Graph API, retrying transient network failures (DNS/TLS
+ * resets, timeouts) with a short backoff. Only connection-level errors are
+ * retried — an HTTP response (even 4xx) is returned to the caller as-is, since
+ * those are deterministic and retrying would just resend.
+ */
+async function graphPost(url: string, body: unknown): Promise<Response> {
+  let lastErr: unknown;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      return await fetch(url, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
+    } catch (err) {
+      lastErr = err;
+      const code = (err as { cause?: { code?: string } })?.cause?.code ?? (err as Error)?.name;
+      console.warn(`WhatsApp send attempt ${attempt}/${MAX_ATTEMPTS} failed: ${code}`);
+      if (attempt < MAX_ATTEMPTS) {
+        await new Promise((r) => setTimeout(r, 400 * attempt));
+      }
+    }
+  }
+
+  const cause = (lastErr as { cause?: { code?: string } })?.cause?.code ?? "network error";
+  throw new ApiError(
+    503,
+    `Couldn't reach WhatsApp right now (${cause}). Please try again in a moment.`,
+  );
+}
+
 /**
  * Sends an OTP through a WhatsApp "authentication" template. The code is passed
  * to the template body and (unless disabled) to its copy-code button — the
@@ -44,22 +85,15 @@ export async function sendWhatsappOtp(toE164: string, code: string): Promise<str
     });
   }
 
-  const res = await fetch(url, {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${env.WHATSAPP_ACCESS_TOKEN}`,
-      "Content-Type": "application/json",
+  const res = await graphPost(url, {
+    messaging_product: "whatsapp",
+    to,
+    type: "template",
+    template: {
+      name: env.WHATSAPP_TEMPLATE_NAME,
+      language: { code: env.WHATSAPP_TEMPLATE_LANG },
+      components,
     },
-    body: JSON.stringify({
-      messaging_product: "whatsapp",
-      to,
-      type: "template",
-      template: {
-        name: env.WHATSAPP_TEMPLATE_NAME,
-        language: { code: env.WHATSAPP_TEMPLATE_LANG },
-        components,
-      },
-    }),
   });
 
   const payload = (await res.json().catch(() => ({}))) as {
