@@ -1,15 +1,36 @@
 "use client";
 
-import { useForm } from "react-hook-form";
-import { useState } from "react";
+import { useForm, type FieldErrors } from "react-hook-form";
+import { useEffect, useState } from "react";
 import type { ContactFormValues } from "@/types";
 import { submitContactForm } from "@/services/contact";
+import { fetchSiteSettings, settingValue } from "@/services/settings";
 import { cn } from "@/utils/cn";
 import { Button } from "@/components/ui/Button";
 import { CheckIcon } from "@/components/ui/Icons";
+import { useToast } from "@/components/ui/Toast";
 
 const fieldClass =
-  "h-12 w-full border-b border-line bg-transparent text-sm text-ink placeholder:text-stone/70 focus:border-ink focus:outline-none transition-colors";
+  "h-12 w-full rounded-md border border-line bg-white px-3.5 text-sm text-ink placeholder:text-stone/60 transition-colors focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10";
+const labelClass = "mb-1.5 block text-xs font-medium uppercase tracking-wide text-stone";
+
+// Fallback support line if the setting hasn't been configured.
+const DEFAULT_WHATSAPP_NUMBER = "919998009904";
+
+/** Builds a wa.me click-to-chat URL with the enquiry pre-filled. */
+function whatsappUrl(values: ContactFormValues, number: string): string {
+  const lines = [
+    "New enquiry from the CONROY website",
+    "",
+    `Name: ${values.name}`,
+    `Email: ${values.email}`,
+    values.phone ? `Phone: ${values.phone}` : "",
+    `Subject: ${values.subject}`,
+    "",
+    values.message,
+  ].filter(Boolean);
+  return `https://wa.me/${number}?text=${encodeURIComponent(lines.join("\n"))}`;
+}
 
 export function ContactForm() {
   const {
@@ -18,19 +39,47 @@ export function ContactForm() {
     reset,
     formState: { errors, isSubmitting },
   } = useForm<ContactFormValues>();
+  const { toast } = useToast();
   const [done, setDone] = useState<string | null>(null);
+  const [waNumber, setWaNumber] = useState(DEFAULT_WHATSAPP_NUMBER);
 
-  async function onSubmit(values: ContactFormValues) {
+  useEffect(() => {
+    let active = true;
+    void fetchSiteSettings().then(
+      (s) => active && setWaNumber(settingValue(s, "contact.whatsapp", DEFAULT_WHATSAPP_NUMBER)),
+    );
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // +91 99980 09904 → "+91 99980 09904" for display.
+  const waDisplay = waNumber.startsWith("+") ? waNumber : `+${waNumber}`;
+
+  async function onValid(values: ContactFormValues) {
+    // Open WhatsApp synchronously inside the click gesture so it isn't popup-blocked.
+    // This delivers the enquiry straight to the CONROY support number.
+    window.open(whatsappUrl(values, waNumber), "_blank", "noopener,noreferrer");
+
+    // Persist the enquiry too, so it always lands in the admin inbox.
     const res = await submitContactForm(values);
     if (res.ok) {
-      setDone(res.message);
+      setDone("Your enquiry has been sent to us on WhatsApp. We'll reply shortly.");
       reset();
+      toast("Opening WhatsApp — tap send to reach us.", "success");
+    } else {
+      toast(res.message || "Something went wrong. Please try again.", "error");
     }
+  }
+
+  function onInvalid(errs: FieldErrors<ContactFormValues>) {
+    const first = Object.values(errs)[0];
+    toast(first?.message ? String(first.message) : "Please fix the highlighted fields.", "error");
   }
 
   if (done) {
     return (
-      <div className="flex flex-col items-start gap-4 border border-line bg-paper p-8">
+      <div className="flex flex-col items-start gap-4 rounded-media border border-line bg-white p-8 shadow-sm">
         <span className="grid h-12 w-12 place-items-center rounded-full bg-ink text-cream">
           <CheckIcon className="h-6 w-6" />
         </span>
@@ -44,25 +93,31 @@ export function ContactForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-7" noValidate>
-      <div className="grid gap-7 sm:grid-cols-2">
+    <form
+      onSubmit={handleSubmit(onValid, onInvalid)}
+      className="space-y-5 rounded-media border border-line bg-white p-6 shadow-sm sm:p-8"
+      noValidate
+    >
+      <div className="grid gap-5 sm:grid-cols-2">
         <div>
+          <label className={labelClass}>Name *</label>
           <input
             {...register("name", { required: "Please enter your name" })}
-            placeholder="Name *"
+            placeholder="Your name"
             className={cn(fieldClass, errors.name && "border-accent")}
             aria-invalid={!!errors.name}
           />
           {errors.name && <p className="mt-1.5 text-xs text-accent">{errors.name.message}</p>}
         </div>
         <div>
+          <label className={labelClass}>Email *</label>
           <input
             type="email"
             {...register("email", {
               required: "Please enter your email",
               pattern: { value: /^[^@\s]+@[^@\s]+\.[^@\s]+$/, message: "Enter a valid email" },
             })}
-            placeholder="Email *"
+            placeholder="you@example.com"
             className={cn(fieldClass, errors.email && "border-accent")}
             aria-invalid={!!errors.email}
           />
@@ -70,27 +125,34 @@ export function ContactForm() {
         </div>
       </div>
 
-      <div className="grid gap-7 sm:grid-cols-2">
-        <input {...register("phone")} placeholder="Phone (optional)" className={fieldClass} />
-        <input
-          {...register("subject", { required: "Please add a subject" })}
-          placeholder="Subject *"
-          className={cn(fieldClass, errors.subject && "border-accent")}
-          aria-invalid={!!errors.subject}
-        />
+      <div className="grid gap-5 sm:grid-cols-2">
+        <div>
+          <label className={labelClass}>Phone</label>
+          <input {...register("phone")} placeholder="Optional" className={fieldClass} />
+        </div>
+        <div>
+          <label className={labelClass}>Subject *</label>
+          <input
+            {...register("subject", { required: "Please add a subject" })}
+            placeholder="How can we help?"
+            className={cn(fieldClass, errors.subject && "border-accent")}
+            aria-invalid={!!errors.subject}
+          />
+          {errors.subject && <p className="mt-1.5 text-xs text-accent">{errors.subject.message}</p>}
+        </div>
       </div>
-      {errors.subject && <p className="-mt-4 text-xs text-accent">{errors.subject.message}</p>}
 
       <div>
+        <label className={labelClass}>Message *</label>
         <textarea
           {...register("message", {
             required: "Please write a message",
             minLength: { value: 10, message: "A little more detail, please" },
           })}
-          placeholder="How can we help? *"
+          placeholder="Tell us a bit more…"
           rows={5}
           className={cn(
-            "w-full resize-none border-b border-line bg-transparent py-3 text-sm text-ink placeholder:text-stone/70 focus:border-ink focus:outline-none",
+            "w-full resize-none rounded-md border border-line bg-white px-3.5 py-3 text-sm text-ink placeholder:text-stone/60 transition-colors focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10",
             errors.message && "border-accent",
           )}
           aria-invalid={!!errors.message}
@@ -98,9 +160,14 @@ export function ContactForm() {
         {errors.message && <p className="mt-1.5 text-xs text-accent">{errors.message.message}</p>}
       </div>
 
-      <Button type="submit" size="lg" disabled={isSubmitting}>
-        {isSubmitting ? "Sending…" : "Send"}
-      </Button>
+      <div className="space-y-2">
+        <Button type="submit" size="lg" className="w-full sm:w-auto" disabled={isSubmitting}>
+          {isSubmitting ? "Sending…" : "Send message"}
+        </Button>
+        <p className="text-xs text-stone">
+          Opens WhatsApp to send your enquiry to <span className="text-ink">{waDisplay}</span>.
+        </p>
+      </div>
     </form>
   );
 }

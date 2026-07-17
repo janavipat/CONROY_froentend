@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { AnimatePresence, motion } from "framer-motion";
 import { AdminSidebar } from "./AdminSidebar";
 import { AdminGate } from "./AdminGate";
 
@@ -32,7 +33,19 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </div>
 
         <main className="flex-1 p-5 sm:p-8">
-          <AdminGate>{children}</AdminGate>
+          <AdminGate>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={pathname}
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }}
+              >
+                {children}
+              </motion.div>
+            </AnimatePresence>
+          </AdminGate>
         </main>
       </div>
     </div>

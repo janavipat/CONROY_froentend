@@ -35,7 +35,7 @@ const QUICK_LINKS = [
     icon: TruckIcon,
     title: "Addresses",
     body: "Save delivery addresses for faster checkout.",
-    href: "/account/profile",
+    href: "/account/addresses",
     cta: "Manage addresses",
   },
   {

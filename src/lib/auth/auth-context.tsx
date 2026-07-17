@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from "react";
-import { startPhoneOtp, verifyPhoneOtp, type AuthUser } from "@/services/auth";
+import { startPhoneOtp, verifyPhoneOtp, type AuthUser, type AuthMode } from "@/services/auth";
 
 export type { AuthUser };
 
@@ -13,11 +13,15 @@ interface AuthContextValue {
   isConfigured: boolean;
   /** OTP to enter in mock mode (shown as a hint). */
   demoCode: string;
-  sendOtp: (phoneE164: string, remember: boolean) => Promise<{ error: string | null }>;
+  sendOtp: (
+    phoneE164: string,
+    remember: boolean,
+    mode?: AuthMode,
+  ) => Promise<{ error: string | null }>;
   verifyOtp: (
     phoneE164: string,
     code: string,
-    email?: string,
+    opts?: { mode?: AuthMode; email?: string; fullName?: string },
   ) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
@@ -52,17 +56,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     restore();
   }, []);
 
-  const sendOtp = useCallback(async (phoneE164: string, rememberMe: boolean) => {
-    remember.current = rememberMe;
-    const res = await startPhoneOtp(phoneE164);
-    if (!res.ok) return { error: res.message };
-    setLastSend({ mock: res.mock ?? false, code: res.code });
-    return { error: null };
-  }, []);
+  const sendOtp = useCallback(
+    async (phoneE164: string, rememberMe: boolean, mode: AuthMode = "signin") => {
+      remember.current = rememberMe;
+      const res = await startPhoneOtp(phoneE164, mode);
+      if (!res.ok) return { error: res.message };
+      setLastSend({ mock: res.mock ?? false, code: res.code });
+      return { error: null };
+    },
+    [],
+  );
 
-  const verifyOtp = useCallback(async (phoneE164: string, code: string, email?: string) => {
-    const res = await verifyPhoneOtp(phoneE164, code, email);
-    if (!res.ok || !res.user) return { error: res.message };
+  const verifyOtp = useCallback(
+    async (
+      phoneE164: string,
+      code: string,
+      opts?: { mode?: AuthMode; email?: string; fullName?: string },
+    ) => {
+      const res = await verifyPhoneOtp(phoneE164, code, opts);
+      if (!res.ok || !res.user) return { error: res.message };
 
     const session: StoredSession = { user: res.user, token: res.token };
     try {

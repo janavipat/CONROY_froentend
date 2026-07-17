@@ -30,9 +30,13 @@ function toApiItems(items: CartItem[]) {
  * server-side, so we only send the cart contents. Returns { mock: true } when
  * the backend has no Razorpay keys (demo mode).
  */
-export async function createRazorpayOrder(items: CartItem[]): Promise<RazorpayOrderResponse> {
+export async function createRazorpayOrder(
+  items: CartItem[],
+  code?: string,
+): Promise<RazorpayOrderResponse> {
   const { data } = await api.post<RazorpayOrderResponse>("/payments/razorpay/order", {
     items: toApiItems(items),
+    code: code?.trim() || undefined,
   });
   return data;
 }
@@ -42,6 +46,9 @@ export async function verifyRazorpayPayment(payload: {
   email: string;
   items: CartItem[];
   phone?: string | null;
+  fullName?: string;
+  shippingAddress?: string;
+  code?: string;
   razorpayOrderId: string;
   razorpayPaymentId: string;
   razorpaySignature: string;
@@ -51,6 +58,9 @@ export async function verifyRazorpayPayment(payload: {
     {
       email: payload.email,
       phone: payload.phone ?? undefined,
+      fullName: payload.fullName?.trim() || undefined,
+      shippingAddress: payload.shippingAddress?.trim() || undefined,
+      code: payload.code?.trim() || undefined,
       items: toApiItems(payload.items),
       razorpayOrderId: payload.razorpayOrderId,
       razorpayPaymentId: payload.razorpayPaymentId,

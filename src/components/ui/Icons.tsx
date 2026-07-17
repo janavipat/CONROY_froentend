@@ -31,6 +31,83 @@ export const SearchIcon = (p: IconProps) => (
   </svg>
 );
 
+export const GridIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <rect x="3" y="3" width="7" height="7" rx="1" />
+    <rect x="14" y="3" width="7" height="7" rx="1" />
+    <rect x="14" y="14" width="7" height="7" rx="1" />
+    <rect x="3" y="14" width="7" height="7" rx="1" />
+  </svg>
+);
+
+export const MegaphoneIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M3 11v2a1 1 0 0 0 1 1h2l3 4V6L6 10H4a1 1 0 0 0-1 1Z" />
+    <path d="M9 6l10-3v18L9 18" />
+  </svg>
+);
+
+export const TagIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M3 3h7l11 11-7 7L3 10V3Z" />
+    <circle cx="7.5" cy="7.5" r="1.2" />
+  </svg>
+);
+
+export const CogIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <circle cx="12" cy="12" r="3" />
+    <path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1" />
+  </svg>
+);
+
+export const ChartIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M3 3v18h18" />
+    <path d="M7 15l3-4 3 2 4-6" />
+  </svg>
+);
+
+export const ChatIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M21 11.5a8.4 8.4 0 0 1-9 8.4 9.3 9.3 0 0 1-3.3-.6L3 21l1.7-4.5A8.2 8.2 0 0 1 3.6 11.5a8.4 8.4 0 0 1 9-8.4 8.4 8.4 0 0 1 8.4 8.4Z" />
+  </svg>
+);
+
+export const SendIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M21 3 10.5 13.5" />
+    <path d="M21 3l-6.7 18-3.8-7.5L3 9.7 21 3Z" />
+  </svg>
+);
+
+export const ReceiptIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M5 3h14v18l-3-1.5L13 21l-3-1.5L7 21l-2-1.5V3Z" />
+    <path d="M9 8h6M9 12h6" />
+  </svg>
+);
+
+export const HeartIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78Z" />
+  </svg>
+);
+
+export const LayersIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M12 3 3 8l9 5 9-5-9-5Z" />
+    <path d="m3 13 9 5 9-5" />
+  </svg>
+);
+
+export const BoxIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M21 8 12 3 3 8v8l9 5 9-5V8Z" />
+    <path d="m3 8 9 5 9-5M12 13v8" />
+  </svg>
+);
+
 export const BagIcon = (p: IconProps) => (
   <svg {...base} {...p}>
     <path d="M6 8h12l-1 12H7L6 8Z" />

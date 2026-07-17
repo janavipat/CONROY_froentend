@@ -7,6 +7,7 @@ import type { Product } from "@/types";
 import { formatCurrency } from "@/utils/format";
 import { cn } from "@/utils/cn";
 import { Rating } from "@/components/ui/Rating";
+import { LikeButton } from "./LikeButton";
 import { QuickViewModal } from "./QuickViewModal";
 
 export function ProductCard({ product, priority = false }: { product: Product; priority?: boolean }) {
@@ -42,6 +43,9 @@ export function ProductCard({ product, priority = false }: { product: Product; p
               {product.badge}
             </span>
           )}
+
+          {/* Wishlist */}
+          <LikeButton handle={product.handle} className="absolute right-3 top-3" />
 
           {/* Quick view */}
           <button

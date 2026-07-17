@@ -4,11 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { PRIMARY_NAV, SITE } from "@/lib/site";
 import { Modal } from "@/components/ui/Modal";
-import { ArrowRightIcon, InstagramIcon } from "@/components/ui/Icons";
+import { ArrowRightIcon, InstagramIcon, BagIcon } from "@/components/ui/Icons";
+import { useAuth } from "@/lib/auth/auth-context";
 import { cn } from "@/utils/cn";
 
 export function MobileNav({ open, onClose }: { open: boolean; onClose: () => void }) {
   const pathname = usePathname();
+  const { user } = useAuth();
 
   return (
     <Modal open={open} onClose={onClose} position="right" label="Menu" className="h-full w-[86vw] max-w-sm">
@@ -35,9 +37,28 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
           })}
         </nav>
 
+        {/* Account: signed-in customers get a direct path to their orders + returns */}
+        {user ? (
+          <Link
+            href="/account/profile#orders"
+            onClick={onClose}
+            className="mt-8 flex items-center justify-between rounded-md border border-line px-4 py-3 text-sm font-medium text-ink transition-colors hover:border-ink"
+          >
+            <span className="inline-flex items-center gap-2">
+              <BagIcon className="h-4.5 w-4.5" />
+              My orders &amp; returns
+            </span>
+            <ArrowRightIcon className="h-4 w-4" />
+          </Link>
+        ) : null}
+
         <div className="mt-auto space-y-3 text-sm text-ink-soft">
-          <Link href="/account/login" onClick={onClose} className="block hover:text-ink">
-            Login / Register
+          <Link
+            href={user ? "/account/profile" : "/account/login"}
+            onClick={onClose}
+            className="block hover:text-ink"
+          >
+            {user ? "My account" : "Login / Register"}
           </Link>
           <a href={SITE.contact.phoneHref} className="block hover:text-ink">
             {SITE.contact.phone}

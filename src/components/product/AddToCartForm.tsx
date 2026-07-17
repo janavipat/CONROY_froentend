@@ -4,6 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Product } from "@/types";
 import { useCart } from "@/lib/cart-context";
+import { useAuth } from "@/lib/auth/auth-context";
+import { useToast } from "@/components/ui/Toast";
+import { trackCartAdd } from "@/services/analytics";
 import { cn } from "@/utils/cn";
 import { Button } from "@/components/ui/Button";
 import { CheckIcon, MinusIcon, PlusIcon } from "@/components/ui/Icons";
@@ -11,36 +14,44 @@ import { CheckIcon, MinusIcon, PlusIcon } from "@/components/ui/Icons";
 /** Size + quantity selector with add-to-cart. Shared by Quick View and PDP. */
 export function AddToCartForm({ product, compact = false }: { product: Product; compact?: boolean }) {
   const { addItem } = useCart();
+  const { user } = useAuth();
+  const { toast } = useToast();
   const router = useRouter();
   const [size, setSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [error, setError] = useState(false);
   const [added, setAdded] = useState(false);
 
-  function handleAdd() {
+  /** Returns the chosen size, or null (flagging + toasting the error). */
+  function requireSize(): string | null {
     if (!size) {
       setError(true);
-      return;
+      toast("Please select a size first.", "error");
+      return null;
     }
+    return size;
+  }
+
+  function handleAdd() {
+    const chosen = requireSize();
+    if (!chosen) return;
     addItem({
       productHandle: product.handle,
       title: product.title,
       image: product.images[0].src,
       price: product.price,
       currency: product.currency,
-      size,
+      size: chosen,
       fit: product.fit,
       quantity,
     });
+    trackCartAdd(product.handle, { phone: user?.phone }); // analytics: added-to-cart (attributed if signed in)
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
   }
 
   function handleBuyNow() {
-    if (!size) {
-      setError(true);
-      return;
-    }
+    if (!requireSize()) return;
     handleAdd();
     router.push("/cart");
   }
@@ -62,17 +73,23 @@ export function AddToCartForm({ product, compact = false }: { product: Product; 
                 setError(false);
               }}
               className={cn(
-                "grid h-11 min-w-11 place-items-center border px-3 text-sm transition-colors",
+                "grid h-11 min-w-11 place-items-center rounded-md border px-3 text-sm transition-colors",
                 size === s
                   ? "border-ink bg-ink text-cream"
-                  : "border-line text-ink hover:border-ink",
+                  : error
+                    ? "border-accent text-ink"
+                    : "border-line text-ink hover:border-ink",
               )}
             >
               {s}
             </button>
           ))}
         </div>
-        {error && <p className="mt-2 text-xs text-accent">Please select a size.</p>}
+        {error && (
+          <p className="mt-2.5 inline-flex items-center gap-1.5 rounded-md bg-accent/10 px-2.5 py-1.5 text-xs font-medium text-accent">
+            <span aria-hidden>⚠</span> Please select a size to continue.
+          </p>
+        )}
       </div>
 
       {/* Quantity + actions */}

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { PRIMARY_NAV, SITE } from "@/lib/site";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth/auth-context";
@@ -71,9 +72,9 @@ export function Header() {
           </Link>
 
           {/* Right: actions */}
-          <div className="flex items-center justify-end gap-1 sm:gap-2 lg:flex-1">
+          <div className="flex items-center justify-end gap-0.5 sm:gap-1 lg:flex-1">
             <button
-              className="grid h-9 w-9 place-items-center text-ink transition-colors hover:text-accent"
+              className="grid h-10 w-10 place-items-center rounded-full text-ink transition-colors hover:bg-mist"
               aria-label="Search"
               onClick={() => setSearchOpen(true)}
             >
@@ -81,22 +82,31 @@ export function Header() {
             </button>
             <Link
               href={user ? "/account/profile" : "/account/login"}
-              className="hidden h-9 w-9 place-items-center text-ink transition-colors hover:text-accent sm:grid"
+              className="hidden h-10 w-10 place-items-center rounded-full text-ink transition-colors hover:bg-mist sm:grid"
               aria-label={user ? "My account" : "Sign in"}
             >
               <UserIcon className="h-5 w-5" />
             </Link>
             <button
-              className="relative grid h-9 w-9 place-items-center text-ink transition-colors hover:text-accent"
+              className="relative grid h-10 w-10 place-items-center rounded-full text-ink transition-colors hover:bg-mist"
               aria-label={`Cart, ${count} items`}
               onClick={openCart}
             >
               <BagIcon className="h-5 w-5" />
-              {count > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-ink px-1 text-[0.6rem] font-medium text-white">
-                  {count}
-                </span>
-              )}
+              <AnimatePresence>
+                {count > 0 && (
+                  <motion.span
+                    key={count}
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    exit={{ scale: 0 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 22 }}
+                    className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-accent px-1 text-[0.6rem] font-medium text-white"
+                  >
+                    {count}
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </button>
           </div>
         </Container>

@@ -7,32 +7,34 @@
  * gently rounded (8px) media.
  */
 @theme {
-  /* Neutrals */
+  /* Neutrals — cool off-white base with a navy ink */
   --color-white: #ffffff;
-  --color-paper: #f6f6f4; /* soft off-white alt section */
-  --color-mist: #f3f3f3; /* light grey (image backdrops) */
-  --color-ink: #000000; /* headings — true black */
-  --color-ink-soft: #2e2e2e; /* body text */
-  --color-stone: #767676; /* muted text */
-  --color-line: #e7e7e7; /* hairline borders */
+  --color-paper: #f4f5f1; /* off-white alt section */
+  --color-mist: #eef1f4; /* light cool grey (image backdrops) */
+  --color-ink: #15243c; /* headings — deep navy */
+  --color-ink-soft: #44566a; /* body text — slate */
+  --color-stone: #8a94a3; /* muted text — cool grey */
+  --color-line: #e3e6ea; /* hairline borders */
 
-  /* Pastel section blocks (from offduty's scheme palette) */
-  --color-sky: #e1edf5; /* pale blue */
-  --color-sage: #eef1ea; /* pale green */
-  --color-cream: #eef1ea; /* alias kept for existing usages → sage */
+  /* Blue-tinted section blocks */
+  --color-sky: #e6eff6; /* pale blue */
+  --color-sage: #eaf0f5; /* pale blue-grey (name kept for existing usages) */
+  --color-cream: #eaf0f5; /* alias kept for existing usages → sage */
 
   /* Accent */
-  --color-accent: #1d3686; /* navy */
+  --color-accent: #23507e; /* royal blue */
+  --color-gold: #a98545; /* warm classic accent (badges, highlights) */
 
   /* Semantic */
   --color-background: var(--color-white);
   --color-foreground: var(--color-ink-soft);
 
-  /* Typography — native system stack, like offduty.in */
+  /* Typography — classic luxury pairing: EB Garamond (old-style serif) for body
+     & UI, Playfair Display (high-contrast serif) for display headings. Both
+     self-hosted via next/font — a timeless, editorial, non-modern feel. */
   --font-sans:
-    system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial,
-    sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-  --font-serif: var(--font-sans);
+    var(--font-eb-garamond), "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-serif: var(--font-playfair), Georgia, "Times New Roman", serif;
 
   /* Shape */
   --radius-pill: 9999px;
@@ -69,11 +71,11 @@
     letter-spacing: 0;
   }
 
-  /* Headings — system sans, medium weight, tight tracking, normal case. */
+  /* Display headings — Playfair Display, a high-contrast luxury serif. */
   .font-display {
-    font-family: var(--font-sans);
-    font-weight: 500;
-    letter-spacing: -0.02em;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    letter-spacing: -0.01em;
     color: var(--color-ink);
   }
 
@@ -107,6 +109,34 @@
 }
 .animate-marquee {
   animation: marquee 32s linear infinite;
+}
+
+/* Ken Burns — slow ambient zoom/pan for the cinematic campaign band */
+@keyframes ken-burns {
+  from {
+    transform: scale(1.05) translate(0, 0);
+  }
+  to {
+    transform: scale(1.2) translate(-2%, 1.5%);
+  }
+}
+.ken-burns {
+  transform-origin: center;
+  animation: ken-burns 24s ease-in-out infinite alternate;
+}
+
+/* Gentle float for badges / accents */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-7px);
+  }
+}
+.animate-float {
+  animation: float 4.5s ease-in-out infinite;
 }
 
 /* Refined scrollbar */

@@ -2,8 +2,12 @@
 
 import { usePathname } from "next/navigation";
 import { AnnouncementBar } from "./AnnouncementBar";
+import { MaintenanceBanner } from "./MaintenanceBanner";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
+import { OfferPopup } from "@/components/offers/OfferPopup";
+import { ChatWidget } from "@/components/chat/ChatWidget";
+import { VisitorBeacon } from "@/components/analytics/VisitorBeacon";
 
 /**
  * Renders the storefront chrome (announcement bar, header, footer) — except on
@@ -19,10 +23,14 @@ export function StoreChrome({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+      <VisitorBeacon />
+      <MaintenanceBanner />
       <AnnouncementBar />
       <Header />
       <main className="flex-1">{children}</main>
       <Footer />
+      <OfferPopup />
+      <ChatWidget />
     </>
   );
 }
