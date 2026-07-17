@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Product } from "@/types";
 import { useCart } from "@/lib/cart-context";
+import { useAuth } from "@/lib/auth/auth-context";
 import { useToast } from "@/components/ui/Toast";
 import { trackCartAdd } from "@/services/analytics";
 import { cn } from "@/utils/cn";
@@ -13,6 +14,7 @@ import { CheckIcon, MinusIcon, PlusIcon } from "@/components/ui/Icons";
 /** Size + quantity selector with add-to-cart. Shared by Quick View and PDP. */
 export function AddToCartForm({ product, compact = false }: { product: Product; compact?: boolean }) {
   const { addItem } = useCart();
+  const { user } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const [size, setSize] = useState<string | null>(null);
@@ -43,7 +45,7 @@ export function AddToCartForm({ product, compact = false }: { product: Product; 
       fit: product.fit,
       quantity,
     });
-    trackCartAdd(product.handle); // analytics: added-to-cart event
+    trackCartAdd(product.handle, { phone: user?.phone }); // analytics: added-to-cart (attributed if signed in)
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
   }

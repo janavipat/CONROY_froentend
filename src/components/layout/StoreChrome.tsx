@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { AnnouncementBar } from "./AnnouncementBar";
+import { MaintenanceBanner } from "./MaintenanceBanner";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
 import { OfferPopup } from "@/components/offers/OfferPopup";
@@ -23,6 +24,7 @@ export function StoreChrome({ children }: { children: React.ReactNode }) {
   return (
     <>
       <VisitorBeacon />
+      <MaintenanceBanner />
       <AnnouncementBar />
       <Header />
       <main className="flex-1">{children}</main>

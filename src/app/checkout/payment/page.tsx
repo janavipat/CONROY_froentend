@@ -16,6 +16,8 @@ import {
 import { applyOffer, type ApplyOfferResult } from "@/services/offers";
 import { useToast } from "@/components/ui/Toast";
 import { formatCurrency } from "@/utils/format";
+import { fetchSiteSettings, isOn } from "@/services/settings";
+import { fetchAddresses } from "@/services/addresses";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { CheckIcon, ShieldIcon, TruckIcon } from "@/components/ui/Icons";
@@ -51,6 +53,23 @@ export default function PaymentPage() {
   const [error, setError] = useState("");
   const [done, setDone] = useState<{ orderId?: string; method: PaymentMethod } | null>(null);
 
+  // Which payment methods the admin has enabled (Settings → Store controls).
+  const [methodEnabled, setMethodEnabled] = useState({ online: true, cod: true });
+  useEffect(() => {
+    let active = true;
+    void fetchSiteSettings().then((s) => {
+      if (!active) return;
+      const online = isOn(s, "payments.online");
+      const cod = isOn(s, "payments.cod");
+      setMethodEnabled({ online, cod });
+      setMethod((m) => (m === "online" && !online ? "cod" : m === "cod" && !cod ? "online" : m));
+    });
+    return () => {
+      active = false;
+    };
+  }, []);
+  const availableMethods = METHODS.filter((m) => methodEnabled[m.id]);
+
   // Delivery address
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -64,6 +83,27 @@ export default function PaymentPage() {
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (user?.phone) setPhone((p) => p || user.phone!.replace(/\D/g, "").slice(-10));
+  }, [user?.phone]);
+
+  // Prefill the delivery form from the customer's default saved address.
+  useEffect(() => {
+    if (!user?.phone) return;
+    let active = true;
+    void fetchAddresses(user.phone).then((saved) => {
+      if (!active) return;
+      const def = saved.find((a) => a.isDefault) ?? saved[0];
+      if (!def) return;
+      setFullName((v) => v || def.fullName);
+      setPhone((v) => v || def.phone);
+      setLine1((v) => v || def.line1);
+      setLine2((v) => v || def.line2);
+      setCity((v) => v || def.city);
+      setStateName((v) => v || def.state);
+      setPincode((v) => v || def.pincode);
+    });
+    return () => {
+      active = false;
+    };
   }, [user?.phone]);
 
   // Offer / coupon
@@ -362,8 +402,13 @@ export default function PaymentPage() {
 
           <section className="mt-8">
             <h2 className="font-display text-xl text-ink">Payment method</h2>
+            {availableMethods.length === 0 && (
+              <p className="mt-3 rounded-md border border-accent/30 bg-accent/5 px-4 py-3 text-sm text-accent">
+                No payment methods are available right now. Please contact support.
+              </p>
+            )}
             <div className="mt-3 space-y-3">
-              {METHODS.map((m) => {
+              {availableMethods.map((m) => {
                 const active = method === m.id;
                 return (
                   <button

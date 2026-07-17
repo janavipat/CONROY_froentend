@@ -34,6 +34,7 @@ interface NavItem {
 // Shopify-style information architecture: top-level sections with sub-items.
 const NAV: NavItem[] = [
   { label: "Home", href: "/admin", icon: GridIcon },
+  { label: "Analytics", href: "/admin/analytics", icon: ChartIcon },
   {
     label: "Orders",
     href: "/admin/orders",
@@ -58,7 +59,6 @@ const NAV: NavItem[] = [
   { label: "Accounts", href: "/admin/accounts", icon: ReceiptIcon },
   { label: "Marketing", href: "/admin/marketing", icon: MegaphoneIcon },
   { label: "Discounts", href: "/admin/offers", icon: TagIcon },
-  { label: "Analytics", href: "/admin/analytics", icon: ChartIcon },
 ];
 
 // Pinned at the very bottom, like Shopify's Settings.

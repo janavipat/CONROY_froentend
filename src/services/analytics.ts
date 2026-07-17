@@ -43,7 +43,20 @@ export function trackPageView(path: string, durationMs: number): void {
   api.post("/analytics/pageview", JSON.parse(body)).catch(() => {});
 }
 
-/** Records an add-to-cart event for a product (best-effort). */
-export function trackCartAdd(productHandle: string): void {
-  api.post("/analytics/cart-add", { sessionId: sessionId(), productHandle }).catch(() => {});
+/**
+ * Records an add-to-cart event for a product (best-effort). Pass the signed-in
+ * shopper's phone/email so the admin can see customer-wise abandoned carts.
+ */
+export function trackCartAdd(
+  productHandle: string,
+  who?: { phone?: string | null; email?: string | null },
+): void {
+  api
+    .post("/analytics/cart-add", {
+      sessionId: sessionId(),
+      productHandle,
+      phone: who?.phone || undefined,
+      email: who?.email || undefined,
+    })
+    .catch(() => {});
 }

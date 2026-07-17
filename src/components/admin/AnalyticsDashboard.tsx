@@ -82,16 +82,6 @@ function KpiCard({
 
 /* ───────────────────────────── badges ───────────────────────────────────── */
 
-function statusBadge(status: string): string {
-  switch (status) {
-    case "VIP":
-      return "bg-purple-100 text-purple-700";
-    case "New":
-      return "bg-sky-100 text-sky-700";
-    default:
-      return "bg-emerald-100 text-emerald-700";
-  }
-}
 function paymentBadge(label: string): string {
   if (label === "Paid") return "bg-emerald-100 text-emerald-700";
   if (label.startsWith("COD")) return "bg-amber-100 text-amber-700";
@@ -329,7 +319,6 @@ function CustomerTable({
   pageActivityNote: React.ReactNode;
 }) {
   const [query, setQuery] = useState("");
-  const [filter, setFilter] = useState("all");
   const [sortKey, setSortKey] = useState<SortKey>("grossValue");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(0);
@@ -338,13 +327,12 @@ function CustomerTable({
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     let rows = customers.filter((c) => {
-      const matchesQ =
+      return (
         !q ||
         c.name.toLowerCase().includes(q) ||
         c.email.toLowerCase().includes(q) ||
-        (c.phone ?? "").toLowerCase().includes(q);
-      const matchesF = filter === "all" || c.status === filter;
-      return matchesQ && matchesF;
+        (c.phone ?? "").toLowerCase().includes(q)
+      );
     });
     rows = [...rows].sort((a, b) => {
       let cmp: number;
@@ -354,7 +342,7 @@ function CustomerTable({
       return sortDir === "asc" ? cmp : -cmp;
     });
     return rows;
-  }, [customers, query, filter, sortKey, sortDir]);
+  }, [customers, query, sortKey, sortDir]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount - 1);
@@ -413,19 +401,6 @@ function CustomerTable({
               className="w-56 rounded-md border border-line bg-white py-1.5 pl-8 pr-3 text-sm text-ink outline-none placeholder:text-stone focus:border-ink"
             />
           </div>
-          <select
-            value={filter}
-            onChange={(e) => {
-              setFilter(e.target.value);
-              setPage(0);
-            }}
-            className="rounded-md border border-line bg-white px-3 py-1.5 text-sm text-ink outline-none focus:border-ink"
-          >
-            <option value="all">All statuses</option>
-            <option value="VIP">VIP</option>
-            <option value="Active">Active</option>
-            <option value="New">New</option>
-          </select>
         </div>
       </div>
 
@@ -440,15 +415,14 @@ function CustomerTable({
               {sortHead("Returned", "returnedAmount", "right")}
               {sortHead("Net purchase", "netPurchase", "right")}
               {sortHead("Last order", "lastOrder")}
-              <th className="py-2.5 px-3 font-medium text-stone">Status</th>
               <th className="w-10 py-2.5 px-3" />
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
             {rows.length === 0 && (
               <tr>
-                <td colSpan={8} className="py-10 text-center text-sm text-stone">
-                  No customers match your filters.
+                <td colSpan={7} className="py-10 text-center text-sm text-stone">
+                  No customers match your search.
                 </td>
               </tr>
             )}
@@ -481,18 +455,13 @@ function CustomerTable({
                     </td>
                     <td className="py-3 px-3 text-stone">{fmtDate(c.lastOrder)}</td>
                     <td className="py-3 px-3">
-                      <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", statusBadge(c.status))}>
-                        {c.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3">
                       <Chevron open={open} />
                     </td>
                   </tr>
                   <AnimatePresence initial={false}>
                     {open && (
                       <tr key={`${c.key}-detail`}>
-                        <td colSpan={8} className="p-0">
+                        <td colSpan={7} className="p-0">
                           <motion.div
                             initial={{ height: 0, opacity: 0 }}
                             animate={{ height: "auto", opacity: 1 }}

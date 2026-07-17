@@ -44,6 +44,19 @@ function CountUp({ target, format }: { target: number; format?: (n: number) => s
   return <>{format ? format(val) : val}</>;
 }
 
+/** Indeterminate top progress bar shown while the dashboard loads. */
+function TopLoadingBar() {
+  return (
+    <div className="relative mt-6 h-1 w-full overflow-hidden rounded-full bg-mist">
+      <motion.div
+        className="absolute inset-y-0 w-1/3 rounded-full bg-ink"
+        animate={{ x: ["-120%", "320%"] }}
+        transition={{ repeat: Infinity, duration: 1.1, ease: "easeInOut" }}
+      />
+    </div>
+  );
+}
+
 function statusBadge(status: string): { text: string; cls: string } {
   switch (status) {
     case "paid":
@@ -126,12 +139,15 @@ export function Dashboard() {
       )}
 
       {loading ? (
-        // Shimmer skeletons
-        <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-36 animate-pulse rounded-media border border-line bg-white" />
-          ))}
-        </div>
+        <>
+          <TopLoadingBar />
+          {/* Shimmer skeletons */}
+          <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="h-36 animate-pulse rounded-media border border-line bg-white" />
+            ))}
+          </div>
+        </>
       ) : (
         stats && (
           <>
@@ -192,20 +208,26 @@ export function Dashboard() {
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: 0.4 + i * 0.05, duration: 0.4 }}
-                          className="flex items-center justify-between gap-3 py-3"
                         >
-                          <div className="min-w-0">
-                            <p className="truncate text-sm text-ink">{o.customerName || o.email}</p>
-                            <p className="text-xs text-stone">
-                              #{o.id.slice(0, 8).toUpperCase()} · {formatDate(o.createdAt)}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <span className={cn("rounded-full px-2 py-0.5 text-[0.65rem] font-medium", b.cls)}>
-                              {b.text}
-                            </span>
-                            <span className="text-sm font-medium text-ink">{formatCurrency(o.total)}</span>
-                          </div>
+                          <Link
+                            href={`/admin/orders/${o.id}`}
+                            className="-mx-2 flex items-center justify-between gap-3 rounded-md px-2 py-3 transition-colors hover:bg-mist"
+                          >
+                            <div className="min-w-0">
+                              <p className="truncate text-sm text-ink">{o.customerName || o.email}</p>
+                              <p className="text-xs text-stone">
+                                #{o.id.slice(0, 8).toUpperCase()} · {formatDate(o.createdAt)}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className={cn("rounded-full px-2 py-0.5 text-[0.65rem] font-medium", b.cls)}>
+                                {b.text}
+                              </span>
+                              <span className="text-sm font-medium text-ink">
+                                {formatCurrency(o.total)}
+                              </span>
+                            </div>
+                          </Link>
                         </motion.li>
                       );
                     })}

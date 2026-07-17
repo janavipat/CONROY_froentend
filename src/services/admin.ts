@@ -236,7 +236,6 @@ export interface AnalyticsCustomer {
   netPurchase: number;
   avgOrder: number;
   lastOrder: string;
-  status: string;
   orderList: CustomerOrder[];
   returnList: CustomerReturn[];
 }
@@ -256,6 +255,21 @@ export interface AdminAnalytics {
 export async function adminGetAnalytics(): Promise<AdminAnalytics> {
   const { data } = await api.get<ApiList<AdminAnalytics>>("/admin/analytics");
   return data.data;
+}
+
+export interface AbandonedCustomer {
+  phone: string;
+  email: string;
+  name: string | null;
+  products: { handle: string; title: string }[];
+  productCount: number;
+  hasOrders: boolean;
+  lastAddedAt: string;
+}
+
+export async function adminGetAbandonedCustomers(): Promise<AbandonedCustomer[]> {
+  const { data } = await api.get<ApiList<AbandonedCustomer[]>>("/admin/abandoned");
+  return data.data ?? [];
 }
 
 export async function adminListOrders(): Promise<AdminOrder[]> {

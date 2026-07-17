@@ -1,9 +1,10 @@
 "use client";
 
 import { useForm, type FieldErrors } from "react-hook-form";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ContactFormValues } from "@/types";
 import { submitContactForm } from "@/services/contact";
+import { fetchSiteSettings, settingValue } from "@/services/settings";
 import { cn } from "@/utils/cn";
 import { Button } from "@/components/ui/Button";
 import { CheckIcon } from "@/components/ui/Icons";
@@ -13,11 +14,11 @@ const fieldClass =
   "h-12 w-full rounded-md border border-line bg-white px-3.5 text-sm text-ink placeholder:text-stone/60 transition-colors focus:border-ink focus:outline-none focus:ring-2 focus:ring-ink/10";
 const labelClass = "mb-1.5 block text-xs font-medium uppercase tracking-wide text-stone";
 
-// CONROY support line — enquiries open a pre-filled WhatsApp chat to this number.
-const CONTACT_WHATSAPP_NUMBER = "919998009904";
+// Fallback support line if the setting hasn't been configured.
+const DEFAULT_WHATSAPP_NUMBER = "919998009904";
 
 /** Builds a wa.me click-to-chat URL with the enquiry pre-filled. */
-function whatsappUrl(values: ContactFormValues): string {
+function whatsappUrl(values: ContactFormValues, number: string): string {
   const lines = [
     "New enquiry from the CONROY website",
     "",
@@ -28,7 +29,7 @@ function whatsappUrl(values: ContactFormValues): string {
     "",
     values.message,
   ].filter(Boolean);
-  return `https://wa.me/${CONTACT_WHATSAPP_NUMBER}?text=${encodeURIComponent(lines.join("\n"))}`;
+  return `https://wa.me/${number}?text=${encodeURIComponent(lines.join("\n"))}`;
 }
 
 export function ContactForm() {
@@ -40,11 +41,25 @@ export function ContactForm() {
   } = useForm<ContactFormValues>();
   const { toast } = useToast();
   const [done, setDone] = useState<string | null>(null);
+  const [waNumber, setWaNumber] = useState(DEFAULT_WHATSAPP_NUMBER);
+
+  useEffect(() => {
+    let active = true;
+    void fetchSiteSettings().then(
+      (s) => active && setWaNumber(settingValue(s, "contact.whatsapp", DEFAULT_WHATSAPP_NUMBER)),
+    );
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // +91 99980 09904 → "+91 99980 09904" for display.
+  const waDisplay = waNumber.startsWith("+") ? waNumber : `+${waNumber}`;
 
   async function onValid(values: ContactFormValues) {
     // Open WhatsApp synchronously inside the click gesture so it isn't popup-blocked.
     // This delivers the enquiry straight to the CONROY support number.
-    window.open(whatsappUrl(values), "_blank", "noopener,noreferrer");
+    window.open(whatsappUrl(values, waNumber), "_blank", "noopener,noreferrer");
 
     // Persist the enquiry too, so it always lands in the admin inbox.
     const res = await submitContactForm(values);
@@ -150,7 +165,7 @@ export function ContactForm() {
           {isSubmitting ? "Sending…" : "Send message"}
         </Button>
         <p className="text-xs text-stone">
-          Opens WhatsApp to send your enquiry to <span className="text-ink">+91 99980 09904</span>.
+          Opens WhatsApp to send your enquiry to <span className="text-ink">{waDisplay}</span>.
         </p>
       </div>
     </form>
