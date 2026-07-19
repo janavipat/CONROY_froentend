@@ -38,7 +38,6 @@ export const PRODUCTS: Product[] = [
     stock: 99,
     rating: 5,
     reviewCount: 1,
-    badge: "Limited time",
   },
   {
     id: "blue-straight",
@@ -71,7 +70,6 @@ export const PRODUCTS: Product[] = [
     stock: 99,
     rating: 5,
     reviewCount: 1,
-    badge: "Limited time",
   },
   {
     id: "black-relax",
@@ -103,7 +101,6 @@ export const PRODUCTS: Product[] = [
     stock: 99,
     rating: 5,
     reviewCount: 1,
-    badge: "Limited time",
   },
   {
     id: "blue-relax",
@@ -137,7 +134,6 @@ export const PRODUCTS: Product[] = [
     stock: 99,
     rating: 5,
     reviewCount: 1,
-    badge: "Limited time",
   },
 ];
 
