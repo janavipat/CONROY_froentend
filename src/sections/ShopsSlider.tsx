@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/motion/Reveal";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/Icons";
@@ -67,14 +67,42 @@ function Ornament() {
  * entry points into the catalogue. Modelled on ralphlauren.global's brand-page
  * shops rail.
  */
+/** How long each slide holds before the rail advances on its own. */
+const AUTOPLAY_MS = 3000;
+
 export function ShopsSlider() {
   const trackRef = useRef<HTMLDivElement>(null);
+  // Paused while the visitor hovers/touches or uses the arrows.
+  const pausedRef = useRef(false);
+
+  const resumeTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
 
   function scroll(dir: number) {
     const track = trackRef.current;
     if (!track) return;
+    // A manual click pauses auto-play briefly so the two don't fight.
+    pausedRef.current = true;
+    clearTimeout(resumeTimer.current);
+    resumeTimer.current = setTimeout(() => (pausedRef.current = false), 5000);
     track.scrollBy({ left: track.clientWidth * 0.6 * dir, behavior: "smooth" });
   }
+
+  // Auto-advance one panel every AUTOPLAY_MS; loop back to the start once the
+  // end is reached. Pauses on hover so it never fights the visitor.
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    const id = setInterval(() => {
+      if (pausedRef.current) return;
+      const atEnd = track.scrollLeft + track.clientWidth >= track.scrollWidth - 8;
+      if (atEnd) {
+        track.scrollTo({ left: 0, behavior: "smooth" });
+      } else {
+        track.scrollBy({ left: track.clientWidth * 0.6, behavior: "smooth" });
+      }
+    }, AUTOPLAY_MS);
+    return () => clearInterval(id);
+  }, []);
 
   const arrow = (dir: number, label: string, Icon: typeof ChevronLeftIcon) => (
     <button
@@ -109,6 +137,9 @@ export function ShopsSlider() {
           {/* Right — gold-framed tiles */}
           <div
             ref={trackRef}
+            onMouseEnter={() => (pausedRef.current = true)}
+            onMouseLeave={() => (pausedRef.current = false)}
+            onTouchStart={() => (pausedRef.current = true)}
             className="flex min-w-0 snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {SHOPS.map((s, i) => (
