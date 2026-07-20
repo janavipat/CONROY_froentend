@@ -28,7 +28,7 @@ export const SITE = {
 
 export const PRIMARY_NAV: NavLink[] = [
   { label: "Home", href: "/" },
-  { label: "Catalog", href: "/collections/all" },
+  { label: "Collection", href: "/collections/all" },
   { label: "About us", href: "/about" },
   { label: "Contact", href: "/contact" },
 ];

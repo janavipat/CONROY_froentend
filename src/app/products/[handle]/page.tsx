@@ -106,7 +106,7 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
             <li aria-hidden>/</li>
             <li>
               <Link href="/collections/all" className="hover:text-ink">
-                Catalog
+                Collection
               </Link>
             </li>
             <li aria-hidden>/</li>

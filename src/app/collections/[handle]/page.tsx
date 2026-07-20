@@ -47,7 +47,7 @@ export default async function CollectionPage(props: PageProps<"/collections/[han
         description={collection.description}
         breadcrumbs={[
           { label: "Home", href: "/" },
-          { label: "Catalog", href: "/collections/all" },
+          { label: "Collection", href: "/collections/all" },
           ...(handle === "all" ? [] : [{ label: collection.title }]),
         ]}
       />
