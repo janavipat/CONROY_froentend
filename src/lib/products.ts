@@ -11,7 +11,7 @@ export const PRODUCTS: Product[] = [
   {
     id: "black-straight",
     handle: "pants",
-    title: "Black Straight Fit",
+    title: "Men's Black Straight Fit",
     tagline: "Premium soft-wash denim, clean straight leg.",
     description:
       "A refined denim piece featuring a straight-leg silhouette cut from premium soft-wash denim with modern fade detailing. Designed for all-day comfort — durable, versatile and effortlessly stylish.",
@@ -42,7 +42,7 @@ export const PRODUCTS: Product[] = [
   {
     id: "blue-straight",
     handle: "black-pent",
-    title: "Blue Straight Fit",
+    title: "Men's Blue Straight Fit",
     tagline: "Heritage indigo with a tailored straight leg.",
     description:
       "An everyday indigo straight-fit cut from premium denim with a subtle, lived-in finish. Tailored through the leg for a clean line that pairs with everything — built to last and to soften beautifully over time.",
@@ -74,7 +74,7 @@ export const PRODUCTS: Product[] = [
   {
     id: "black-relax",
     handle: "the-comfort-deep-black",
-    title: "Black Relax Fit",
+    title: "Men's Black Relax Fit",
     tagline: "Relaxed comfort in a deep, washed black.",
     description:
       "A relaxed-fit denim cut from soft, breathable fabric for ease of movement without losing its shape. Deep washed black with understated detailing — comfort that reads as quiet confidence.",
@@ -105,7 +105,7 @@ export const PRODUCTS: Product[] = [
   {
     id: "blue-relax",
     handle: "the-comfort-true-blue",
-    title: "Blue Relax Fit",
+    title: "Men's Blue Relax Fit",
     tagline: "True-blue denim, relaxed and easy.",
     description:
       "A true-blue relaxed-fit denim with generous room through the leg and a soft hand-feel. Honest indigo, thoughtfully finished — an everyday piece designed to move with you and age gracefully.",
