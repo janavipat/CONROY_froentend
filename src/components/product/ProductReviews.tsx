@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { StarIcon } from "@/components/ui/Icons";
 import { cn } from "@/utils/cn";
 import { ReviewForm } from "./ReviewForm";
+import { Loader } from "@/components/ui/Loader";
 
 function formatDate(iso: string): string {
   try {
@@ -148,7 +149,7 @@ export function ProductReviews({ handle }: { handle: string }) {
         <div className="mt-8">
           {loading ? (
             <div className="grid place-items-center py-10">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-line border-t-ink" />
+              <Loader size="sm" label="" />
             </div>
           ) : reviews.length === 0 ? (
             <p className="py-8 text-center text-stone">

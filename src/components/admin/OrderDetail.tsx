@@ -6,6 +6,7 @@ import { adminGetOrder, type AdminOrder } from "@/services/admin";
 import { formatCurrency } from "@/utils/format";
 import { cn } from "@/utils/cn";
 import { ChevronLeftIcon } from "@/components/ui/Icons";
+import { Loader } from "@/components/ui/Loader";
 
 function formatDateTime(iso: string): string {
   try {
@@ -71,7 +72,7 @@ export function OrderDetail({ id }: { id: string }) {
   if (loading) {
     return (
       <div className="grid place-items-center py-24">
-        <div className="h-7 w-7 animate-spin rounded-full border-2 border-line border-t-ink" />
+        <Loader size="sm" label="" />
       </div>
     );
   }

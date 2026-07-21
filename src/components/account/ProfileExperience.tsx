@@ -9,6 +9,7 @@ import { useToast } from "@/components/ui/Toast";
 import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/motion/Reveal";
+import { Loader } from "@/components/ui/Loader";
 import { MyOrders } from "./MyOrders";
 import {
   ArrowRightIcon,
@@ -103,10 +104,7 @@ export function ProfileExperience() {
   if (initializing || !user) {
     return (
       <div className="grid min-h-[60vh] place-items-center">
-        <div
-          aria-label="Loading"
-          className="h-8 w-8 animate-spin rounded-full border-2 border-line border-t-ink"
-        />
+        <Loader />
       </div>
     );
   }

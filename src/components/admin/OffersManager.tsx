@@ -17,6 +17,7 @@ import {
 import { formatCurrency } from "@/utils/format";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/utils/cn";
+import { Loader } from "@/components/ui/Loader";
 
 const TYPE_LABEL: Record<OfferType, string> = {
   all_products: "All products",
@@ -298,7 +299,7 @@ export function OffersManager() {
       <div className="mt-6">
         {loading ? (
           <div className="grid place-items-center rounded-media border border-line bg-white py-16">
-            <div className="h-7 w-7 animate-spin rounded-full border-2 border-line border-t-ink" />
+            <Loader size="sm" label="" />
           </div>
         ) : offers.length === 0 ? (
           <p className="rounded-media border border-line bg-white py-16 text-center text-stone">

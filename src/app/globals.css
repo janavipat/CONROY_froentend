@@ -139,6 +139,24 @@
   animation: float 4.5s ease-in-out infinite;
 }
 
+/* Loader — the brand mark breathes rather than spins: the logo has a fixed
+   upright orientation, so rotating it would read as broken. Rest state is
+   full opacity/scale, which is also what shows under reduced motion. */
+@keyframes brand-breathe {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.95);
+  }
+}
+.animate-brand-breathe {
+  animation: brand-breathe 1.8s ease-in-out infinite;
+}
+
 /* Refined scrollbar */
 ::-webkit-scrollbar {
   width: 10px;

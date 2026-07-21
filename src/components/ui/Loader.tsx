@@ -1,8 +1,9 @@
 import { cn } from "@/utils/cn";
+import { ConroyMark } from "./ConroyMark";
 
 /**
- * Branded loading indicator — a ring spinning around the CONROY monogram, with
- * a tracked label. Replaces the plain spinner across the app.
+ * Branded loading indicator — the CONROY mark breathing gently, with a tracked
+ * label. Used everywhere the app waits on data.
  */
 export function Loader({
   label = "Loading",
@@ -13,15 +14,13 @@ export function Loader({
   className?: string;
   size?: "sm" | "md";
 }) {
-  const ring = size === "sm" ? "h-9 w-9 text-xs" : "h-12 w-12 text-sm";
+  // Width only — the mark keeps its own aspect ratio, so height follows.
+  const mark = size === "sm" ? "w-9" : "w-12";
   return (
     <div className={cn("flex flex-col items-center justify-center gap-4", className)}>
-      <div className={cn("relative", ring)}>
-        <span className="absolute inset-0 rounded-full border-2 border-line" />
-        <span className="absolute inset-0 animate-spin rounded-full border-2 border-transparent border-t-ink border-r-ink" />
-        <span className="absolute inset-0 grid place-items-center font-display font-semibold text-ink">
-          C
-        </span>
+      {/* Reserving the box keeps the pulse from nudging the label as it scales. */}
+      <div className={cn("grid place-items-center", mark)}>
+        <ConroyMark className="animate-brand-breathe text-ink" />
       </div>
       {label && (
         <span className="animate-pulse text-[0.65rem] uppercase tracking-[0.3em] text-stone">

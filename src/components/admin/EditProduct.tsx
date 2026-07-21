@@ -5,6 +5,7 @@ import type { Product } from "@/types";
 import { adminGetProduct } from "@/services/admin";
 import { ProductForm } from "./ProductForm";
 import { Button } from "@/components/ui/Button";
+import { Loader } from "@/components/ui/Loader";
 
 export function EditProduct({ handle }: { handle: string }) {
   const [product, setProduct] = useState<Product | null>(null);
@@ -28,7 +29,7 @@ export function EditProduct({ handle }: { handle: string }) {
   if (state === "loading") {
     return (
       <div className="grid min-h-[40vh] place-items-center">
-        <div className="h-7 w-7 animate-spin rounded-full border-2 border-line border-t-ink" />
+        <Loader size="sm" label="" />
       </div>
     );
   }

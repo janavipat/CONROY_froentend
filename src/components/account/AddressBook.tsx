@@ -15,6 +15,7 @@ import { Container } from "@/components/ui/Container";
 import { Button } from "@/components/ui/Button";
 import { ChevronLeftIcon, TruckIcon, CheckIcon, CloseIcon } from "@/components/ui/Icons";
 import { cn } from "@/utils/cn";
+import { Loader } from "@/components/ui/Loader";
 
 const field =
   "h-12 w-full rounded-md border border-line bg-white px-3 text-[15px] text-ink placeholder:text-stone focus:border-ink focus:outline-none";
@@ -135,7 +136,7 @@ export function AddressBook() {
     return (
       <Container className="py-20">
         <div className="grid place-items-center py-20">
-          <div className="h-7 w-7 animate-spin rounded-full border-2 border-line border-t-ink" />
+          <Loader size="sm" label="" />
         </div>
       </Container>
     );
@@ -251,7 +252,7 @@ export function AddressBook() {
       {/* List */}
       {loading ? (
         <div className="mt-6 grid place-items-center rounded-media border border-line bg-white py-16">
-          <div className="h-7 w-7 animate-spin rounded-full border-2 border-line border-t-ink" />
+          <Loader size="sm" label="" />
         </div>
       ) : list.length === 0 && !showForm ? (
         <div className="mt-6 flex flex-col items-center gap-3 rounded-media border border-line bg-white py-16 text-center">

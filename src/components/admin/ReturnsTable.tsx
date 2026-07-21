@@ -12,6 +12,7 @@ import {
 import { formatCurrency } from "@/utils/format";
 import { CheckIcon, CloseIcon } from "@/components/ui/Icons";
 import { cn } from "@/utils/cn";
+import { Loader } from "@/components/ui/Loader";
 
 const STATUSES: AdminReturnStatus[] = [
   "requested",
@@ -268,7 +269,7 @@ export function ReturnsTable() {
 
       {loading ? (
         <div className="mt-6 grid place-items-center rounded-media border border-line bg-white py-16">
-          <div className="h-7 w-7 animate-spin rounded-full border-2 border-line border-t-ink" />
+          <Loader size="sm" label="" />
         </div>
       ) : filtered.length === 0 ? (
         <p className="mt-6 rounded-media border border-line bg-white py-16 text-center text-stone">

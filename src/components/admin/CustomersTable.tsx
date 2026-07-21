@@ -6,6 +6,7 @@ import type { AdminCustomer } from "@/services/admin";
 import { adminListCustomers } from "@/services/admin";
 import { formatCurrency } from "@/utils/format";
 import { ChevronRightIcon } from "@/components/ui/Icons";
+import { Loader } from "@/components/ui/Loader";
 
 function formatDate(iso: string): string {
   try {
@@ -106,7 +107,7 @@ export function CustomersTable() {
 
         {loading ? (
           <div className="grid place-items-center py-16">
-            <div className="h-7 w-7 animate-spin rounded-full border-2 border-line border-t-ink" />
+            <Loader size="sm" label="" />
           </div>
         ) : customers.length === 0 ? (
           <p className="py-16 text-center text-stone">No customers yet.</p>

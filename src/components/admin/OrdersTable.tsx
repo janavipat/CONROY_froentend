@@ -8,6 +8,7 @@ import { formatCurrency } from "@/utils/format";
 import { printPackingSlips } from "@/lib/packing-slip";
 import { cn } from "@/utils/cn";
 import { SearchIcon, ChevronRightIcon } from "@/components/ui/Icons";
+import { Loader } from "@/components/ui/Loader";
 
 function formatDate(iso: string): string {
   try {
@@ -196,7 +197,7 @@ export function OrdersTable() {
         <div className="overflow-x-auto">
           {loading ? (
             <div className="grid place-items-center py-16">
-              <div className="h-7 w-7 animate-spin rounded-full border-2 border-line border-t-ink" />
+              <Loader size="sm" label="" />
             </div>
           ) : filtered.length === 0 ? (
             <p className="py-16 text-center text-stone">

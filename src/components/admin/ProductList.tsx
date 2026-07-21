@@ -8,6 +8,7 @@ import { adminListProducts, adminDeleteProduct } from "@/services/admin";
 import { formatCurrency } from "@/utils/format";
 import { Button } from "@/components/ui/Button";
 import { PlusIcon } from "@/components/ui/Icons";
+import { Loader } from "@/components/ui/Loader";
 
 export function ProductList() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -82,7 +83,7 @@ export function ProductList() {
 
         {loading ? (
           <div className="grid place-items-center py-16">
-            <div className="h-7 w-7 animate-spin rounded-full border-2 border-line border-t-ink" />
+            <Loader size="sm" label="" />
           </div>
         ) : products.length === 0 ? (
           <div className="grid place-items-center gap-3 py-16 text-center">

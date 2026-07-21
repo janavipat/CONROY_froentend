@@ -13,6 +13,7 @@ import {
 import { formatCurrency } from "@/utils/format";
 import { ChevronLeftIcon } from "@/components/ui/Icons";
 import { cn } from "@/utils/cn";
+import { Loader } from "@/components/ui/Loader";
 
 function formatDate(iso: string): string {
   try {
@@ -96,7 +97,7 @@ export function CustomerDetail({ phone }: { phone: string }) {
 
       {loading ? (
         <div className="mt-6 grid place-items-center rounded-media border border-line bg-white py-20">
-          <div className="h-7 w-7 animate-spin rounded-full border-2 border-line border-t-ink" />
+          <Loader size="sm" label="" />
         </div>
       ) : (
         <div className="mt-4 space-y-6">
