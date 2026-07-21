@@ -6,6 +6,7 @@ import { MaintenanceBanner } from "./MaintenanceBanner";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
 import { OfferPopup } from "@/components/offers/OfferPopup";
+import { LoginPopup } from "@/components/auth/LoginPopup";
 import { ChatWidget } from "@/components/chat/ChatWidget";
 import { VisitorBeacon } from "@/components/analytics/VisitorBeacon";
 
@@ -30,6 +31,7 @@ export function StoreChrome({ children }: { children: React.ReactNode }) {
       <main className="flex-1">{children}</main>
       <Footer />
       <OfferPopup />
+      <LoginPopup />
       <ChatWidget />
     </>
   );
