@@ -11,6 +11,29 @@ const pingSchema = z.object({
 });
 
 /** POST /api/track — public heartbeat from storefront visitors. */
+/**
+ * Longest slice of time a single page view may contribute to engagement
+ * metrics. A tab left open overnight was reporting 21 hours on one view, which
+ * inflated total/average session time far beyond reality.
+ */
+const MAX_VIEW_MS = 30 * 60 * 1000;
+
+/** Admin-facing label for a raw order status (charts shouldn't show DB codes). */
+function orderStatusLabel(status: string): string {
+  switch (status) {
+    case "paid":
+      return "Paid";
+    case "cod_pending":
+      return "Cash on delivery";
+    case "cancelled":
+      return "Cancelled";
+    case "pending":
+      return "Pending";
+    default:
+      return status;
+  }
+}
+
 export async function trackVisit(req: Request, res: Response) {
   const ping = pingSchema.parse(req.body);
   recordPing(ping);
@@ -145,7 +168,8 @@ export async function getAnalytics(_req: Request, res: Response) {
   for (const v of views ?? []) {
     const path = v.path as string;
     const sid = v.session_id as string;
-    const dur = (v.duration_ms as number) ?? 0;
+    // Clamp idle tabs so they don't masquerade as engagement.
+    const dur = Math.min((v.duration_ms as number) ?? 0, MAX_VIEW_MS);
     totalTimeMs += dur;
     const p = pageAgg.get(path) ?? { views: 0, totalMs: 0, sessions: new Set<string>(), lastVisit: "" };
     p.views += 1;
@@ -224,7 +248,7 @@ export async function getAnalytics(_req: Request, res: Response) {
   for (const o of orders ?? []) {
     const net = netOf(o);
     totalRevenue += net;
-    const st = o.status as string;
+    const st = orderStatusLabel(o.status as string);
     statusCount[st] = (statusCount[st] ?? 0) + 1;
     const day = new Date(o.created_at as string).toISOString().slice(0, 10);
     if (revByDay.has(day)) {
