@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { Order } from "@/services/orders";
-import { fetchMyOrders } from "@/services/orders";
+import { canCancel, fetchMyOrders, fulfillmentBadge, fulfillmentOf } from "@/services/orders";
 import { fetchMyReturns, returnStatusBadge, type ReturnRecord } from "@/services/returns";
 import { ReturnDialog } from "@/components/account/ReturnDialog";
+import { CancelOrderDialog } from "@/components/account/CancelOrderDialog";
 import { formatCurrency } from "@/utils/format";
 import { Button } from "@/components/ui/Button";
 import { Loader } from "@/components/ui/Loader";
-import { BagIcon, ReturnIcon, TruckIcon, ShieldIcon } from "@/components/ui/Icons";
+import { useToast } from "@/components/ui/Toast";
+import { BagIcon, ReturnIcon, TruckIcon, ShieldIcon, CloseIcon } from "@/components/ui/Icons";
 import { cn } from "@/utils/cn";
 
 function formatDate(iso: string): string {
@@ -24,27 +26,13 @@ function formatDate(iso: string): string {
   }
 }
 
-function statusLabel(status: string): { text: string; dot: string } {
-  switch (status) {
-    case "paid":
-      return { text: "Paid", dot: "bg-green-500" };
-    case "cod_pending":
-      return { text: "Cash on delivery", dot: "bg-amber-500" };
-    case "cancelled":
-      return { text: "Cancelled", dot: "bg-accent" };
-    default:
-      return { text: "Processing", dot: "bg-stone/50" };
-  }
-}
-
-// Orders eligible for a return request (delivered/paid — not cancelled).
-const RETURNABLE = new Set(["paid", "cod_pending"]);
-
 export function MyOrders({ phone }: { phone: string }) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [returns, setReturns] = useState<ReturnRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [returnFor, setReturnFor] = useState<Order | null>(null);
+  const [cancelFor, setCancelFor] = useState<Order | null>(null);
+  const { toast } = useToast();
 
   const load = useCallback(async () => {
     const [o, r] = await Promise.all([fetchMyOrders(phone), fetchMyReturns(phone)]);
@@ -86,8 +74,9 @@ export function MyOrders({ phone }: { phone: string }) {
       </div>
       {!loading && orders.length > 0 && (
         <p className="mt-1 text-xs text-stone">
-          To return or replace an item, use the{" "}
-          <span className="font-medium text-ink-soft">Return or replace</span> button on the order below.
+          Cancel an order while it&apos;s still being prepared, or request a{" "}
+          <span className="font-medium text-ink-soft">return or replacement</span> once it&apos;s
+          delivered.
         </p>
       )}
 
@@ -108,12 +97,18 @@ export function MyOrders({ phone }: { phone: string }) {
       ) : (
         <ul className="mt-4 space-y-5">
           {orders.map((order) => {
-            const badge = statusLabel(order.status);
+            const fulfillment = fulfillmentOf(order);
+            const badge = fulfillmentBadge(fulfillment);
             const itemCount = order.items.reduce((s, i) => s + i.quantity, 0);
             const discount = order.discount ?? 0;
             const total = order.subtotal - discount;
             const ret = returnByOrder.get(order.id);
-            const isCod = order.status === "cod_pending";
+            const isCancelled = fulfillment === "Cancelled";
+            // Cancelling overwrites `status` with "cancelled", so the payment
+            // method is recovered from the refund state — COD never refunds.
+            const isCod = isCancelled
+              ? (order.refund_status ?? "None") === "None"
+              : order.status === "cod_pending";
 
             return (
               <li
@@ -195,7 +190,34 @@ export function MyOrders({ phone }: { phone: string }) {
                   </div>
                 </div>
 
-                {/* Return / replacement */}
+                {/* Cancellation summary — shown once an order is cancelled */}
+                {isCancelled && (
+                  <div className="border-t border-line bg-mist/30 px-5 py-3 text-xs">
+                    <div className="flex flex-wrap gap-x-6 gap-y-1 text-stone">
+                      {order.cancelled_at && (
+                        <span>
+                          Cancelled on:{" "}
+                          <span className="font-medium text-ink-soft">
+                            {formatDate(order.cancelled_at)}
+                          </span>
+                        </span>
+                      )}
+                      {order.cancel_reason && (
+                        <span>
+                          Reason:{" "}
+                          <span className="font-medium text-ink-soft">{order.cancel_reason}</span>
+                        </span>
+                      )}
+                    </div>
+                    <p className="mt-1 text-stone">
+                      {isCod
+                        ? "No payment collected."
+                        : `Refund status: ${order.refund_status ?? "Initiated"}`}
+                    </p>
+                  </div>
+                )}
+
+                {/* Actions — one per lifecycle state */}
                 <div className="border-t border-line px-5 py-3">
                   {ret ? (
                     <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -207,13 +229,36 @@ export function MyOrders({ phone }: { phone: string }) {
                         {ret.items.reduce((s, i) => s + i.quantity, 0)} item(s) · {ret.reason}
                       </span>
                     </div>
-                  ) : RETURNABLE.has(order.status) ? (
+                  ) : canCancel(order) ? (
+                    <button
+                      onClick={() => setCancelFor(order)}
+                      className="inline-flex items-center gap-1.5 rounded-md border border-line px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink"
+                    >
+                      <CloseIcon className="h-4 w-4" /> Cancel order
+                    </button>
+                  ) : fulfillment === "Delivered" ? (
                     <button
                       onClick={() => setReturnFor(order)}
                       className="inline-flex items-center gap-1.5 rounded-md border border-line px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink"
                     >
                       <ReturnIcon className="h-4 w-4" /> Return or replace
                     </button>
+                  ) : fulfillment === "Shipped" || fulfillment === "Out For Delivery" ? (
+                    // No tracking page or carrier tracking number exists yet, so
+                    // this routes to support rather than a dead URL.
+                    <Link
+                      href="/contact"
+                      className="inline-flex items-center gap-1.5 rounded-md border border-line px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink"
+                    >
+                      <TruckIcon className="h-4 w-4" /> Track order
+                    </Link>
+                  ) : isCancelled ? (
+                    <Link
+                      href="/collections/all"
+                      className="inline-flex items-center gap-1.5 rounded-md border border-line px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink"
+                    >
+                      <BagIcon className="h-4 w-4" /> Buy again
+                    </Link>
                   ) : (
                     <span className="text-xs text-stone">No actions available.</span>
                   )}
@@ -230,6 +275,19 @@ export function MyOrders({ phone }: { phone: string }) {
           open={Boolean(returnFor)}
           onClose={() => setReturnFor(null)}
           onSubmitted={load}
+        />
+      )}
+
+      {cancelFor && (
+        <CancelOrderDialog
+          order={cancelFor}
+          phone={phone}
+          open={Boolean(cancelFor)}
+          onClose={() => setCancelFor(null)}
+          onCancelled={(message) => {
+            toast(message, "success");
+            void load();
+          }}
         />
       )}
     </section>
