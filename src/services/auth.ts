@@ -22,6 +22,12 @@ export interface VerifyResult {
   token?: string;
 }
 
+export interface UpdateNameResult {
+  ok: boolean;
+  message: string;
+  name?: string;
+}
+
 function errMsg(err: unknown, fallback: string): string {
   const m = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
   return typeof m === "string" ? m : fallback;
@@ -64,5 +70,15 @@ export async function verifyPhoneOtp(
     };
   } catch (err) {
     return { ok: false, message: errMsg(err, "Incorrect or expired code.") };
+  }
+}
+
+/** Updates the signed-in customer's display name. */
+export async function updateAccountName(phoneE164: string, name: string): Promise<UpdateNameResult> {
+  try {
+    const { data } = await api.patch("/auth/profile", { phone: phoneE164, name });
+    return { ok: true, message: data.message, name: data.data?.name };
+  } catch (err) {
+    return { ok: false, message: errMsg(err, "Couldn't save your name. Please try again.") };
   }
 }

@@ -23,6 +23,8 @@ interface AuthContextValue {
     code: string,
     opts?: { mode?: AuthMode; email?: string; fullName?: string },
   ) => Promise<{ error: string | null }>;
+  /** Updates the cached user's name (after a successful profile edit). */
+  setUserName: (name: string) => void;
   signOut: () => Promise<void>;
 }
 
@@ -87,6 +89,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return { error: null };
   }, []);
 
+  const setUserName = useCallback((name: string) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, name };
+      // Update whichever storage currently holds the session, preserving the token.
+      try {
+        for (const store of [window.localStorage, window.sessionStorage]) {
+          const raw = store.getItem(STORAGE_KEY);
+          if (!raw) continue;
+          const session = JSON.parse(raw) as StoredSession;
+          store.setItem(STORAGE_KEY, JSON.stringify({ ...session, user: next }));
+        }
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }, []);
+
   const signOut = useCallback(async () => {
     try {
       window.localStorage.removeItem(STORAGE_KEY);
@@ -107,6 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         demoCode: lastSend?.code ?? DEFAULT_DEMO,
         sendOtp,
         verifyOtp,
+        setUserName,
         signOut,
       }}
     >
