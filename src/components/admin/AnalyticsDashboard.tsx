@@ -538,7 +538,9 @@ export function AnalyticsDashboard() {
   const s = data?.summary;
   const kpis = s
     ? [
-        { label: "Total customers", value: String(s.totalCustomers) },
+        // Distinct buyers (guests included) — the Dashboard's "Customers" card
+        // counts registered accounts, so name this precisely to avoid a clash.
+        { label: "Customers who ordered", value: String(s.totalCustomers) },
         { label: "Total orders", value: String(s.totalOrders) },
         { label: "Total revenue", value: formatCurrency(s.totalRevenue) },
         { label: "Returned amount", value: formatCurrency(s.totalReturned), accent: "red" as const },
