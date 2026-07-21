@@ -41,6 +41,21 @@ export const metadata: Metadata = {
   authors: [{ name: SITE.name }],
   applicationName: SITE.name,
   alternates: { canonical: "/" },
+  // Brand mark, served from /public. The icons carry the CONROY ink plate
+  // rather than a bare transparent mark: the logo is white-only, so on a
+  // transparent background it would vanish against light browser chrome.
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "16x16 32x32 48x48", type: "image/x-icon" },
+      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { url: "/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/android-chrome-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/android-chrome-512x512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    shortcut: ["/favicon.ico"],
+  },
+  manifest: "/manifest.webmanifest",
   openGraph: {
     type: "website",
     siteName: SITE.name,
@@ -58,7 +73,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1a1917",
+  // Matches the icon plate and --color-ink.
+  themeColor: "#15243c",
   width: "device-width",
   initialScale: 1,
 };

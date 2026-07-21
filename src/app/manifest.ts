@@ -9,9 +9,19 @@ export default function manifest(): MetadataRoute.Manifest {
     start_url: "/",
     display: "standalone",
     background_color: "#f4f1ea",
-    theme_color: "#1a1917",
+    theme_color: "#15243c",
     icons: [
-      { src: "/icon.svg", sizes: "any", type: "image/svg+xml" },
+      { src: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+      { src: "/android-chrome-192x192.png", sizes: "192x192", type: "image/png" },
+      { src: "/android-chrome-512x512.png", sizes: "512x512", type: "image/png" },
+      // Android/iOS crop installed icons to their own shape; the mark sits
+      // inside the inner-80% safe zone on these two so nothing is clipped.
+      {
+        src: "/android-chrome-512x512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
     ],
   };
 }
