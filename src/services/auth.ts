@@ -3,6 +3,8 @@ import { api } from "./api";
 export interface AuthUser {
   id: string;
   phone: string;
+  /** Display name captured at sign-up; null for accounts created before it. */
+  name?: string | null;
 }
 
 export interface StartResult {

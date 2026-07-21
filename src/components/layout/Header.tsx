@@ -14,6 +14,15 @@ import { BagIcon, MenuIcon, SearchIcon, UserIcon } from "@/components/ui/Icons";
 import { SearchModal } from "./SearchModal";
 import { MobileNav } from "./MobileNav";
 
+/**
+ * First name only — a full name would crowd the navbar. Accounts created
+ * before names were collected fall back to a neutral label.
+ */
+function firstName(name?: string | null): string {
+  const first = (name ?? "").trim().split(/\s+/)[0];
+  return first || "My Account";
+}
+
 export function Header() {
   const pathname = usePathname();
   const scrolled = useScrollPosition(20);
@@ -97,7 +106,9 @@ export function Header() {
               )}
             >
               <UserIcon className="h-5 w-5 shrink-0 text-ink-soft sm:h-[18px] sm:w-[18px]" />
-              <span className="hidden sm:inline">{user ? "My Account" : "Login"}</span>
+              <span className="hidden max-w-[10ch] truncate sm:inline">
+                {user ? firstName(user.name) : "Login"}
+              </span>
             </Link>
             <button
               className="relative grid h-10 w-10 place-items-center rounded-full text-ink transition-colors hover:bg-mist"
