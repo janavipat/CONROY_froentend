@@ -80,12 +80,24 @@ export function Header() {
             >
               <SearchIcon className="h-5 w-5" />
             </button>
+            {/* Account entry point. The icon alone read as decoration, so from
+                `sm` up it becomes a labelled control. Mobile keeps the bare
+                icon to match Search/Cart and save room. */}
             <Link
               href={user ? "/account/profile" : "/account/login"}
-              className="hidden h-10 w-10 place-items-center rounded-full text-ink transition-colors hover:bg-mist sm:grid"
-              aria-label={user ? "My account" : "Sign in"}
+              aria-label={user ? "My account" : "Login"}
+              className={cn(
+                // Mobile: same icon-button treatment as its siblings.
+                "grid h-10 w-10 place-items-center rounded-full text-ink transition-colors hover:bg-mist",
+                // sm+: an outlined, labelled control — quiet, not a CTA.
+                "sm:inline-flex sm:h-[38px] sm:w-auto sm:gap-2 sm:rounded-[10px] sm:border sm:border-[#E5E7EB] sm:bg-white sm:px-[14px] sm:text-sm sm:font-medium",
+                "sm:transition-all sm:duration-200 sm:hover:-translate-y-px sm:hover:border-[#D1D5DB] sm:hover:bg-[#FAFAFA] sm:hover:shadow-sm",
+                "sm:active:translate-y-0 sm:active:border-[#CBD5E1] sm:active:bg-[#F9FAFB]",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/25 focus-visible:ring-offset-2",
+              )}
             >
-              <UserIcon className="h-5 w-5" />
+              <UserIcon className="h-5 w-5 shrink-0 text-ink-soft sm:h-[18px] sm:w-[18px]" />
+              <span className="hidden sm:inline">{user ? "My Account" : "Login"}</span>
             </Link>
             <button
               className="relative grid h-10 w-10 place-items-center rounded-full text-ink transition-colors hover:bg-mist"
