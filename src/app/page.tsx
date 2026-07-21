@@ -7,6 +7,7 @@ import { Philosophy } from "@/sections/Philosophy";
 import { ServiceFeatures } from "@/sections/ServiceFeatures";
 import { CTASection } from "@/sections/CTASection";
 import { fetchSiteSettings, isOn } from "@/services/settings";
+import { fetchAllProducts } from "@/services/catalog";
 
 // Below-the-fold sections are code-split to keep the initial bundle lean.
 const Testimonials = dynamic(() =>
@@ -18,12 +19,15 @@ export default async function HomePage() {
   const settings = await fetchSiteSettings();
   const show = (key: string) => isOn(settings, key);
 
+  // "The Shops" rail shows the live product catalog (admin-managed).
+  const products = show("section.shops") ? await fetchAllProducts() : [];
+
   return (
     <>
       <Hero />
       {/* Sections alternate dark → light → dark so the two navy bands (Shops
           and the Film) never sit back to back and merge into one block. */}
-      {show("section.shops") && <ShopsSlider />}
+      {show("section.shops") && <ShopsSlider products={products} />}
       {show("section.heritage") && <HeritageStory />}
       {show("section.campaign") && <CampaignBanner />}
       {show("section.philosophy") && <Philosophy />}

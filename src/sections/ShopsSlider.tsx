@@ -3,11 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
+import type { Product } from "@/types";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/motion/Reveal";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/Icons";
-
-const CDN = "https://cdn.shopify.com/s/files/1/0763/6248/1899/files";
 
 interface Shop {
   title: string;
@@ -15,39 +14,16 @@ interface Shop {
   image: string;
 }
 
-/** Entry points into the catalogue — mirrors RL's "The Shops" rail. */
-const SHOPS: Shop[] = [
-  {
-    title: "Straight Fit",
-    href: "/products/pants",
-    image: `${CDN}/3_1_jpg.jpg?v=1771951023`,
-  },
-  {
-    title: "Relax Fit",
-    href: "/products/the-comfort-true-blue",
-    image: `${CDN}/4_1_jpg.jpg?v=1771951309`,
-  },
-  {
-    title: "Noir Classique",
-    href: "/collections/romano-fit-noir-classique",
-    image: `${CDN}/3_3_jpg.jpg?v=1771951023`,
-  },
-  {
-    title: "Bleu Heritage",
-    href: "/collections/romano-fit-bleu-heritage",
-    image: `${CDN}/2_7_jpg.jpg?v=1771950828`,
-  },
-  {
-    title: "Black Denim",
-    href: "/products/the-comfort-deep-black",
-    image: `${CDN}/3_4_jpg.jpg?v=1771950996`,
-  },
-  {
-    title: "All Denim",
-    href: "/collections/all",
-    image: `${CDN}/4_2_jpg.jpg?v=1771951311`,
-  },
-];
+/** Maps live catalog products (admin-managed) into the rail's tile shape. */
+function shopsFromProducts(products: Product[]): Shop[] {
+  return products
+    .filter((p) => p.images[0]?.src)
+    .map((p) => ({
+      title: p.title,
+      href: `/products/${p.handle}`,
+      image: p.images[0].src,
+    }));
+}
 
 /** Gold diamond-and-rule ornament under the heading. */
 function Ornament() {
@@ -70,7 +46,8 @@ function Ornament() {
 /** How long each slide holds before the rail advances on its own. */
 const AUTOPLAY_MS = 3000;
 
-export function ShopsSlider() {
+export function ShopsSlider({ products }: { products: Product[] }) {
+  const shops = shopsFromProducts(products);
   const trackRef = useRef<HTMLDivElement>(null);
   // Paused while the visitor hovers/touches or uses the arrows.
   const pausedRef = useRef(false);
@@ -114,6 +91,9 @@ export function ShopsSlider() {
     </button>
   );
 
+  // Nothing to show until at least one product with an image exists.
+  if (shops.length === 0) return null;
+
   return (
     <section className="overflow-hidden border-y border-gold/25 bg-ink py-20 lg:py-28">
       <Container>
@@ -142,7 +122,7 @@ export function ShopsSlider() {
             onTouchStart={() => (pausedRef.current = true)}
             className="flex min-w-0 snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
-            {SHOPS.map((s, i) => (
+            {shops.map((s, i) => (
               <Reveal
                 key={s.title}
                 index={i}
