@@ -65,27 +65,30 @@ export function canCancel(order: Order): boolean {
   return CANCELLABLE.has(fulfillmentOf(order));
 }
 
-/** Customer-facing label + dot colour for a delivery status. */
-export function fulfillmentBadge(status: FulfillmentStatus): { text: string; dot: string } {
+/**
+ * Customer-facing label + pill classes for a delivery status. Soft tints keep
+ * the badge scannable without shouting — a coloured dot on white read as flat.
+ */
+export function fulfillmentBadge(status: FulfillmentStatus): { text: string; cls: string } {
   switch (status) {
     case "Pending":
-      return { text: "Pending", dot: "bg-stone/50" };
+      return { text: "Pending", cls: "bg-[#FFF8E8] text-[#C97A00]" };
     case "Confirmed":
-      return { text: "Confirmed", dot: "bg-blue-500" };
+      return { text: "Confirmed", cls: "bg-[#EFF6FF] text-[#2563EB]" };
     case "Processing":
-      return { text: "Processing", dot: "bg-blue-500" };
+      return { text: "Processing", cls: "bg-[#EEF2FF] text-[#4F46E5]" };
     case "Packed":
-      return { text: "Packed", dot: "bg-amber-500" };
+      return { text: "Packed", cls: "bg-[#F3F4F6] text-[#4B5563]" };
     case "Shipped":
-      return { text: "Shipped", dot: "bg-amber-500" };
+      return { text: "Shipped", cls: "bg-[#F3F4F6] text-[#4B5563]" };
     case "Out For Delivery":
-      return { text: "Out for delivery", dot: "bg-amber-500" };
+      return { text: "Out for delivery", cls: "bg-[#FFF7ED] text-[#C2410C]" };
     case "Delivered":
-      return { text: "Delivered", dot: "bg-green-500" };
+      return { text: "Delivered", cls: "bg-[#ECFDF5] text-[#15803D]" };
     case "Cancelled":
-      return { text: "Cancelled", dot: "bg-accent" };
+      return { text: "Cancelled", cls: "bg-[#FEF2F2] text-[#DC2626]" };
     default:
-      return { text: status, dot: "bg-stone/50" };
+      return { text: status, cls: "bg-[#F3F4F6] text-[#4B5563]" };
   }
 }
 

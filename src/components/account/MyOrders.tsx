@@ -26,6 +26,12 @@ function formatDate(iso: string): string {
   }
 }
 
+/** Outline actions — 44px tall, 12px radius, no filled/heavy colour. */
+const ACTION_BASE =
+  "inline-flex h-11 items-center gap-2 rounded-[12px] border px-5 text-sm font-medium transition-colors";
+const PRIMARY_ACTION = `${ACTION_BASE} border-ink/25 text-ink hover:border-ink hover:bg-ink/[0.04]`;
+const DANGER_ACTION = `${ACTION_BASE} border-[#F0C9C9] text-[#C23B3B] hover:border-[#DC2626]/40 hover:bg-[#FEF2F2]`;
+
 export function MyOrders({ phone }: { phone: string }) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [returns, setReturns] = useState<ReturnRecord[]>([]);
@@ -116,8 +122,8 @@ export function MyOrders({ phone }: { phone: string }) {
                 className="overflow-hidden rounded-media border border-line bg-white shadow-sm"
               >
                 {/* Header strip */}
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-mist/40 px-5 py-3">
-                  <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#ECECEC] bg-[#FAFAFA] px-6 py-4">
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-1 text-xs">
                     <span>
                       <span className="text-stone">Order </span>
                       <span className="font-medium text-ink">
@@ -129,31 +135,35 @@ export function MyOrders({ phone }: { phone: string }) {
                       {itemCount} item{itemCount === 1 ? "" : "s"}
                     </span>
                   </div>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-white px-2.5 py-1 text-xs font-medium text-ink shadow-sm">
-                    <span className={cn("h-1.5 w-1.5 rounded-full", badge.dot)} />
+                  <span
+                    className={cn(
+                      "inline-flex items-center rounded-full px-3 py-1 text-xs font-medium",
+                      badge.cls,
+                    )}
+                  >
                     {badge.text}
                   </span>
                 </div>
 
                 {/* Items */}
-                <ul className="divide-y divide-line px-5">
+                <ul className="px-6 py-2">
                   {order.items.map((item, i) => (
-                    <li key={i} className="flex items-center gap-4 py-3.5">
-                      <span className="grid h-14 w-12 shrink-0 place-items-center rounded-md bg-mist text-stone">
-                        <BagIcon className="h-5 w-5" />
+                    <li key={i} className="flex items-center gap-5 py-4">
+                      <span className="grid h-20 w-16 shrink-0 place-items-center rounded-[12px] bg-[#F8F8F8] text-stone">
+                        <BagIcon className="h-6 w-6" />
                       </span>
                       <div className="min-w-0 flex-1">
                         <Link
                           href={`/products/${item.product_handle}`}
-                          className="block truncate text-sm font-medium text-ink hover:underline"
+                          className="block truncate text-[18px] font-semibold leading-snug text-ink hover:underline"
                         >
                           {item.title}
                         </Link>
-                        <p className="mt-0.5 text-xs text-stone">
+                        <p className="mt-1 text-sm text-stone">
                           {item.fit} · Size {item.size} · Qty {item.quantity}
                         </p>
                       </div>
-                      <span className="shrink-0 text-sm text-ink">
+                      <span className="shrink-0 text-[22px] font-bold text-ink">
                         {formatCurrency(item.price * item.quantity, order.currency)}
                       </span>
                     </li>
@@ -161,13 +171,13 @@ export function MyOrders({ phone }: { phone: string }) {
                 </ul>
 
                 {/* Meta: delivery + payment */}
-                <div className="grid gap-3 border-t border-line px-5 py-3 text-xs text-ink-soft sm:grid-cols-2">
-                  <span className="flex items-start gap-2">
+                <div className="grid gap-4 border-t border-[#ECECEC] bg-[#FAFAFA] px-6 py-4 text-sm text-ink-soft sm:grid-cols-2 sm:gap-10">
+                  <span className="flex items-start gap-2.5">
                     <ShieldIcon className="mt-0.5 h-4 w-4 shrink-0 text-stone" />
                     {isCod ? "Cash on delivery" : "Paid online"}
                   </span>
                   {order.shipping_address && (
-                    <span className="flex items-start gap-2">
+                    <span className="flex items-start gap-2.5">
                       <TruckIcon className="mt-0.5 h-4 w-4 shrink-0 text-stone" />
                       <span className="line-clamp-2">{order.shipping_address}</span>
                     </span>
@@ -175,16 +185,18 @@ export function MyOrders({ phone }: { phone: string }) {
                 </div>
 
                 {/* Totals */}
-                <div className="border-t border-line px-5 py-3">
+                <div className="px-6 py-6">
                   {discount > 0 && (
-                    <div className="flex justify-between text-xs text-stone">
+                    <div className="mb-2 flex justify-between text-sm text-stone">
                       <span>Discount</span>
-                      <span className="text-green-700">− {formatCurrency(discount, order.currency)}</span>
+                      <span className="text-[#15803D]">
+                        − {formatCurrency(discount, order.currency)}
+                      </span>
                     </div>
                   )}
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-stone">Total</span>
-                    <span className="font-display text-lg text-ink">
+                    <span className="text-base font-medium text-ink-soft">Total</span>
+                    <span className="text-[30px] font-bold leading-none text-ink">
                       {formatCurrency(total, order.currency)}
                     </span>
                   </div>
@@ -192,33 +204,45 @@ export function MyOrders({ phone }: { phone: string }) {
 
                 {/* Cancellation summary — shown once an order is cancelled */}
                 {isCancelled && (
-                  <div className="border-t border-line bg-mist/30 px-5 py-3 text-xs">
-                    <div className="flex flex-wrap gap-x-6 gap-y-1 text-stone">
+                  <div className="border-t border-[#F9D6D6] bg-[#FFF8F8] px-6 py-4">
+                    <dl className="grid gap-3 text-sm sm:grid-cols-3 sm:gap-6">
                       {order.cancelled_at && (
-                        <span>
-                          Cancelled on:{" "}
-                          <span className="font-medium text-ink-soft">
-                            {formatDate(order.cancelled_at)}
-                          </span>
-                        </span>
+                        <div className="flex items-start gap-2.5">
+                          <CloseIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#DC2626]/70" />
+                          <div>
+                            <dt className="text-xs text-stone">Cancelled on</dt>
+                            <dd className="mt-0.5 font-medium text-ink">
+                              {formatDate(order.cancelled_at)}
+                            </dd>
+                          </div>
+                        </div>
                       )}
                       {order.cancel_reason && (
-                        <span>
-                          Reason:{" "}
-                          <span className="font-medium text-ink-soft">{order.cancel_reason}</span>
-                        </span>
+                        <div className="flex items-start gap-2.5">
+                          <ReturnIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#DC2626]/70" />
+                          <div className="min-w-0">
+                            <dt className="text-xs text-stone">Reason</dt>
+                            <dd className="mt-0.5 font-medium text-ink">{order.cancel_reason}</dd>
+                          </div>
+                        </div>
                       )}
-                    </div>
-                    <p className="mt-1 text-stone">
-                      {isCod
-                        ? "No payment collected."
-                        : `Refund status: ${order.refund_status ?? "Initiated"}`}
-                    </p>
+                      <div className="flex items-start gap-2.5">
+                        <ShieldIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#DC2626]/70" />
+                        <div>
+                          <dt className="text-xs text-stone">Payment status</dt>
+                          <dd className="mt-0.5 font-medium text-ink">
+                            {isCod
+                              ? "No payment collected"
+                              : `Refund ${(order.refund_status ?? "Initiated").toLowerCase()}`}
+                          </dd>
+                        </div>
+                      </div>
+                    </dl>
                   </div>
                 )}
 
                 {/* Actions — one per lifecycle state */}
-                <div className="border-t border-line px-5 py-3">
+                <div className="border-t border-[#ECECEC] px-6 py-4">
                   {ret ? (
                     <div className="flex flex-wrap items-center gap-2 text-xs">
                       <span className={cn("rounded-full px-2.5 py-1 font-medium", returnStatusBadge(ret.status).cls)}>
@@ -230,37 +254,25 @@ export function MyOrders({ phone }: { phone: string }) {
                       </span>
                     </div>
                   ) : canCancel(order) ? (
-                    <button
-                      onClick={() => setCancelFor(order)}
-                      className="inline-flex items-center gap-1.5 rounded-md border border-line px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink"
-                    >
+                    <button onClick={() => setCancelFor(order)} className={DANGER_ACTION}>
                       <CloseIcon className="h-4 w-4" /> Cancel order
                     </button>
                   ) : fulfillment === "Delivered" ? (
-                    <button
-                      onClick={() => setReturnFor(order)}
-                      className="inline-flex items-center gap-1.5 rounded-md border border-line px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink"
-                    >
+                    <button onClick={() => setReturnFor(order)} className={PRIMARY_ACTION}>
                       <ReturnIcon className="h-4 w-4" /> Return or replace
                     </button>
                   ) : fulfillment === "Shipped" || fulfillment === "Out For Delivery" ? (
                     // No tracking page or carrier tracking number exists yet, so
                     // this routes to support rather than a dead URL.
-                    <Link
-                      href="/contact"
-                      className="inline-flex items-center gap-1.5 rounded-md border border-line px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink"
-                    >
+                    <Link href="/contact" className={PRIMARY_ACTION}>
                       <TruckIcon className="h-4 w-4" /> Track order
                     </Link>
                   ) : isCancelled ? (
-                    <Link
-                      href="/collections/all"
-                      className="inline-flex items-center gap-1.5 rounded-md border border-line px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-ink"
-                    >
+                    <Link href="/collections/all" className={PRIMARY_ACTION}>
                       <BagIcon className="h-4 w-4" /> Buy again
                     </Link>
                   ) : (
-                    <span className="text-xs text-stone">No actions available.</span>
+                    <span className="text-sm text-stone">No actions available.</span>
                   )}
                 </div>
               </li>
