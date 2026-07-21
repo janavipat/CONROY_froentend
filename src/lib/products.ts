@@ -157,6 +157,17 @@ export const COLLECTIONS: Collection[] = [
     productHandles: ["pants", "the-comfort-deep-black"],
   },
   {
+    // Fit-based rather than colour-based: its members are admin-managed in the
+    // live catalogue, so the bundled fallback carries the page but no products.
+    handle: "slim-fit",
+    title: "Slim Fit",
+    subtitle: "Tapered through the leg",
+    description:
+      "Cut close through the thigh and tapered to the ankle — our slimmest silhouette, in indigo, jet black and washfade denim.",
+    image: PRODUCTS[0].images[0].src,
+    productHandles: [],
+  },
+  {
     handle: "romano-fit-bleu-heritage",
     title: "Romano Fit · Bleu Heritage",
     subtitle: "Heritage indigo denim",

@@ -39,6 +39,7 @@ export const FOOTER_NAV: { title: string; links: NavLink[] }[] = [
     links: [
       { label: "All Products", href: "/collections/all" },
       { label: "Straight Fit", href: "/collections/romano-fit-noir-classique" },
+      { label: "Slim Fit", href: "/collections/slim-fit" },
       { label: "Relax Fit", href: "/collections/romano-fit-bleu-heritage" },
       { label: "Search", href: "/search" },
     ],
