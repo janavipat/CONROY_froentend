@@ -86,7 +86,7 @@ export function OtpInput({
           onPaste={handlePaste}
           onFocus={(e) => e.target.select()}
           className={cn(
-            "h-12 w-full min-w-0 rounded-md border border-line bg-white text-center text-lg font-semibold text-ink outline-none transition-colors duration-200 focus:border-ink sm:h-14 sm:text-xl",
+            "h-12 w-full min-w-0 rounded-md border border-line bg-white text-center text-lg font-semibold text-ink outline-none transition-colors duration-(--duration-quick) focus:border-ink sm:h-14 sm:text-xl",
             d && "border-ink/40",
             error && "border-accent focus:border-accent",
             disabled && "opacity-60",

@@ -27,18 +27,18 @@ export default function ContactPage() {
         breadcrumbs={[{ label: "Home", href: "/" }, { label: "Contact" }]}
       />
 
-      <section className="py-16 lg:py-24">
+      <section className="py-section">
         <Container>
-          <div className="grid gap-8 lg:grid-cols-[1fr_1.4fr] lg:gap-12">
+          <div className="grid gap-12 lg:grid-cols-[1fr_1.4fr] lg:gap-20">
             {/* Details */}
-            <div className="h-fit rounded-media border border-line bg-sage p-7 sm:p-8">
+            <div className="h-fit bg-paper p-10 sm:p-14">
               <h2 className="font-display text-2xl text-ink">Customer care</h2>
-              <p className="mt-3 text-sm leading-relaxed text-ink-soft">
+              <p className="mt-5 text-body text-ink-soft">
                 Our team is available everyday to assist with sizing, orders, returns and anything
                 else you need.
               </p>
 
-              <dl className="mt-8 space-y-5">
+              <dl className="mt-11 space-y-7">
                 {[
                   { Icon: PhoneIcon, label: "Phone", value: SITE.contact.phone, href: SITE.contact.phoneHref },
                   { Icon: MailIcon, label: "Email", value: SITE.contact.email, href: `mailto:${SITE.contact.email}` },
@@ -50,7 +50,7 @@ export default function ContactPage() {
                     </span>
                     <div>
                       <dt className="text-xs uppercase tracking-wide text-stone">{label}</dt>
-                      <dd className="mt-0.5 text-[0.95rem] text-ink">
+                      <dd className="mt-1.5 text-[0.95rem] text-ink">
                         {href ? (
                           <a href={href} className="hover:text-stone">
                             {value}

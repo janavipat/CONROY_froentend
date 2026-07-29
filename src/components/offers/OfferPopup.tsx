@@ -135,7 +135,7 @@ export function OfferPopup() {
               <Link
                 href="/collections/all"
                 onClick={dismiss}
-                className="mt-4 flex h-12 w-full items-center justify-center rounded-pill bg-ink text-[0.72rem] font-medium uppercase tracking-[0.16em] text-white transition-opacity hover:opacity-90"
+                className="mt-4 flex h-[52px] w-full items-center justify-center rounded-(--radius-button) bg-ink text-[0.9375rem] font-medium uppercase tracking-[0.08em] text-white transition-[background-color,border-color,color] duration-(--duration-button) ease-out hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-accent"
               >
                 Shop now
               </Link>

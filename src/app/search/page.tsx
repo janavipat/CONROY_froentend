@@ -16,7 +16,7 @@ export default function SearchPage() {
   );
 
   return (
-    <Container className="py-14 lg:py-20">
+    <Container className="py-section-sm">
       <h1 className="font-display text-4xl text-ink sm:text-5xl">Search</h1>
 
       <label className="mt-8 flex max-w-2xl items-center gap-3 border-b border-ink pb-3">

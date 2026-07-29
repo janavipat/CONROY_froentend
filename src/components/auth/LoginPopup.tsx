@@ -134,14 +134,14 @@ export function LoginPopup() {
               <Link
                 href="/account/login"
                 onClick={dismiss}
-                className="mt-5 flex h-12 w-full items-center justify-center rounded-pill bg-ink text-[0.72rem] font-medium uppercase tracking-[0.16em] text-white transition-opacity hover:opacity-90"
+                className="mt-5 flex h-[52px] w-full items-center justify-center rounded-(--radius-button) bg-ink text-[0.9375rem] font-medium uppercase tracking-[0.08em] text-white transition-[background-color,border-color,color] duration-(--duration-button) ease-out hover:bg-accent focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-accent"
               >
                 Sign in
               </Link>
               <Link
                 href="/account/register"
                 onClick={dismiss}
-                className="mt-3 flex h-12 w-full items-center justify-center rounded-pill border border-line text-[0.72rem] font-medium uppercase tracking-[0.16em] text-ink transition-colors hover:bg-mist"
+                className="mt-3 flex h-[52px] w-full items-center justify-center rounded-(--radius-button) border border-ink/25 text-[0.9375rem] font-medium uppercase tracking-[0.08em] text-ink transition-[background-color,border-color,color] duration-(--duration-button) ease-out hover:border-ink hover:bg-ink hover:text-white focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-accent"
               >
                 Create account
               </Link>

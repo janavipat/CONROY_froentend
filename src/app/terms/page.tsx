@@ -118,10 +118,10 @@ export default function TermsPage() {
         description="The General Terms and Conditions governing all sales of products and services made through CONROY."
         breadcrumbs={[{ label: "Home", href: "/" }, { label: "Terms & Conditions" }]}
       />
-      <section className="py-14 lg:py-20">
+      <section className="py-section">
         <Container className="max-w-3xl">
           <p className="text-sm text-stone">Effective Date: {EFFECTIVE_DATE}</p>
-          <p className="mt-4 text-[0.95rem] leading-relaxed text-ink-soft">
+          <p className="mt-4 text-body text-ink-soft">
             Welcome to Conroy (“we,” “our,” or “us”). These General Terms and Conditions (“Terms”)
             govern all sales of products and services made through our website, applications, and
             associated platforms (collectively, the “Website”). By accessing or purchasing from our
@@ -130,7 +130,7 @@ export default function TermsPage() {
           </p>
 
           {/* Quick nav */}
-          <nav className="mt-10 flex flex-wrap gap-2">
+          <nav className="mt-14 flex flex-wrap gap-2.5">
             {SECTIONS.map((s) => (
               <a
                 key={s.id}
@@ -142,13 +142,13 @@ export default function TermsPage() {
             ))}
           </nav>
 
-          <div className="mt-14 space-y-14">
+          <div className="mt-20 space-y-20">
             {SECTIONS.map((section) => (
               <article key={section.id} id={section.id} className="scroll-mt-28">
                 <h2 className="font-display text-2xl text-ink sm:text-3xl">{section.title}</h2>
-                <div className="mt-4 space-y-4">
+                <div className="mt-6 space-y-5">
                   {section.paragraphs.map((p, i) => (
-                    <p key={i} className="text-[0.95rem] leading-relaxed text-ink-soft">
+                    <p key={i} className="text-body text-ink-soft">
                       {p}
                     </p>
                   ))}
@@ -159,10 +159,10 @@ export default function TermsPage() {
             {/* Contact */}
             <article id="contact" className="scroll-mt-28">
               <h2 className="font-display text-2xl text-ink sm:text-3xl">11. Contact Information</h2>
-              <p className="mt-4 text-[0.95rem] leading-relaxed text-ink-soft">
+              <p className="mt-4 text-body text-ink-soft">
                 For any questions, complaints, or support inquiries, please contact us at:
               </p>
-              <ul className="mt-4 space-y-1.5 text-[0.95rem] text-ink-soft">
+              <ul className="mt-6 space-y-3 text-[0.95rem] text-ink-soft">
                 <li className="font-medium text-ink">Conroy Support Team</li>
                 <li>
                   📧 Email:{" "}
@@ -181,7 +181,7 @@ export default function TermsPage() {
             </article>
           </div>
 
-          <p className="mt-16 border-t border-line pt-8 text-sm text-stone">
+          <p className="mt-24 border-t border-line pt-12 text-sm text-stone">
             © 2025 Conroy. All rights reserved.
           </p>
         </Container>

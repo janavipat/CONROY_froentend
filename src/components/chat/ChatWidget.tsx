@@ -117,7 +117,7 @@ export function ChatWidget() {
                   <button
                     type="button"
                     onClick={startNewMessage}
-                    className="mt-1 rounded-pill border border-line px-4 py-2 text-xs text-ink transition-colors hover:bg-mist"
+                    className="mt-1 rounded-(--radius-button) border border-ink/25 px-4 py-2 text-xs text-ink transition-colors duration-(--duration-button) ease-out hover:border-ink hover:bg-ink hover:text-white"
                   >
                     Send another message
                   </button>
@@ -169,7 +169,7 @@ export function ChatWidget() {
                     <button
                       type="submit"
                       disabled={!message.trim() || sending}
-                      className="flex w-full items-center justify-center gap-2 rounded-pill bg-ink py-2.5 text-sm text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                      className="flex w-full items-center justify-center gap-2 rounded-(--radius-button) bg-ink py-3 text-[0.8125rem] font-medium uppercase tracking-[0.08em] text-white transition-colors duration-(--duration-button) ease-out hover:bg-accent disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-ink"
                     >
                       {sending ? (
                         "Sending…"

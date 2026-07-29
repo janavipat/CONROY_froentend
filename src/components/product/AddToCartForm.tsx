@@ -57,14 +57,14 @@ export function AddToCartForm({ product, compact = false }: { product: Product; 
   }
 
   return (
-    <div className={cn("flex flex-col", compact ? "gap-4" : "gap-6")}>
+    <div className={cn("flex flex-col", compact ? "gap-5" : "gap-9")}>
       {/* Sizes */}
       <div>
-        <div className="mb-2.5 flex items-center justify-between">
+        <div className="mb-4 flex items-center justify-between">
           <span className="eyebrow text-ink">Size</span>
           <span className="text-xs text-stone">{product.fit}</span>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2.5">
           {product.sizes.map((s) => (
             <button
               key={s}
@@ -86,15 +86,15 @@ export function AddToCartForm({ product, compact = false }: { product: Product; 
           ))}
         </div>
         {error && (
-          <p className="mt-2.5 inline-flex items-center gap-1.5 rounded-md bg-accent/10 px-2.5 py-1.5 text-xs font-medium text-accent">
+          <p className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-accent/10 px-2.5 py-1.5 text-xs font-medium text-accent">
             <span aria-hidden>⚠</span> Please select a size to continue.
           </p>
         )}
       </div>
 
       {/* Quantity + actions */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-stretch gap-3">
+      <div className="flex flex-col gap-4">
+        <div className="flex items-stretch gap-4">
           <div className="flex items-center border border-line">
             <button
               onClick={() => setQuantity((q) => Math.max(1, q - 1))}

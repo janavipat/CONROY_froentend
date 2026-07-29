@@ -51,9 +51,9 @@ export default function AboutPage() {
       />
 
       {/* Intro split */}
-      <section className="py-16 lg:py-24">
+      <section className="py-section">
         <Container>
-          <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
+          <div className="grid items-center gap-16 lg:grid-cols-2 lg:gap-24">
             <Reveal className="relative aspect-[4/5] overflow-hidden bg-mist">
               <Image
                 src={PRODUCTS[1].images[0].src}
@@ -66,11 +66,11 @@ export default function AboutPage() {
             <div>
               <Reveal>
                 <p className="eyebrow text-stone">Old-world elegance</p>
-                <h2 className="mt-4 font-display text-3xl leading-tight text-ink sm:text-4xl">
+                <h2 className="display-section mt-6 text-ink">
                   Garments designed with intention.
                 </h2>
               </Reveal>
-              <div className="mt-6 space-y-4 text-[0.95rem] leading-relaxed text-ink-soft">
+              <div className="mt-8 space-y-6 text-body text-ink-soft">
                 <Reveal as="div">
                   <p>
                     We believe in restraint over extravagance, quality over quantity, and
@@ -85,7 +85,7 @@ export default function AboutPage() {
                   </p>
                 </Reveal>
               </div>
-              <Reveal className="mt-8">
+              <Reveal className="mt-12">
                 <Button href="/collections/all">Explore the collection</Button>
               </Reveal>
             </div>
@@ -94,19 +94,19 @@ export default function AboutPage() {
       </section>
 
       {/* Pillars */}
-      <section className="bg-paper py-16 lg:py-24">
+      <section className="bg-paper py-section">
         <Container>
           <SectionHeading
             eyebrow="What we stand for"
             title="Four enduring commitments"
-            className="mb-14"
+            className="mb-block"
           />
-          <div className="grid gap-px overflow-hidden border border-line bg-line sm:grid-cols-2">
+          <div className="grid gap-px overflow-hidden bg-line sm:grid-cols-2">
             {PILLARS.map((pillar, i) => (
-              <Reveal key={pillar.title} index={i % 2} className="bg-paper p-8 lg:p-10">
+              <Reveal key={pillar.title} index={i % 2} className="bg-paper p-10 lg:p-14">
                 <span className="font-display text-3xl text-stone">0{i + 1}</span>
-                <h3 className="mt-4 font-display text-xl text-ink">{pillar.title}</h3>
-                <p className="mt-3 text-sm leading-relaxed text-ink-soft">{pillar.body}</p>
+                <h3 className="mt-6 font-display text-xl text-ink">{pillar.title}</h3>
+                <p className="mt-4 text-body text-ink-soft">{pillar.body}</p>
               </Reveal>
             ))}
           </div>
@@ -114,7 +114,7 @@ export default function AboutPage() {
       </section>
 
       {/* Quote band */}
-      <section className="bg-sage py-20 lg:py-28">
+      <section className="bg-sage py-section">
         <Container>
           <Reveal className="mx-auto flex max-w-3xl flex-col items-center text-center">
             <span aria-hidden className="font-display text-6xl leading-none text-accent/30 sm:text-7xl">
@@ -124,11 +124,9 @@ export default function AboutPage() {
               Clothing meant to be lived in, passed down, and appreciated — not for a
               season, but for a lifetime.
             </blockquote>
-            <div className="mt-8 flex items-center gap-4">
+            <div className="mt-12 flex items-center gap-5">
               <span className="h-px w-10 bg-ink/20" />
-              <span className="text-[0.7rem] uppercase tracking-[0.28em] text-stone">
-                The CONROY promise
-              </span>
+              <span className="eyebrow">The CONROY promise</span>
               <span className="h-px w-10 bg-ink/20" />
             </div>
           </Reveal>

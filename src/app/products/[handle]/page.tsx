@@ -94,10 +94,10 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
 
-      <Container className="py-8 lg:py-12">
+      <Container className="py-12 lg:py-16">
         {/* Breadcrumb */}
-        <nav aria-label="Breadcrumb" className="mb-8 flex text-xs text-stone">
-          <ol className="flex items-center gap-2">
+        <nav aria-label="Breadcrumb" className="mb-12 flex text-xs text-stone">
+          <ol className="flex items-center gap-2.5">
             <li>
               <Link href="/" className="hover:text-ink">
                 Home
@@ -114,36 +114,36 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
           </ol>
         </nav>
 
-        <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
+        <div className="grid gap-14 lg:grid-cols-2 lg:gap-24">
           <ProductGallery images={product.images} />
 
-          <div className="lg:py-4">
+          <div className="lg:py-6">
             <p className="eyebrow text-stone">{product.color} Denim</p>
-            <h1 className="mt-3 font-display text-4xl leading-tight text-ink sm:text-5xl">
+            <h1 className="display-section mt-5 text-ink">
               {product.title}
             </h1>
 
-            <div className="mt-4 flex items-center gap-4">
+            <div className="mt-7 flex items-center gap-5">
               <span className="text-xl text-ink">{formatCurrency(product.price, product.currency)}</span>
               <Rating value={product.rating} count={product.reviewCount} />
             </div>
-            <p className="mt-1 text-xs text-stone">Tax included. Shipping calculated at checkout.</p>
+            <p className="mt-2.5 text-xs text-stone">Tax included. Shipping calculated at checkout.</p>
 
-            <p className="mt-6 text-[0.95rem] leading-relaxed text-ink-soft">{product.description}</p>
+            <p className="mt-9 text-body text-ink-soft">{product.description}</p>
 
-            <div className="mt-8">
+            <div className="mt-11">
               <AddToCartForm product={product} />
             </div>
 
-            <div className="mt-10">
+            <div className="mt-14">
               <Accordion
                 items={[
                   {
                     title: "Product Details",
                     content: (
-                      <ul className="space-y-1.5">
+                      <ul className="space-y-3">
                         {product.details.map((d) => (
-                          <li key={d} className="flex gap-2">
+                          <li key={d} className="flex gap-2.5">
                             <span aria-hidden>—</span>
                             {d}
                           </li>
@@ -164,9 +164,9 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
       <ProductReviews handle={product.handle} />
 
       {/* Related products */}
-      <section className="border-t border-line py-16 lg:py-24">
+      <section className="border-t border-line py-section">
         <Container>
-          <SectionHeading eyebrow="You may also like" title="Complete the look" className="mb-12" />
+          <SectionHeading eyebrow="You may also like" title="Complete the look" className="mb-block" />
           <ProductGrid products={related} columns={4} />
         </Container>
       </section>

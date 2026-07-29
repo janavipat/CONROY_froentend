@@ -41,7 +41,7 @@ export function NewsletterForm() {
         type="submit"
         disabled={status === "loading"}
         aria-label="Subscribe"
-        className="grid h-9 w-9 shrink-0 place-items-center text-ink transition-colors hover:text-stone disabled:opacity-50"
+        className="grid h-9 w-9 shrink-0 place-items-center text-ink transition-colors duration-(--duration-quick) hover:text-accent disabled:opacity-50"
       >
         <ArrowRightIcon className="h-5 w-5" />
       </button>

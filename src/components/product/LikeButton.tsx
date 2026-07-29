@@ -30,12 +30,19 @@ export function LikeButton({
         void toggle(handle);
       }}
       className={cn(
-        "grid place-items-center rounded-full bg-white/90 shadow-sm backdrop-blur transition-transform hover:scale-110 active:scale-95",
+        // No plate, no shadow — the icon sits directly on the photograph.
+        "grid place-items-center transition-opacity duration-(--duration-base) ease-[var(--ease-luxe)] hover:opacity-70",
         dim,
         className,
       )}
     >
-      <HeartIcon className={cn(icon, liked ? "fill-current text-accent" : "text-ink")} />
+      <HeartIcon
+        className={cn(
+          icon,
+          "drop-shadow-[0_1px_2px_rgba(0,0,0,0.35)]",
+          liked ? "fill-current text-accent" : "text-white",
+        )}
+      />
     </button>
   );
 }

@@ -1,24 +1,24 @@
 import type { Metadata, Viewport } from "next";
-import { Playfair_Display, EB_Garamond } from "next/font/google";
+import { Cormorant_Garamond, Inter } from "next/font/google";
 import "./globals.css";
 import { SITE } from "@/lib/site";
 import { StoreChrome } from "@/components/layout/StoreChrome";
 import { Providers } from "./providers";
 
-// Body stays on the native system sans; headings use Playfair Display — a
-// high-contrast neoclassical serif close to Ralph Lauren's ITC Fenice.
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
+// Display — Cormorant Garamond: a high-contrast old-style serif in the Canela /
+// Editorial New register, the quiet-luxury house style. Headings only.
+const cormorant = Cormorant_Garamond({
+  variable: "--font-cormorant",
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["300", "400", "500"],
   display: "swap",
 });
 
-// EB Garamond — a timeless old-style serif for body & UI (classic, refined).
-const ebGaramond = EB_Garamond({
-  variable: "--font-eb-garamond",
+// Body & UI — Inter: a neutral grotesque that stays out of the serif's way.
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
+  weight: ["300", "400", "500"],
   display: "swap",
 });
 
@@ -85,8 +85,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${playfair.variable} ${ebGaramond.variable} h-full antialiased`}>
-      <body className="flex min-h-full flex-col bg-white">
+    <html lang="en" className={`${cormorant.variable} ${inter.variable} h-full antialiased`}>
+      <body className="flex min-h-full flex-col bg-background">
         <Providers>
           <StoreChrome>{children}</StoreChrome>
         </Providers>

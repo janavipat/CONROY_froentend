@@ -1,50 +1,76 @@
 @import "tailwindcss";
 
 /*
- * CONROY — clean design system inspired by offduty.in (Shopify Horizon theme):
- * native system sans, normal-case typography, crisp white with soft pastel
- * section blocks, near-black text, a quiet navy accent, full-pill buttons and
- * gently rounded (8px) media.
+ * CONROY — quiet-luxury design system in the register of Loro Piana, Brunello
+ * Cucinelli and COS: a warm off-white ground, deep navy ink, one restrained
+ * gold accent, Cormorant Garamond over Inter, square edges, hairline rules
+ * instead of card borders, and long (700–1200ms) transitions so nothing snaps.
  */
 @theme {
-  /* Neutrals — cool off-white base with a navy ink */
+  /* Neutrals — warm off-white ground with deep navy ink. Every surface is a
+     shade of the same warm base, so bands read as a change of light rather
+     than a change of colour. */
   --color-white: #ffffff;
-  --color-paper: #f4f5f1; /* off-white alt section */
-  --color-mist: #eef1f4; /* light cool grey (image backdrops) */
-  --color-ink: #15243c; /* headings — deep navy */
-  --color-ink-soft: #44566a; /* body text — slate */
-  --color-stone: #8a94a3; /* muted text — cool grey */
-  --color-line: #e3e6ea; /* hairline borders */
+  --color-background: #faf8f4; /* warm off-white — the page ground */
+  --color-paper: #f4f1ea; /* alt section band */
+  --color-mist: #ece7dd; /* image backdrops */
+  --color-ink: #16233b; /* headings — deep navy */
+  --color-ink-soft: #5b6678; /* body text — slate */
+  --color-stone: #97918a; /* muted text — warm grey */
+  --color-line: #e7e2d8; /* hairline borders — barely there */
 
-  /* Blue-tinted section blocks */
-  --color-sky: #e6eff6; /* pale blue */
-  --color-sage: #eaf0f5; /* pale blue-grey (name kept for existing usages) */
-  --color-cream: #eaf0f5; /* alias kept for existing usages → sage */
+  /* Warm section blocks */
+  --color-sky: #f1ece2;
+  --color-sage: #efeae0; /* name kept for existing usages */
+  --color-cream: #f4f1ea; /* alias kept for existing usages */
 
-  /* Accent */
-  --color-accent: #23507e; /* royal blue */
-  --color-gold: #a98545; /* warm classic accent (badges, highlights) */
+  /* Accent — a single restrained gold. Used for emphasis, never for fill. */
+  --color-accent: #b08a4a;
+  --color-gold: #b08a4a;
 
   /* Semantic */
-  --color-background: var(--color-white);
   --color-foreground: var(--color-ink-soft);
 
-  /* Typography — classic luxury pairing: EB Garamond (old-style serif) for body
-     & UI, Playfair Display (high-contrast serif) for display headings. Both
-     self-hosted via next/font — a timeless, editorial, non-modern feel. */
-  --font-sans:
-    var(--font-eb-garamond), "Iowan Old Style", "Palatino Linotype", Georgia, serif;
-  --font-serif: var(--font-playfair), Georgia, "Times New Roman", serif;
+  /* Typography — Cormorant Garamond (display serif) over Inter (body sans).
+     Loaded via next/font in app/layout.tsx. */
+  --font-sans: var(--font-inter), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-serif: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
 
   /* Shape */
   --radius-pill: 9999px;
-  --radius-media: 8px;
+  --radius-media: 0px;
 
   /* Layout */
-  --spacing-header: 4.5rem;
+  --spacing-header: clamp(4.5rem, 4rem + 1.6vw, 6rem);
+
+  /* Vertical rhythm — one fluid scale drives every section band so the spacing
+     stays consistent site-wide instead of each section picking its own py-*.
+     Resolves to ~64px on phones, ~95px on tablets and 150–176px on desktop,
+     the open, editorial cadence luxury houses use. */
+  --spacing-section: clamp(4rem, 2rem + 8vw, 11rem);
+  /* Denser bands (utility pages, service strips) — same curve, ~0.7 scale. */
+  --spacing-section-sm: clamp(3rem, 1.5rem + 5.5vw, 7.5rem);
+  /* Gap between a section's heading block and the content it introduces. */
+  --spacing-block: clamp(2.5rem, 1.75rem + 3vw, 5rem);
 
   /* Easing */
   --ease-luxe: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Motion — one narrow band, 300–500ms. Anything faster reads as cheap,
+     anything slower reads as laggy. Every interactive transition picks one
+     of these three rather than inventing its own. */
+  --duration-quick: 300ms; /* colour / opacity on small UI */
+  --duration-base: 400ms; /* buttons, links, icons */
+  --duration-slow: 500ms; /* images, cards, section reveals */
+
+  /* Soft shadow used only on hover — a lift, never a resting box. */
+  --shadow-lift: 0 18px 40px -28px rgb(22 35 59 / 0.28);
+
+  /* Buttons — a near-square corner (4px) reads as tailored; a pill reads as
+     retail. One radius, one duration, one shadow, applied everywhere. */
+  --radius-button: 4px;
+  --duration-button: 350ms;
+  --shadow-button: 0 12px 30px rgb(0 0 0 / 0.12);
 }
 
 /*
@@ -66,15 +92,18 @@
     background: var(--color-background);
     color: var(--color-ink-soft);
     font-family: var(--font-sans);
-    font-size: 16px;
+    font-size: 1.0625rem;
+    line-height: 1.75;
     font-weight: 400;
-    letter-spacing: 0;
+    letter-spacing: 0.005em;
   }
 
-  /* Display headings — Playfair Display, a high-contrast luxury serif. */
+  /* Display headings — Cormorant Garamond. Light weight is deliberate: at
+     display sizes a high-contrast serif reads as more expensive the lighter
+     it is set. */
   .font-display {
     font-family: var(--font-serif);
-    font-weight: 600;
+    font-weight: 300;
     letter-spacing: -0.01em;
     color: var(--color-ink);
   }
@@ -84,17 +113,65 @@
   h3,
   h4 {
     color: var(--color-ink);
-    font-weight: 500;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+
+  /*
+   * Type scale — fluid, so headings never jump at a breakpoint.
+   */
+  .display-hero {
+    font-family: var(--font-serif);
+    font-size: clamp(3.25rem, 1.5rem + 6vw, 6rem);
+    font-weight: 300;
+    line-height: 1.04;
     letter-spacing: -0.02em;
   }
 
-  /* Eyebrow / label — normal case, subtle, like offduty. */
+  .display-section {
+    font-family: var(--font-serif);
+    font-size: clamp(2.25rem, 1.4rem + 2.6vw, 3.5rem);
+    font-weight: 300;
+    line-height: 1.14;
+    letter-spacing: -0.015em;
+  }
+
+  .display-product {
+    font-family: var(--font-serif);
+    font-size: clamp(1.25rem, 1.1rem + 0.45vw, 1.625rem);
+    font-weight: 400;
+    line-height: 1.3;
+    letter-spacing: 0;
+  }
+
+  /* Long-form body copy. */
+  .text-body {
+    font-size: 1.0625rem;
+    line-height: 1.8;
+    letter-spacing: 0.005em;
+  }
+
+  /* Small caps labels — "Heritage Icons", "Our Philosophy". */
   .eyebrow {
-    font-size: 0.8rem;
-    letter-spacing: 0.01em;
-    text-transform: none;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
     font-weight: 500;
     color: var(--color-stone);
+  }
+
+  /* Navigation and other quiet UI labels. */
+  .nav-label {
+    font-size: 0.8125rem;
+    font-weight: 400;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+
+  /* Comfortable measure — ~65 characters. */
+  .measure {
+    max-width: 54ch;
   }
 }
 

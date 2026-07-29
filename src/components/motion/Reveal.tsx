@@ -3,12 +3,16 @@
 import { motion, useReducedMotion, type Variants } from "framer-motion";
 import type { ReactNode } from "react";
 
+// A short lift, not a slide: 16px is enough to read as "arriving" without the
+// page feeling like it assembles itself. 500ms is the slow end of the motion
+// band; the stagger is deliberately small so a row of cards settles together
+// rather than counting itself in.
 const variants: Variants = {
-  hidden: { opacity: 0, y: 28 },
+  hidden: { opacity: 0, y: 16 },
   visible: (i: number) => ({
     opacity: 1,
     y: 0,
-    transition: { duration: 0.7, ease: [0.16, 1, 0.3, 1], delay: i * 0.08 },
+    transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: i * 0.06 },
   }),
 };
 

@@ -31,7 +31,7 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
                 )}
               >
                 {link.label}
-                <ArrowRightIcon className="h-5 w-5 -translate-x-1 opacity-0 transition-all group-hover:translate-x-0 group-hover:opacity-100" />
+                <ArrowRightIcon className="h-5 w-5 -translate-x-1 opacity-0 transition-all duration-(--duration-base) group-hover:translate-x-0 group-hover:opacity-100" />
               </Link>
             );
           })}

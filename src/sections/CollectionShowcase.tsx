@@ -57,26 +57,26 @@ export function CollectionShowcase() {
     <button
       aria-label={label}
       onClick={() => scroll(dir)}
-      className="grid h-11 w-11 place-items-center rounded-full border border-line text-ink transition-colors hover:border-ink hover:bg-ink hover:text-white"
+      className="grid h-11 w-11 place-items-center rounded-full border border-line text-ink transition-colors duration-(--duration-base) hover:border-ink hover:bg-ink hover:text-white"
     >
       <Icon className="h-5 w-5" />
     </button>
   );
 
   return (
-    <section className="overflow-hidden py-14 lg:py-20">
+    <section className="overflow-hidden py-section">
       <Container>
-        <div className="grid gap-8 lg:grid-cols-[0.85fr_2.6fr] lg:items-center lg:gap-12">
+        <div className="grid gap-12 lg:grid-cols-[0.85fr_2.6fr] lg:items-center lg:gap-16">
           {/* Left — intro */}
           <Reveal className="lg:pr-4">
             <p className="eyebrow text-stone">Discover</p>
-            <h2 className="mt-3 font-display text-4xl leading-[1.02] text-ink sm:text-5xl">
+            <h2 className="display-section mt-5 text-ink">
               What&apos;s New
             </h2>
-            <p className="mt-5 max-w-xs text-[0.95rem] leading-relaxed text-ink-soft">
+            <p className="mt-7 max-w-xs text-body text-ink-soft">
               The latest campaigns, collections and stories from the world of CONROY.
             </p>
-            <div className="mt-8 hidden gap-2.5 lg:flex">
+            <div className="mt-11 hidden gap-2.5 lg:flex">
               {arrow(-1, "Previous", ChevronLeftIcon)}
               {arrow(1, "Next", ChevronRightIcon)}
             </div>
@@ -85,7 +85,7 @@ export function CollectionShowcase() {
           {/* Right — horizontal editorial cards */}
           <div
             ref={trackRef}
-            className="flex min-w-0 snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="flex min-w-0 snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth pb-2 sm:gap-7 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {TILES.map((t, i) => (
               <Reveal
@@ -104,7 +104,7 @@ export function CollectionShowcase() {
                       alt={t.title}
                       fill
                       sizes="(max-width: 640px) 78vw, (max-width: 1024px) 46vw, 31vw"
-                      className="object-cover transition-transform duration-[1600ms] ease-[var(--ease-luxe)] group-hover:scale-[1.07]"
+                      className="object-cover transition-transform duration-(--duration-slow) ease-[var(--ease-luxe)] group-hover:scale-[1.04]"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-ink/75 via-ink/15 to-transparent" />
                   </div>

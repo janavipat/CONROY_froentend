@@ -315,7 +315,7 @@ export default function PaymentPage() {
 
   /* ---- Payment ---------------------------------------------------------- */
   return (
-    <Container className="py-12 lg:py-16">
+    <Container className="py-section-sm">
       <nav className="mb-8 flex text-xs text-stone">
         <Link href="/cart" className="hover:text-ink">
           Cart

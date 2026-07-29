@@ -61,12 +61,12 @@ export function Testimonials() {
   }
 
   return (
-    <section className="bg-paper py-16 sm:py-20 lg:py-28">
+    <section className="bg-paper py-section">
       <Container>
-        <Reveal className="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-end sm:justify-between sm:text-left">
+        <Reveal className="flex flex-col items-center gap-6 text-center sm:flex-row sm:items-end sm:justify-between sm:text-left">
           <div>
             <p className="eyebrow text-stone">Loved by our community</p>
-            <h2 className="mt-3 font-display text-3xl leading-tight text-ink sm:text-4xl">
+            <h2 className="display-section mt-5 text-ink">
               What our customers say
             </h2>
           </div>
@@ -75,14 +75,14 @@ export function Testimonials() {
             <button
               aria-label="Previous testimonial"
               onClick={() => step(-1)}
-              className="grid h-11 w-11 place-items-center rounded-full border border-line text-ink transition-colors hover:border-ink hover:bg-ink hover:text-white"
+              className="grid h-11 w-11 place-items-center rounded-full border border-line text-ink transition-colors duration-(--duration-base) hover:border-ink hover:bg-ink hover:text-white"
             >
               <ChevronLeftIcon className="h-5 w-5" />
             </button>
             <button
               aria-label="Next testimonial"
               onClick={() => step(1)}
-              className="grid h-11 w-11 place-items-center rounded-full border border-line text-ink transition-colors hover:border-ink hover:bg-ink hover:text-white"
+              className="grid h-11 w-11 place-items-center rounded-full border border-line text-ink transition-colors duration-(--duration-base) hover:border-ink hover:bg-ink hover:text-white"
             >
               <ChevronRightIcon className="h-5 w-5" />
             </button>
@@ -93,18 +93,18 @@ export function Testimonials() {
         <div
           ref={trackRef}
           onScroll={onScroll}
-          className="mt-10 flex snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          className="mt-block flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth pb-2 lg:gap-8 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {TESTIMONIALS.map((t) => (
             <figure
               key={t.author}
-              className="flex shrink-0 basis-[86%] snap-center flex-col rounded-media border border-line bg-white p-7 shadow-sm sm:basis-[47%] lg:basis-[31.8%]"
+              className="flex shrink-0 basis-[86%] snap-center flex-col rounded-media border border-line bg-white p-9 shadow-sm sm:basis-[47%] lg:basis-[31.8%] lg:p-10"
             >
               <Stars rating={t.rating} />
-              <blockquote className="mt-4 flex-1 text-[0.98rem] leading-relaxed text-ink-soft">
+              <blockquote className="mt-6 flex-1 text-body text-ink-soft">
                 “{t.quote}”
               </blockquote>
-              <figcaption className="mt-6 flex items-center gap-3 border-t border-line pt-4">
+              <figcaption className="mt-9 flex items-center gap-4 border-t border-line pt-6">
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-ink text-sm font-medium text-white">
                   {t.author.charAt(0)}
                 </span>

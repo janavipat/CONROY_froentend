@@ -40,8 +40,8 @@ export function Header() {
         className={cn(
           "sticky top-0 z-50 border-b transition-all duration-300 ease-[var(--ease-luxe)]",
           scrolled
-            ? "border-line bg-white/95 backdrop-blur-md"
-            : "border-line/60 bg-white",
+            ? "border-line bg-background/95 backdrop-blur-md"
+            : "border-transparent bg-background",
         )}
       >
         <Container className="flex h-[var(--spacing-header)] items-center justify-between gap-4">
@@ -54,13 +54,15 @@ export function Header() {
             >
               <MenuIcon className="h-6 w-6" />
             </button>
-            <nav className="hidden items-center gap-8 lg:flex">
+            <nav className="hidden shrink-0 items-center gap-10 lg:flex">
               {PRIMARY_NAV.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "relative text-sm text-ink-soft transition-colors hover:text-ink",
+                    // whitespace-nowrap: the nav sits in a flex-1 column, so a
+                    // two-word label like "About us" would otherwise wrap.
+                    "nav-label relative whitespace-nowrap text-ink-soft transition-colors duration-500 hover:text-ink",
                     "after:absolute after:-bottom-1.5 after:left-0 after:h-px after:bg-ink after:transition-all after:duration-300",
                     isActive(link.href) ? "text-ink after:w-full" : "after:w-0 hover:after:w-full",
                   )}
@@ -74,7 +76,7 @@ export function Header() {
           {/* Center: wordmark */}
           <Link
             href="/"
-            className="font-display text-2xl font-semibold tracking-[0.14em] text-ink sm:text-[1.6rem] lg:flex-1 lg:text-center"
+            className="font-display text-[1.75rem] tracking-[0.28em] text-ink sm:text-[2rem] lg:flex-1 lg:text-center"
             aria-label={`${SITE.name} home`}
           >
             {SITE.name}
@@ -83,7 +85,7 @@ export function Header() {
           {/* Right: actions */}
           <div className="flex items-center justify-end gap-0.5 sm:gap-1 lg:flex-1">
             <button
-              className="grid h-10 w-10 place-items-center rounded-full text-ink transition-colors hover:bg-mist"
+              className="grid h-10 w-10 place-items-center rounded-full text-ink transition-colors duration-(--duration-quick) hover:bg-mist"
               aria-label="Search"
               onClick={() => setSearchOpen(true)}
             >
@@ -97,10 +99,10 @@ export function Header() {
               aria-label={user ? "My account" : "Login"}
               className={cn(
                 // Mobile: same icon-button treatment as its siblings.
-                "grid h-10 w-10 place-items-center rounded-full text-ink transition-colors hover:bg-mist",
+                "grid h-10 w-10 place-items-center rounded-full text-ink transition-colors duration-(--duration-quick) hover:bg-mist",
                 // sm+: an outlined, labelled control — quiet, not a CTA.
                 "sm:inline-flex sm:h-[38px] sm:w-auto sm:gap-2 sm:rounded-[10px] sm:border sm:border-[#E5E7EB] sm:bg-white sm:px-[14px] sm:text-sm sm:font-medium",
-                "sm:transition-all sm:duration-200 sm:hover:-translate-y-px sm:hover:border-[#D1D5DB] sm:hover:bg-[#FAFAFA] sm:hover:shadow-sm",
+                "sm:transition-all sm:duration-(--duration-base) sm:hover:-translate-y-px sm:hover:border-ink/30 sm:hover:shadow-(--shadow-lift)",
                 "sm:active:translate-y-0 sm:active:border-[#CBD5E1] sm:active:bg-[#F9FAFB]",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/25 focus-visible:ring-offset-2",
               )}
@@ -111,7 +113,7 @@ export function Header() {
               </span>
             </Link>
             <button
-              className="relative grid h-10 w-10 place-items-center rounded-full text-ink transition-colors hover:bg-mist"
+              className="relative grid h-10 w-10 place-items-center rounded-full text-ink transition-colors duration-(--duration-quick) hover:bg-mist"
               aria-label={`Cart, ${count} items`}
               onClick={openCart}
             >

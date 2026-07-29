@@ -8,16 +8,16 @@ import { Reveal } from "@/components/motion/Reveal";
 export async function FeaturedProducts() {
   const products = await fetchAllProducts();
   return (
-    <section className="py-16 sm:py-20 lg:py-24">
+    <section className="py-section">
       <Container>
         <SectionHeading
           eyebrow="The Collection"
           title="Denim, Made to Last"
           description="Four considered styles in heritage indigo and washed black — straight and relaxed fits for every day."
-          className="mb-12"
+          className="mb-block"
         />
         <ProductGrid products={products} columns={4} />
-        <Reveal className="mt-14 flex justify-center">
+        <Reveal className="mt-block flex justify-center">
           <Button href="/collections/all" variant="outline" size="lg">
             View all products
           </Button>

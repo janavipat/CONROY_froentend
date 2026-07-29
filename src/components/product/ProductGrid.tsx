@@ -19,7 +19,7 @@ export function ProductGrid({
   }[columns];
 
   return (
-    <div className={cn("grid gap-x-5 gap-y-10", colClass)}>
+    <div className={cn("grid gap-x-6 gap-y-14 sm:gap-x-8 lg:gap-x-10 lg:gap-y-20", colClass)}>
       {products.map((product, i) => (
         <Reveal key={product.id} index={i % columns} as="div">
           <ProductCard product={product} priority={i < priorityCount} />

@@ -1,10 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useRef } from "react";
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { Container } from "@/components/ui/Container";
+import { Button } from "@/components/ui/Button";
 
 const IMAGE =
   "https://cdn.shopify.com/s/files/1/0763/6248/1899/files/2_7_jpg.jpg?v=1771950828";
@@ -44,12 +44,12 @@ export function CampaignBanner() {
       {/* Gentle top/bottom vignette for depth. */}
       <div className="absolute inset-0 bg-gradient-to-t from-ink/45 via-transparent to-ink/25" />
 
-      <Container className="relative z-10 py-24">
+      <Container className="relative z-10 py-section">
         <motion.div
           initial={reduce ? { opacity: 1, y: 0 } : { opacity: 0, y: 36 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-120px" }}
-          transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           className="max-w-xl"
         >
           <motion.p
@@ -57,25 +57,22 @@ export function CampaignBanner() {
             initial={reduce ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.15, duration: 0.7 }}
+            transition={{ delay: 0.1, duration: 0.5 }}
           >
             The CONROY Film
           </motion.p>
-          <h2 className="mt-5 font-display text-4xl leading-[1.03] text-white sm:text-5xl lg:text-6xl">
+          <h2 className="display-section mt-7 text-white">
             Made to move
             <br />
             with you.
           </h2>
-          <p className="mt-6 max-w-md text-[0.98rem] leading-relaxed text-white/85">
+          <p className="mt-8 max-w-md text-body text-white/85">
             Honest indigo, softened by wear. A film of everyday moments in denim built to be
             lived in — and passed on.
           </p>
-          <Link
-            href="/collections/all"
-            className="mt-9 inline-flex h-12 items-center justify-center rounded-pill border border-white/70 px-10 text-[0.72rem] font-medium uppercase tracking-[0.2em] text-white transition-colors duration-300 hover:bg-white hover:text-ink"
-          >
+          <Button href="/collections/all" variant="light" size="lg" className="mt-12">
             Explore the collection
-          </Link>
+          </Button>
         </motion.div>
       </Container>
     </section>

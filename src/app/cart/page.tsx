@@ -44,7 +44,7 @@ export default function CartPage() {
   }
 
   return (
-    <Container className="py-12 lg:py-16">
+    <Container className="py-section-sm">
       <h1 className="font-display text-4xl text-ink sm:text-5xl">Your Cart</h1>
       <p className="mt-2 text-sm text-stone">
         {count} {count === 1 ? "item" : "items"}

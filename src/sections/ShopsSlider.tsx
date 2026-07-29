@@ -85,7 +85,7 @@ export function ShopsSlider({ products }: { products: Product[] }) {
     <button
       aria-label={label}
       onClick={() => scroll(dir)}
-      className="grid h-11 w-11 place-items-center rounded-full border border-gold/50 text-gold transition-colors hover:border-gold hover:bg-gold hover:text-ink"
+      className="grid h-11 w-11 place-items-center rounded-full border border-gold/50 text-gold transition-colors duration-(--duration-base) hover:border-gold hover:bg-gold hover:text-ink"
     >
       <Icon className="h-5 w-5" />
     </button>
@@ -95,9 +95,9 @@ export function ShopsSlider({ products }: { products: Product[] }) {
   if (shops.length === 0) return null;
 
   return (
-    <section className="overflow-hidden border-y border-gold/25 bg-ink py-20 lg:py-28">
+    <section className="overflow-hidden border-y border-gold/25 bg-ink py-section">
       <Container>
-        <div className="grid gap-12 lg:grid-cols-[0.8fr_2.7fr] lg:items-center lg:gap-16">
+        <div className="grid gap-16 lg:grid-cols-[0.8fr_2.7fr] lg:items-center lg:gap-24">
           {/* Left — navy editorial panel */}
           <Reveal className="flex flex-col items-center text-center lg:items-start lg:text-left">
             <h2 className="font-display leading-[0.9] text-gold">
@@ -105,10 +105,10 @@ export function ShopsSlider({ products }: { products: Product[] }) {
               <span className="mt-1 block text-6xl tracking-[0.01em] sm:text-7xl">Shops</span>
             </h2>
             <Ornament />
-            <p className="mt-6 max-w-xs text-[0.95rem] leading-[1.9] text-gold/70">
+            <p className="mt-8 max-w-xs text-body text-gold/70">
               Destinations for CONROY style, from timeless classics to new collections.
             </p>
-            <div className="mt-8 hidden gap-2.5 lg:flex">
+            <div className="mt-11 hidden gap-2.5 lg:flex">
               {arrow(-1, "Previous shops", ChevronLeftIcon)}
               {arrow(1, "Next shops", ChevronRightIcon)}
             </div>
@@ -120,7 +120,7 @@ export function ShopsSlider({ products }: { products: Product[] }) {
             onMouseEnter={() => (pausedRef.current = true)}
             onMouseLeave={() => (pausedRef.current = false)}
             onTouchStart={() => (pausedRef.current = true)}
-            className="flex min-w-0 snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="flex min-w-0 snap-x snap-mandatory gap-5 overflow-x-auto scroll-smooth pb-2 sm:gap-7 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
             {shops.map((s, i) => (
               <Reveal
@@ -136,7 +136,7 @@ export function ShopsSlider({ products }: { products: Product[] }) {
                       alt={s.title}
                       fill
                       sizes="(max-width: 640px) 70vw, (max-width: 1024px) 44vw, 30vw"
-                      className="object-cover transition-transform duration-[1400ms] ease-[var(--ease-luxe)] group-hover:scale-[1.06]"
+                      className="object-cover transition-transform duration-(--duration-slow) ease-[var(--ease-luxe)] group-hover:scale-[1.04]"
                     />
 
                     {/* Scrim so the title stays legible over any photo */}
@@ -150,7 +150,7 @@ export function ShopsSlider({ products }: { products: Product[] }) {
                     />
                     <span
                       aria-hidden
-                      className="pointer-events-none absolute inset-[0.95rem] border border-gold/25 transition-colors duration-500 group-hover:border-gold/50 sm:inset-[1.35rem]"
+                      className="pointer-events-none absolute inset-6 border border-gold/20 transition-colors duration-(--duration-base) group-hover:border-gold/40 sm:inset-8"
                     />
 
                     {/* Title, overlaid like RL */}
@@ -165,7 +165,7 @@ export function ShopsSlider({ products }: { products: Product[] }) {
         </div>
 
         {/* Mobile arrows */}
-        <div className="mt-8 flex justify-center gap-2.5 lg:hidden">
+        <div className="mt-12 flex justify-center gap-2.5 lg:hidden">
           {arrow(-1, "Previous shops", ChevronLeftIcon)}
           {arrow(1, "Next shops", ChevronRightIcon)}
         </div>

@@ -61,10 +61,10 @@ export default function PolicyPage() {
         breadcrumbs={[{ label: "Home", href: "/" }, { label: "Store Policy" }]}
       />
 
-      <section className="py-16 lg:py-24">
+      <section className="py-section">
         <Container className="max-w-3xl">
           {/* Quick links */}
-          <nav className="mb-12 flex flex-wrap gap-2">
+          <nav className="mb-16 flex flex-wrap gap-2.5">
             {SECTIONS.map((s) => (
               <a
                 key={s.id}
@@ -76,13 +76,13 @@ export default function PolicyPage() {
             ))}
           </nav>
 
-          <div className="space-y-14">
+          <div className="space-y-20">
             {SECTIONS.map((section) => (
               <article key={section.id} id={section.id} className="scroll-mt-28">
                 <h2 className="font-display text-2xl text-ink sm:text-3xl">{section.title}</h2>
-                <div className="mt-4 space-y-4">
+                <div className="mt-6 space-y-5">
                   {section.paragraphs.map((p, i) => (
-                    <p key={i} className="text-[0.95rem] leading-relaxed text-ink-soft">
+                    <p key={i} className="text-body text-ink-soft">
                       {p}
                     </p>
                   ))}
@@ -91,7 +91,7 @@ export default function PolicyPage() {
             ))}
           </div>
 
-          <p className="mt-16 border-t border-line pt-8 text-sm text-stone">
+          <p className="mt-24 border-t border-line pt-12 text-sm text-stone">
             Questions about any of the above? Reach us at{" "}
             <a href={`mailto:${SITE.contact.email}`} className="text-ink hover:underline">
               {SITE.contact.email}

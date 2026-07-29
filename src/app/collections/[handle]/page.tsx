@@ -76,13 +76,13 @@ export default async function CollectionPage(props: PageProps<"/collections/[han
           ...(handle === "all" ? [] : [{ label: collection.title }]),
         ]}
       />
-      <section className="py-14 lg:py-20">
+      <section className="py-section">
         <Container>
           {products.length === 0 ? (
             <EmptyCollection title={handle === "all" ? "" : collection.title} />
           ) : (
             <>
-              <p className="mb-8 text-xs tracking-[0.01em] text-stone">
+              <p className="mb-12 text-xs tracking-[0.01em] text-stone">
                 {products.length} {products.length === 1 ? "product" : "products"}
               </p>
               <ProductGrid products={products} columns={4} priorityCount={4} />

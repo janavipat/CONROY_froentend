@@ -28,20 +28,18 @@ export function HeritageStory() {
         {/* Centre — the story */}
         <Reveal
           index={1}
-          className="flex flex-col justify-center bg-mist px-8 py-16 sm:px-12 lg:px-10 xl:px-14"
+          className="flex flex-col justify-center bg-mist px-8 py-section sm:px-12 lg:px-14 xl:px-20"
         >
-          <p className="text-[0.72rem] font-medium uppercase tracking-[0.22em] text-stone">
-            Heritage Icons
-          </p>
+          <p className="eyebrow">Heritage Icons</p>
 
           <h2
             id="heritage-story-title"
-            className="mt-4 font-display text-4xl leading-[1.05] text-ink sm:text-5xl"
+            className="display-section mt-6 text-ink"
           >
             Indigo
           </h2>
 
-          <p className="mt-6 max-w-sm text-[0.95rem] leading-relaxed text-ink-soft">
+          <p className="mt-8 max-w-sm text-body text-ink-soft">
             CONROY draws on the mills of the Indian subcontinent, where indigo has been woven and
             worn for generations — blending that heritage with a quiet, modern ease.
           </p>
@@ -49,7 +47,7 @@ export function HeritageStory() {
           {/* Underlined SHOP NOW, as on the reference */}
           <Link
             href="/collections/romano-fit-bleu-heritage"
-            className="group mt-9 w-fit border-b border-ink pb-1.5 text-[0.72rem] font-medium uppercase tracking-[0.2em] text-ink transition-colors hover:border-accent hover:text-accent"
+            className="eyebrow group mt-12 w-fit border-b border-ink/40 pb-2.5 text-ink transition-colors duration-(--duration-base) hover:border-accent hover:text-accent"
           >
             Shop Now
           </Link>
@@ -57,7 +55,7 @@ export function HeritageStory() {
           {/* Scroll cue with a long rule + arrow */}
           <span
             aria-hidden
-            className="mt-12 inline-flex items-center gap-3 text-[0.68rem] font-medium uppercase tracking-[0.2em] text-stone"
+            className="eyebrow mt-16 inline-flex items-center gap-3"
           >
             Scroll to explore
             <span className="flex items-center">

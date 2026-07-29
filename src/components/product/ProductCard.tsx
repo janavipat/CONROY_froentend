@@ -5,11 +5,15 @@ import Link from "next/link";
 import { useState } from "react";
 import type { Product } from "@/types";
 import { formatCurrency } from "@/utils/format";
-import { cn } from "@/utils/cn";
 import { Rating } from "@/components/ui/Rating";
 import { LikeButton } from "./LikeButton";
 import { QuickViewModal } from "./QuickViewModal";
 
+/**
+ * Minimal product card: a tall image doing all the work, with the name, price
+ * and fit set quietly beneath it. No border, no card surface, no hover panel —
+ * the only motion is the second image crossfading in over a long beat.
+ */
 export function ProductCard({ product, priority = false }: { product: Product; priority?: boolean }) {
   const [quickView, setQuickView] = useState(false);
   const primary = product.images[0];
@@ -18,60 +22,56 @@ export function ProductCard({ product, priority = false }: { product: Product; p
   return (
     <>
       <article className="group flex flex-col">
-        <div className="relative aspect-[4/5] overflow-hidden rounded-media bg-mist">
+        {/* 3:4 rather than 4:5 — a taller frame reads as editorial. The shadow
+            is a hover-only lift: at rest the card has no box at all. */}
+        <div className="relative aspect-[3/4] overflow-hidden bg-mist transition-shadow duration-(--duration-slow) ease-[var(--ease-luxe)] group-hover:shadow-(--shadow-lift)">
           <Link href={`/products/${product.handle}`} aria-label={product.title}>
-            {/* Primary + hover image */}
             <Image
               src={primary.src}
               alt={primary.alt}
               fill
               priority={priority}
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className="object-cover transition-opacity duration-500 ease-[var(--ease-luxe)] group-hover:opacity-0"
+              className="object-cover transition-[opacity,transform] duration-(--duration-slow) ease-[var(--ease-luxe)] group-hover:scale-[1.03] group-hover:opacity-0"
             />
             <Image
               src={secondary.src}
               alt={secondary.alt}
               fill
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className="scale-105 object-cover opacity-0 transition-all duration-700 ease-[var(--ease-luxe)] group-hover:scale-100 group-hover:opacity-100"
+              className="object-cover opacity-0 transition-[opacity,transform] duration-(--duration-slow) ease-[var(--ease-luxe)] group-hover:scale-[1.03] group-hover:opacity-100"
             />
           </Link>
 
           {product.badge && (
-            <span className="absolute left-3 top-3 bg-ink px-2.5 py-1 text-[0.6rem] tracking-[0.01em] text-cream">
-              {product.badge}
-            </span>
+            <span className="eyebrow absolute left-5 top-5 text-ink">{product.badge}</span>
           )}
 
-          {/* Wishlist */}
-          <LikeButton handle={product.handle} className="absolute right-3 top-3" />
+          <LikeButton
+            handle={product.handle}
+            className="absolute right-4 top-4 opacity-0 transition-opacity duration-(--duration-base) focus-within:opacity-100 group-hover:opacity-100"
+          />
 
-          {/* Quick view */}
+          {/* Quick view — a hairline word at the foot, not a filled bar. */}
           <button
             onClick={() => setQuickView(true)}
-            className={cn(
-              "absolute inset-x-3 bottom-3 h-10 bg-cream/95 text-[0.7rem] tracking-[0.01em] text-ink opacity-0 backdrop-blur transition-all duration-300",
-              "translate-y-2 group-hover:translate-y-0 group-hover:opacity-100 hover:bg-ink hover:text-cream",
-            )}
+            className="nav-label absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/35 to-transparent py-6 text-white opacity-0 transition-opacity duration-(--duration-base) ease-[var(--ease-luxe)] group-hover:opacity-100"
           >
             Quick view
           </button>
         </div>
 
-        <div className="mt-4 flex flex-col gap-1.5">
-          <div className="flex items-center justify-between gap-2">
-            <Link
-              href={`/products/${product.handle}`}
-              className="font-display text-lg leading-tight text-ink hover:text-stone"
-            >
-              {product.title}
-            </Link>
-            <span className="shrink-0 text-sm text-ink">
-              {formatCurrency(product.price, product.currency)}
-            </span>
-          </div>
-          <p className="text-xs text-stone">{product.fit}</p>
+        <div className="mt-7 flex flex-col items-start gap-2.5">
+          <Link
+            href={`/products/${product.handle}`}
+            className="display-product text-ink transition-colors duration-(--duration-quick) hover:text-accent"
+          >
+            {product.title}
+          </Link>
+          <span className="text-[0.9375rem] tracking-[0.02em] text-ink-soft">
+            {formatCurrency(product.price, product.currency)}
+          </span>
+          <p className="text-[0.75rem] uppercase tracking-[0.14em] text-stone">{product.fit}</p>
           <Rating value={product.rating} count={product.reviewCount} showCount={false} />
         </div>
       </article>
