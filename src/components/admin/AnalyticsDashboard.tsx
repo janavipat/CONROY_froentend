@@ -7,7 +7,6 @@ import {
   type AdminAnalytics,
   type AnalyticsCustomer,
 } from "@/services/admin";
-import { LiveVisitors } from "@/components/admin/LiveVisitors";
 import { AreaChart, BarChart, DonutChart } from "@/components/admin/charts";
 import { Loader } from "@/components/ui/Loader";
 import { formatCurrency } from "@/utils/format";
@@ -642,9 +641,6 @@ export function AnalyticsDashboard() {
                 height={140}
               />
             </Panel>
-
-            {/* Live visitors */}
-            <LiveVisitors />
 
             {/* Customer table with expandable history */}
             <CustomerTable customers={data.customers} pageActivityNote={pageActivityNote} />
