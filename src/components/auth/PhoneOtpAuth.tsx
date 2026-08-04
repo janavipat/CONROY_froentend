@@ -35,7 +35,12 @@ export function PhoneOtpAuth({ mode = "signin" }: { mode?: AuthMode }) {
   const { toast } = useToast();
 
   const isSignup = mode === "signup";
-  const collectEmail = isSignup;
+  // Sign-up still collects a phone number — it's the account's identity in
+  // the DB. Sign-in is by EMAIL for now (phone-based sign-in is commented out
+  // below — re-enable by flipping `showPhone` back to always-true and
+  // restoring the phone-based validation/submit paths).
+  const showPhone = isSignup;
+  const collectEmail = true;
 
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [country, setCountry] = useState<Country>(DEFAULT_COUNTRY);
@@ -54,8 +59,11 @@ export function PhoneOtpAuth({ mode = "signin" }: { mode?: AuthMode }) {
   const [resendIn, setResendIn] = useState(0);
   const [sentMessage, setSentMessage] = useState<string | null>(null);
   const phoneRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
 
-  const e164 = useMemo(() => `${country.dial}${phone}`, [country, phone]);
+  // No phone is collected for sign-in, so there's nothing to normalise to
+  // E.164 — the server resolves the account's phone from the email instead.
+  const e164 = useMemo(() => (showPhone ? `${country.dial}${phone}` : ""), [country, phone, showPhone]);
 
   useEffect(() => {
     if (resendIn <= 0) return;
@@ -63,13 +71,17 @@ export function PhoneOtpAuth({ mode = "signin" }: { mode?: AuthMode }) {
     return () => clearTimeout(id);
   }, [resendIn]);
 
-  // Focus the phone field AFTER hydration (avoids dropping the first keystroke
-  // that `autoFocus` causes when typing before React attaches its handlers).
+  // Focus the primary field AFTER hydration (avoids dropping the first
+  // keystroke that `autoFocus` causes when typing before React attaches its
+  // handlers).
   useEffect(() => {
-    if (step === "phone") phoneRef.current?.focus();
-  }, [step]);
+    if (step !== "phone") return;
+    if (showPhone) phoneRef.current?.focus();
+    else emailRef.current?.focus();
+  }, [step, showPhone]);
 
   function validatePhone(): boolean {
+    if (!showPhone) return true;
     const digits = phone.replace(/\D/g, "");
     if (!digits) {
       setPhoneError("Please enter your mobile number");
@@ -93,9 +105,9 @@ export function PhoneOtpAuth({ mode = "signin" }: { mode?: AuthMode }) {
     return true;
   }
 
-  // Email is required at signup — that's who the code gets sent to (no
-  // account yet to look an address up from). Sign-in uses the email already
-  // on file, so no field is shown there.
+  // Email is required for both flows now — at signup it's who the code gets
+  // sent to (no account yet to look an address up from); at sign-in it's the
+  // identifier itself (phone-based sign-in is commented out — see `showPhone`).
   function validateEmail(): boolean {
     if (!collectEmail) return true;
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) {
@@ -112,10 +124,12 @@ export function PhoneOtpAuth({ mode = "signin" }: { mode?: AuthMode }) {
     const okEmail = validateEmail();
     if (!okName || !okPhone || !okEmail) return;
     setSending(true);
-    const res = await sendOtp(e164, remember, mode, collectEmail ? email.trim() : undefined);
+    const res = await sendOtp(e164, remember, mode, email.trim());
     setSending(false);
     if (res.error) {
-      setPhoneError(res.error);
+      // The phone field is hidden during sign-in, so route the error there.
+      if (showPhone) setPhoneError(res.error);
+      else setEmailError(res.error);
       toast(res.error, "error");
       return;
     }
@@ -131,7 +145,7 @@ export function PhoneOtpAuth({ mode = "signin" }: { mode?: AuthMode }) {
   async function handleResend() {
     if (resendIn > 0 || sending) return;
     setSending(true);
-    const res = await sendOtp(e164, remember, mode, collectEmail ? email.trim() : undefined);
+    const res = await sendOtp(e164, remember, mode, email.trim());
     setSending(false);
     if (res.error) {
       toast(res.error, "error");
@@ -153,7 +167,7 @@ export function PhoneOtpAuth({ mode = "signin" }: { mode?: AuthMode }) {
     setVerifying(true);
     const { error } = await verifyOtp(e164, value, {
       mode,
-      email: collectEmail ? email.trim() : undefined,
+      email: email.trim(),
       fullName: isSignup ? name.trim() : undefined,
     });
     setVerifying(false);
@@ -232,7 +246,7 @@ export function PhoneOtpAuth({ mode = "signin" }: { mode?: AuthMode }) {
             <p className="text-sm leading-relaxed text-ink-soft">
               {isSignup
                 ? "Create your account — we'll email you a one-time verification code."
-                : "Enter your mobile number and we'll send you a one-time verification code."}
+                : "Enter your email and we'll send you a one-time verification code."}
             </p>
 
             {isSignup && (
@@ -256,46 +270,52 @@ export function PhoneOtpAuth({ mode = "signin" }: { mode?: AuthMode }) {
               </div>
             )}
 
-            <div>
-              <div className="mb-2 flex items-center justify-between">
-                <label className="text-[0.7rem] font-medium uppercase tracking-[0.16em] text-stone">
-                  Mobile number
-                </label>
-                <span
-                  className={cn(
-                    "text-[0.7rem] tabular-nums",
-                    phone.length === country.len ? "text-ink" : "text-stone",
-                  )}
-                >
-                  {phone.length}/{country.len}
-                </span>
+            {showPhone && (
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <label className="text-[0.7rem] font-medium uppercase tracking-[0.16em] text-stone">
+                    Mobile number
+                  </label>
+                  <span
+                    className={cn(
+                      "text-[0.7rem] tabular-nums",
+                      phone.length === country.len ? "text-ink" : "text-stone",
+                    )}
+                  >
+                    {phone.length}/{country.len}
+                  </span>
+                </div>
+                <div className="flex">
+                  <CountryPicker value={country} onChange={setCountry} disabled={sending} />
+                  <input
+                    ref={phoneRef}
+                    type="tel"
+                    inputMode="numeric"
+                    autoComplete="tel-national"
+                    value={phone}
+                    disabled={sending}
+                    onChange={(e) => {
+                      setPhone(e.target.value.replace(/\D/g, "").slice(0, country.len));
+                      if (phoneError) setPhoneError(null);
+                    }}
+                    placeholder="Mobile number"
+                    className={cn(inputClass, "border-l-0", phoneError && "border-accent")}
+                  />
+                </div>
+                {phoneError && <p className="mt-2 text-xs text-accent">{phoneError}</p>}
               </div>
-              <div className="flex">
-                <CountryPicker value={country} onChange={setCountry} disabled={sending} />
-                <input
-                  ref={phoneRef}
-                  type="tel"
-                  inputMode="numeric"
-                  autoComplete="tel-national"
-                  value={phone}
-                  disabled={sending}
-                  onChange={(e) => {
-                    setPhone(e.target.value.replace(/\D/g, "").slice(0, country.len));
-                    if (phoneError) setPhoneError(null);
-                  }}
-                  placeholder="Mobile number"
-                  className={cn(inputClass, "border-l-0", phoneError && "border-accent")}
-                />
-              </div>
-              {phoneError && <p className="mt-2 text-xs text-accent">{phoneError}</p>}
-            </div>
+            )}
 
             {collectEmail && (
               <div>
                 <label className="mb-2 block text-[0.7rem] font-medium uppercase tracking-[0.16em] text-stone">
-                  Email <span className="normal-case tracking-normal text-stone/70">(your verification code goes here)</span>
+                  Email{" "}
+                  <span className="normal-case tracking-normal text-stone/70">
+                    (your verification code goes here)
+                  </span>
                 </label>
                 <input
+                  ref={showPhone ? undefined : emailRef}
                   type="email"
                   autoComplete="email"
                   value={email}
@@ -345,13 +365,14 @@ export function PhoneOtpAuth({ mode = "signin" }: { mode?: AuthMode }) {
               onClick={changeNumber}
               className="inline-flex items-center gap-1 text-xs font-medium text-stone transition-colors hover:text-ink"
             >
-              <ChevronLeftIcon className="h-3.5 w-3.5" /> Change number
+              <ChevronLeftIcon className="h-3.5 w-3.5" /> {showPhone ? "Change number" : "Change email"}
             </button>
 
             <p className="text-sm leading-relaxed text-ink-soft">
               {sentMessage ?? (
                 <>
-                  Enter the 6-digit code sent for <span className="font-medium text-ink">{e164}</span>.
+                  Enter the 6-digit code sent for{" "}
+                  <span className="font-medium text-ink">{showPhone ? e164 : email}</span>.
                 </>
               )}
             </p>
