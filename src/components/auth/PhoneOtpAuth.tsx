@@ -49,8 +49,10 @@ export function PhoneOtpAuth({ mode = "signin" }: { mode?: AuthMode }) {
   const [verifying, setVerifying] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
   const [phoneError, setPhoneError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [otpError, setOtpError] = useState<string | null>(null);
   const [resendIn, setResendIn] = useState(0);
+  const [sentMessage, setSentMessage] = useState<string | null>(null);
   const phoneRef = useRef<HTMLInputElement>(null);
 
   const e164 = useMemo(() => `${country.dial}${phone}`, [country, phone]);
@@ -91,37 +93,54 @@ export function PhoneOtpAuth({ mode = "signin" }: { mode?: AuthMode }) {
     return true;
   }
 
+  // Email is required at signup — that's who the code gets sent to (no
+  // account yet to look an address up from). Sign-in uses the email already
+  // on file, so no field is shown there.
+  function validateEmail(): boolean {
+    if (!collectEmail) return true;
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) {
+      setEmailError("Enter a valid email — that's where your code will be sent");
+      return false;
+    }
+    setEmailError(null);
+    return true;
+  }
+
   async function handleSend() {
     const okName = validateName();
     const okPhone = validatePhone();
-    if (!okName || !okPhone) return;
+    const okEmail = validateEmail();
+    if (!okName || !okPhone || !okEmail) return;
     setSending(true);
-    const { error } = await sendOtp(e164, remember, mode);
+    const res = await sendOtp(e164, remember, mode, collectEmail ? email.trim() : undefined);
     setSending(false);
-    if (error) {
-      setPhoneError(error);
-      toast(error, "error");
+    if (res.error) {
+      setPhoneError(res.error);
+      toast(res.error, "error");
       return;
     }
     setOtp("");
     setOtpError(null);
     setStep("otp");
     setResendIn(RESEND_SECONDS);
-    toast(`OTP sent to ${e164}`, "success");
+    const msg = res.message || "A verification code has been sent.";
+    setSentMessage(msg);
+    toast(msg, "success");
   }
 
   async function handleResend() {
     if (resendIn > 0 || sending) return;
     setSending(true);
-    const { error } = await sendOtp(e164, remember, mode);
+    const res = await sendOtp(e164, remember, mode, collectEmail ? email.trim() : undefined);
     setSending(false);
-    if (error) {
-      toast(error, "error");
+    if (res.error) {
+      toast(res.error, "error");
       return;
     }
     setOtp("");
     setOtpError(null);
     setResendIn(RESEND_SECONDS);
+    setSentMessage(res.message || null);
     toast("A new code is on its way", "success");
   }
 
@@ -151,6 +170,7 @@ export function PhoneOtpAuth({ mode = "signin" }: { mode?: AuthMode }) {
     setStep("phone");
     setOtp("");
     setOtpError(null);
+    setSentMessage(null);
   }
 
   /* ---- Auto-login splash --------------------------------------------- */
@@ -211,7 +231,7 @@ export function PhoneOtpAuth({ mode = "signin" }: { mode?: AuthMode }) {
           >
             <p className="text-sm leading-relaxed text-ink-soft">
               {isSignup
-                ? "Create your account — enter your name and mobile number to get a one-time verification code."
+                ? "Create your account — we'll email you a one-time verification code."
                 : "Enter your mobile number and we'll send you a one-time verification code."}
             </p>
 
@@ -273,17 +293,21 @@ export function PhoneOtpAuth({ mode = "signin" }: { mode?: AuthMode }) {
             {collectEmail && (
               <div>
                 <label className="mb-2 block text-[0.7rem] font-medium uppercase tracking-[0.16em] text-stone">
-                  Email <span className="normal-case tracking-normal text-stone/70">(for order updates &amp; a welcome note)</span>
+                  Email <span className="normal-case tracking-normal text-stone/70">(your verification code goes here)</span>
                 </label>
                 <input
                   type="email"
                   autoComplete="email"
                   value={email}
                   disabled={sending}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (emailError) setEmailError(null);
+                  }}
                   placeholder="you@example.com"
-                  className={inputClass}
+                  className={cn(inputClass, emailError && "border-accent")}
                 />
+                {emailError && <p className="mt-2 text-xs text-accent">{emailError}</p>}
               </div>
             )}
 
@@ -325,7 +349,11 @@ export function PhoneOtpAuth({ mode = "signin" }: { mode?: AuthMode }) {
             </button>
 
             <p className="text-sm leading-relaxed text-ink-soft">
-              Enter the 6-digit code sent to <span className="font-medium text-ink">{e164}</span>.
+              {sentMessage ?? (
+                <>
+                  Enter the 6-digit code sent for <span className="font-medium text-ink">{e164}</span>.
+                </>
+              )}
             </p>
 
             <OtpInput
@@ -381,7 +409,7 @@ export function PhoneOtpAuth({ mode = "signin" }: { mode?: AuthMode }) {
       {!isConfigured && (
         <p className="mt-6 border border-dashed border-line bg-mist/60 px-3 py-2 text-center text-xs text-stone">
           Demo mode — use code <span className="font-semibold text-ink">{demoCode}</span>. Configure
-          a WhatsApp/SMS provider in the backend for live OTP.
+          SMTP (email) in the backend for live OTP.
         </p>
       )}
     </div>

@@ -17,7 +17,8 @@ interface AuthContextValue {
     phoneE164: string,
     remember: boolean,
     mode?: AuthMode,
-  ) => Promise<{ error: string | null }>;
+    email?: string,
+  ) => Promise<{ error: string | null; message?: string }>;
   verifyOtp: (
     phoneE164: string,
     code: string,
@@ -59,12 +60,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const sendOtp = useCallback(
-    async (phoneE164: string, rememberMe: boolean, mode: AuthMode = "signin") => {
+    async (phoneE164: string, rememberMe: boolean, mode: AuthMode = "signin", email?: string) => {
       remember.current = rememberMe;
-      const res = await startPhoneOtp(phoneE164, mode);
+      const res = await startPhoneOtp(phoneE164, mode, email);
       if (!res.ok) return { error: res.message };
       setLastSend({ mock: res.mock ?? false, code: res.code });
-      return { error: null };
+      return { error: null, message: res.message };
     },
     [],
   );

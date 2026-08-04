@@ -13,6 +13,8 @@ export interface StartResult {
   mock?: boolean;
   /** Present in mock mode — the code to enter. */
   code?: string;
+  /** Which channel the code went out on ("email" for now — WhatsApp is paused). */
+  channel?: string;
 }
 
 export interface VerifyResult {
@@ -35,14 +37,23 @@ function errMsg(err: unknown, fallback: string): string {
 
 export type AuthMode = "signin" | "signup";
 
-/** Requests an OTP (sent by WhatsApp/SMS, or mocked in dev) to the phone number. */
+/**
+ * Requests an OTP to the phone number. Delivered by email for now (WhatsApp is
+ * paused) — `email` is required for signup (there's no account to look an
+ * address up from yet); sign-in uses whatever email is already on file.
+ */
 export async function startPhoneOtp(
   phoneE164: string,
   mode: AuthMode = "signin",
+  email?: string,
 ): Promise<StartResult> {
   try {
-    const { data } = await api.post("/auth/phone/start", { phone: phoneE164, mode });
-    return { ok: true, message: data.message, mock: data.mock, code: data.code };
+    const { data } = await api.post("/auth/phone/start", {
+      phone: phoneE164,
+      mode,
+      email: email || undefined,
+    });
+    return { ok: true, message: data.message, mock: data.mock, code: data.code, channel: data.channel };
   } catch (err) {
     return { ok: false, message: errMsg(err, "Couldn't send the code. Please try again.") };
   }
