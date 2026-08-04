@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PhoneOtpAuth } from "@/components/auth/PhoneOtpAuth";
+import { EmailAuthForm } from "@/components/auth/EmailAuthForm";
 import { cn } from "@/utils/cn";
 
 /** Clean, light, centered auth card in the CONROY house style. */
@@ -45,8 +45,8 @@ export function LoginExperience({ mode = "signin" }: { mode?: "signin" | "signup
           </div>
 
           <div className="p-6 sm:p-8">
-            {/* Phone OTP powers both — signup also collects name + email. */}
-            <PhoneOtpAuth mode={mode} />
+            {/* Email + password powers both — signup also collects name + phone. */}
+            <EmailAuthForm mode={mode} />
           </div>
         </div>
 

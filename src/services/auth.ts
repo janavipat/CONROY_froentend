@@ -84,6 +84,50 @@ export async function verifyPhoneOtp(
   }
 }
 
+/**
+ * Creates an account with email + password. Phone is still required (it's
+ * the account's identity in the DB), but it's just a stored field now — not
+ * part of authentication.
+ */
+export async function registerWithPassword(opts: {
+  email: string;
+  password: string;
+  phone: string;
+  fullName: string;
+}): Promise<VerifyResult> {
+  try {
+    const { data } = await api.post("/auth/register", {
+      email: opts.email,
+      password: opts.password,
+      phone: opts.phone,
+      fullName: opts.fullName,
+    });
+    return {
+      ok: true,
+      message: data.message,
+      user: data.data?.user,
+      token: data.data?.session?.access_token,
+    };
+  } catch (err) {
+    return { ok: false, message: errMsg(err, "Couldn't create your account. Please try again.") };
+  }
+}
+
+/** Signs in with email + password. */
+export async function loginWithPassword(email: string, password: string): Promise<VerifyResult> {
+  try {
+    const { data } = await api.post("/auth/login", { email, password });
+    return {
+      ok: true,
+      message: data.message,
+      user: data.data?.user,
+      token: data.data?.session?.access_token,
+    };
+  } catch (err) {
+    return { ok: false, message: errMsg(err, "Invalid email or password.") };
+  }
+}
+
 /** Updates the signed-in customer's display name. */
 export async function updateAccountName(phoneE164: string, name: string): Promise<UpdateNameResult> {
   try {
