@@ -346,8 +346,10 @@ export function PhoneOtpAuth({ mode = "signin" }: { mode?: AuthMode }) {
                 <>
                   <Spinner /> Sending OTP…
                 </>
+              ) : isSignup ? (
+                "Signup"
               ) : (
-                "Send OTP"
+                "Login"
               )}
             </button>
           </motion.form>
