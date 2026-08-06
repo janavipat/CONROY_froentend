@@ -88,6 +88,15 @@
     text-rendering: optimizeLegibility;
   }
 
+  /* Browsers give <button> the plain arrow cursor, so anything clickable that
+     isn't an <a> looks inert on hover — quick view, wishlist, slider arrows and
+     dots all had this. Say it once here instead of per component. Disabled
+     controls are excluded so they can keep their own not-allowed cursor. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
+
   body {
     background: var(--color-background);
     color: var(--color-ink-soft);
