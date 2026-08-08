@@ -185,10 +185,6 @@ export function AddToCartForm({ product, compact = false }: { product: Product; 
           </Button>
         )}
       </div>
-
-      <p className="text-xs text-stone">
-        Hurry — only {product.stock} item(s) left in stock.
-      </p>
     </div>
   );
 }
