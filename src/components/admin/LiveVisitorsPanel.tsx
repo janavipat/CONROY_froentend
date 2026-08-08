@@ -18,13 +18,6 @@ function placeOf(v: LiveVisitorRow): string {
 // visitor going offline shows up within one or two polls.
 const POLL_MS = 5_000;
 
-function fmtAgo(iso: string): string {
-  const ms = Date.now() - new Date(iso).getTime();
-  const s = Math.max(0, Math.round(ms / 1000));
-  if (s < 60) return `${s}s ago`;
-  return `${Math.round(s / 60)}m ago`;
-}
-
 function StatTile({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-media border border-line bg-white p-4">
@@ -37,8 +30,6 @@ function StatTile({ label, value }: { label: string; value: string }) {
 export function LiveVisitorsPanel() {
   const [data, setData] = useState<LiveData | null>(null);
   const [error, setError] = useState("");
-  // Ticks once a second purely to re-render the "Xs ago" labels — no refetch.
-  const [, setTick] = useState(0);
   const loadedOnce = useRef(false);
 
   useEffect(() => {
@@ -62,11 +53,6 @@ export function LiveVisitorsPanel() {
       active = false;
       clearInterval(id);
     };
-  }, []);
-
-  useEffect(() => {
-    const id = setInterval(() => setTick((t) => t + 1), 1000);
-    return () => clearInterval(id);
   }, []);
 
   if (!data && !error) {
@@ -107,7 +93,6 @@ export function LiveVisitorsPanel() {
                 <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-stone">
                   <th className="py-2 px-3 font-medium">Visitor</th>
                   <th className="py-2 px-3 font-medium">Location</th>
-                  <th className="py-2 px-3 text-right font-medium">Last seen</th>
                 </tr>
               </thead>
               <tbody>
@@ -135,7 +120,6 @@ export function LiveVisitorsPanel() {
                         </span>
                       )}
                     </td>
-                    <td className="py-2 px-3 text-right text-stone">{fmtAgo(v.lastSeen)}</td>
                   </tr>
                 ))}
               </tbody>
