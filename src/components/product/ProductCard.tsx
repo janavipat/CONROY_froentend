@@ -44,7 +44,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
           </Link>
 
           {product.badge && (
-            <span className="eyebrow absolute left-5 top-5 text-ink">{product.badge}</span>
+            <span className="eyebrow absolute left-5 top-5 text-red-600">{product.badge}</span>
           )}
 
           <LikeButton
