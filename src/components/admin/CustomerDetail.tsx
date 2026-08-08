@@ -271,10 +271,58 @@ export function CustomerDetail({ phone }: { phone: string }) {
             )}
           </section>
 
-          {/* Added to cart — every add, whether or not it became an order */}
+          {/* Cart — mirrors what the customer has right now */}
           <section className="overflow-hidden rounded-media border border-line bg-white">
             <div className="flex items-baseline justify-between border-b border-line px-5 py-4">
-              <h2 className="font-display text-lg text-ink">Added to cart</h2>
+              <h2 className="font-display text-lg text-ink">Cart</h2>
+              <span className="text-xs text-stone">
+                {activity && activity.cart.length > 0
+                  ? `${activity.cart.reduce((s, c) => s + c.quantity, 0)} item${
+                      activity.cart.reduce((s, c) => s + c.quantity, 0) === 1 ? "" : "s"
+                    } · ${formatCurrency(
+                      activity.cart.reduce((s, c) => s + (c.price ?? 0) * c.quantity, 0),
+                    )}`
+                  : "Live"}
+              </span>
+            </div>
+            {!activity || activity.cart.length === 0 ? (
+              <p className="px-5 py-12 text-center text-sm text-stone">
+                {activity && !activity.cartTableReady
+                  ? "Run supabase/customer-cart.sql to mirror the customer's live cart."
+                  : "Cart is empty."}
+              </p>
+            ) : (
+              <ul className="divide-y divide-line">
+                {activity.cart.map((c, i) => (
+                  <li key={`${c.handle}-${c.size}-${i}`} className="flex items-center gap-4 px-5 py-3">
+                    <span className="h-14 w-11 shrink-0 overflow-hidden rounded bg-mist">
+                      {c.image && (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={c.image} alt={c.title} className="h-full w-full object-cover" />
+                      )}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm text-ink">{c.title}</p>
+                      <p className="text-xs text-stone">
+                        {c.size ? `Size ${c.size} · ` : ""}Qty {c.quantity}
+                      </p>
+                      <p className="text-xs text-stone">Updated {formatDateTime(c.at)}</p>
+                    </div>
+                    {c.price != null && (
+                      <span className="shrink-0 text-sm font-medium text-ink">
+                        {formatCurrency(c.price * c.quantity, c.currency)}
+                      </span>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          {/* Add-to-cart history — append-only, keeps items even after removal */}
+          <section className="overflow-hidden rounded-media border border-line bg-white">
+            <div className="flex items-baseline justify-between border-b border-line px-5 py-4">
+              <h2 className="font-display text-lg text-ink">Add-to-cart history</h2>
               {activity && activity.cartAdds.length > 0 && (
                 <span className="text-xs text-stone">
                   {activity.cartAdds.length} add{activity.cartAdds.length === 1 ? "" : "s"}

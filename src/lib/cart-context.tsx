@@ -9,6 +9,8 @@ import {
   useState,
 } from "react";
 import type { CartItem } from "@/types";
+import { useAuth } from "@/lib/auth/auth-context";
+import { syncCart } from "@/services/cart-sync";
 
 interface CartContextValue {
   items: CartItem[];
@@ -27,6 +29,7 @@ const CartContext = createContext<CartContextValue | null>(null);
 const STORAGE_KEY = "conroy.cart";
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth();
   const [items, setItems] = useState<CartItem[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
@@ -52,6 +55,28 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (!hydrated) return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items, hydrated]);
+
+  // Mirror the cart to the backend so the admin sees the customer's *current*
+  // cart. Every mutation — add, remove, quantity change, clear — lands here,
+  // so this single effect keeps them in step. The whole cart is sent each time
+  // (not a delta), which means a dropped request self-heals on the next change
+  // and an emptied cart clears the admin view.
+  const phone = user?.phone;
+  useEffect(() => {
+    if (!hydrated || !phone) return;
+    const payload = items.map((i) => ({
+      productHandle: i.productHandle,
+      title: i.title,
+      image: i.image,
+      size: i.size,
+      quantity: i.quantity,
+      price: i.price,
+      currency: i.currency,
+    }));
+    // Small debounce so holding the quantity stepper sends one request, not ten.
+    const t = setTimeout(() => void syncCart(phone, payload), 400);
+    return () => clearTimeout(t);
+  }, [items, hydrated, phone]);
 
   const addItem = useCallback((item: CartItem) => {
     setItems((prev) => {

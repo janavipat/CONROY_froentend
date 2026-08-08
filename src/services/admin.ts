@@ -310,16 +310,29 @@ export interface CustomerCartAdd {
 
 export interface CustomerActivity {
   pageViews: CustomerPageView[];
+  /** Append-only history of every add. */
   cartAdds: CustomerCartAdd[];
+  /** What is in the customer's cart right now — removals disappear from here. */
+  cart: CustomerCartAdd[];
   /** False when customer-activity.sql hasn't been applied yet. */
   migrationApplied: boolean;
+  /** False when customer-cart.sql hasn't been applied yet. */
+  cartTableReady: boolean;
 }
 
 export async function adminGetCustomerActivity(phone: string): Promise<CustomerActivity> {
   const { data } = await api.get<ApiList<CustomerActivity>>(
     `/admin/customers/${encodeURIComponent(phone)}/activity`,
   );
-  return data.data ?? { pageViews: [], cartAdds: [], migrationApplied: true };
+  return (
+    data.data ?? {
+      pageViews: [],
+      cartAdds: [],
+      cart: [],
+      migrationApplied: true,
+      cartTableReady: true,
+    }
+  );
 }
 
 /* ---- Accounts (accounting overview) ------------------------------------- */
