@@ -43,8 +43,12 @@ export function ProductCard({ product, priority = false }: { product: Product; p
             />
           </Link>
 
+          {/* Solid label, not bare text. `top-4 left-4` mirrors the wishlist
+              icon's inset on the opposite corner so the two sit level. */}
           {product.badge && (
-            <span className="eyebrow absolute left-5 top-5 text-red-600">{product.badge}</span>
+            <span className="absolute left-4 top-4 rounded-(--radius-button) bg-red-600 px-2.5 py-1.5 text-[0.625rem] font-medium uppercase leading-none tracking-[0.12em] text-white">
+              {product.badge}
+            </span>
           )}
 
           <LikeButton
