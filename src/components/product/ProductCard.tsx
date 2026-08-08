@@ -46,7 +46,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
           {/* Solid label, not bare text. `top-4 left-4` mirrors the wishlist
               icon's inset on the opposite corner so the two sit level. */}
           {product.badge && (
-            <span className="absolute left-4 top-4 rounded-(--radius-button) bg-red-600 px-2.5 py-1.5 text-[0.625rem] font-medium uppercase leading-none tracking-[0.12em] text-white">
+            <span className="absolute left-4 top-4 rounded-(--radius-button) bg-red-600 px-2 py-1 text-[0.5rem] font-medium uppercase leading-none tracking-[0.08em] text-white">
               {product.badge}
             </span>
           )}
