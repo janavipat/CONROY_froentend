@@ -1,10 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Product } from "@/types";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth/auth-context";
+import {
+  clearPendingCartItem,
+  readPendingCartItem,
+  setPendingCartItem,
+} from "@/lib/pending-cart";
 import { useToast } from "@/components/ui/Toast";
 import { trackCartAdd } from "@/services/analytics";
 import { cn } from "@/utils/cn";
@@ -32,9 +37,8 @@ export function AddToCartForm({ product, compact = false }: { product: Product; 
     return size;
   }
 
-  function handleAdd() {
-    const chosen = requireSize();
-    if (!chosen) return;
+  /** Puts the item in the cart. Callers must have checked sign-in already. */
+  function commitAdd(chosen: string, qty: number) {
     addItem({
       productHandle: product.handle,
       title: product.title,
@@ -43,18 +47,66 @@ export function AddToCartForm({ product, compact = false }: { product: Product; 
       currency: product.currency,
       size: chosen,
       fit: product.fit,
-      quantity,
+      quantity: qty,
     });
     trackCartAdd(product.handle, { phone: user?.phone }); // analytics: added-to-cart (attributed if signed in)
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
   }
 
+  /**
+   * Signed out? Park the intent and send them to the existing login page —
+   * nothing goes in the cart. `resumedRef` picks it back up on return.
+   * Returns true when the caller should stop.
+   */
+  function redirectedToLogin(chosen: string): boolean {
+    if (user) return false;
+    setPendingCartItem({ handle: product.handle, size: chosen, quantity });
+    toast("Please sign in to add items to your cart.", "info");
+    router.push("/account/login");
+    return true;
+  }
+
+  function handleAdd() {
+    const chosen = requireSize();
+    if (!chosen) return;
+    if (redirectedToLogin(chosen)) return;
+    commitAdd(chosen, quantity);
+  }
+
   function handleBuyNow() {
-    if (!requireSize()) return;
-    handleAdd();
+    const chosen = requireSize();
+    if (!chosen) return;
+    if (redirectedToLogin(chosen)) return;
+    commitAdd(chosen, quantity);
     router.push("/cart");
   }
+
+  // Resume the add the visitor was blocked on before signing in. Guarded by a
+  // ref so a re-render can never add the same item twice.
+  const resumedRef = useRef(false);
+  useEffect(() => {
+    if (!user || resumedRef.current) return;
+    const pending = readPendingCartItem();
+    if (!pending || pending.handle !== product.handle) return;
+    if (!product.sizes.includes(pending.size)) {
+      clearPendingCartItem();
+      return;
+    }
+    resumedRef.current = true;
+    clearPendingCartItem();
+    // Mirrors the selection the visitor made before signing in, so the form
+    // matches what just went into the cart. Runs once, guarded by resumedRef.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSize(pending.size);
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setQuantity(pending.quantity);
+    commitAdd(pending.size, pending.quantity);
+    toast("Signed in — added to your cart.", "success");
+    // commitAdd/toast are stable for this product; re-running on every render
+    // would re-add the item.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, product.handle]);
 
   return (
     <div className={cn("flex flex-col", compact ? "gap-5" : "gap-9")}>

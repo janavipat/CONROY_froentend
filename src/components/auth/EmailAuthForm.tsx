@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/auth-context";
+import { readPendingCartItem } from "@/lib/pending-cart";
 import type { AuthMode } from "@/services/auth";
 import { useToast } from "@/components/ui/Toast";
 import { DEFAULT_COUNTRY, type Country } from "@/lib/countries";
@@ -29,6 +31,7 @@ const buttonClass =
 export function EmailAuthForm({ mode = "signin" }: { mode?: AuthMode }) {
   const { user, initializing, register, login, signOut } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
 
   const isSignup = mode === "signup";
 
@@ -131,6 +134,11 @@ export function EmailAuthForm({ mode = "signin" }: { mode?: AuthMode }) {
       return;
     }
     toast(isSignup ? "Account created successfully" : "Signed in successfully", "success");
+
+    // Came here from a blocked "Add to cart"? Go back to that product so the
+    // form can finish the add. Otherwise the screen is unchanged.
+    const pending = readPendingCartItem();
+    if (pending) router.replace(`/products/${pending.handle}`);
   }
 
   /* ---- Auto-login splash --------------------------------------------- */
