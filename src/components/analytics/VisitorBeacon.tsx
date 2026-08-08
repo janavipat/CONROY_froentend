@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { api } from "@/services/api";
-import { sessionId, trackPageView, trackLeave } from "@/services/analytics";
+import { anonUserKey, trackPageView, trackLeave } from "@/services/analytics";
 import { useAuth } from "@/lib/auth/auth-context";
 import { getCoords, readGeoConsent } from "@/lib/geo-consent";
 
@@ -30,31 +30,32 @@ export function VisitorBeacon() {
     whoRef.current = { name: user?.name, phone: user?.phone };
   }, [user?.name, user?.phone]);
 
-  // Read the GPS fix once consent exists — on load for a returning visitor who
-  // already agreed, or the moment they answer the prompt. Never prompts by
-  // itself: getCoords is only called when consent is already "granted", so a
-  // visitor who declined is never asked again.
   useEffect(() => {
-    let cancelled = false;
+    // Presence is keyed on the DEVICE, not the tab. sessionId() lives in
+    // sessionStorage, so three open tabs used to appear as three live
+    // visitors; anonUserKey() is in localStorage and is one id per browser.
+    const visitorKey = anonUserKey();
+
+    /**
+     * Fetches the GPS fix, then beats immediately so the corrected location
+     * lands right away instead of after the next 25s tick. Retried from the
+     * heartbeat while consent is granted and we still have nothing — a single
+     * failed read must not leave the visitor on the IP guess forever.
+     */
     const acquire = async () => {
-      if (cancelled || coordsRef.current) return;
+      if (coordsRef.current) return;
       if (readGeoConsent() !== "granted") return;
       const c = await getCoords();
-      if (!cancelled && c) coordsRef.current = c;
+      if (c) {
+        coordsRef.current = c;
+        send();
+      }
     };
-    void acquire();
-    window.addEventListener("conroy:geoconsent", acquire);
-    return () => {
-      cancelled = true;
-      window.removeEventListener("conroy:geoconsent", acquire);
-    };
-  }, []);
 
-  useEffect(() => {
     const send = () => {
       api
         .post("/track", {
-          sessionId: sessionId(),
+          sessionId: visitorKey,
           name: whoRef.current.name || undefined,
           phone: whoRef.current.phone || undefined,
           latitude: coordsRef.current?.latitude,
@@ -68,11 +69,17 @@ export function VisitorBeacon() {
     };
 
     send();
-    const interval = setInterval(send, 25_000); // keep the session "live"
+    void acquire();
+    const interval = setInterval(() => {
+      void acquire(); // no-op once we have a fix, or if consent wasn't given
+      send();
+    }, 25_000);
     const onVisible = () => {
       if (document.visibilityState === "visible") send();
     };
     document.addEventListener("visibilitychange", onVisible);
+    // Picks up the answer the moment the visitor allows, without a reload.
+    window.addEventListener("conroy:geoconsent", acquire);
 
     // Time-on-page (unrelated cart/pageview analytics) + an immediate
     // live-visitor "offline" signal — both only on a real tab close/navigate
@@ -82,13 +89,14 @@ export function VisitorBeacon() {
     const path = pathname || "/";
     const onPageHide = () => {
       trackPageView(path, Math.round(performance.now() - start), whoRef.current);
-      trackLeave(sessionId());
+      trackLeave(visitorKey);
     };
     window.addEventListener("pagehide", onPageHide);
 
     return () => {
       clearInterval(interval);
       document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("conroy:geoconsent", acquire);
       window.removeEventListener("pagehide", onPageHide);
       trackPageView(path, Math.round(performance.now() - start), whoRef.current);
     };

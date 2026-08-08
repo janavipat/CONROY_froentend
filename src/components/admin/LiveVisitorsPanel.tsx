@@ -6,19 +6,12 @@ import { Loader } from "@/components/ui/Loader";
 import { cn } from "@/utils/cn";
 
 /**
- * "Dhrol, Jamnagar, Gujarat, India" — town, district, state, country, with
- * duplicates dropped (a town that is its own district shouldn't repeat).
+ * State + country only — "Gujarat, India". Deliberately not the town, district
+ * or coordinates: knowing which state someone is in is enough to run the shop,
+ * and anything finer is more of a customer's whereabouts than we need to hold.
  */
 function placeOf(v: LiveVisitorRow): string {
-  const parts = [v.city, v.district, v.region, v.country].filter(Boolean) as string[];
-  const seen = new Set<string>();
-  const unique = parts.filter((p) => {
-    const k = p.toLowerCase();
-    if (seen.has(k)) return false;
-    seen.add(k);
-    return true;
-  });
-  return unique.join(", ") || "Unknown";
+  return [v.region, v.country].filter(Boolean).join(", ") || "Unknown";
 }
 
 // Matches the storefront beacon's ~25s heartbeat closely enough that a
