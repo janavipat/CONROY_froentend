@@ -70,7 +70,14 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
                         <span className="block text-sm text-ink">{p.title}</span>
                         <span className="block text-xs text-stone">{p.fit}</span>
                       </span>
-                      <span className="text-sm text-ink">{formatCurrency(p.price, p.currency)}</span>
+                      <span className="flex items-baseline gap-2">
+                        <span className="text-sm text-ink">{formatCurrency(p.price, p.currency)}</span>
+                        {p.compareAtPrice != null && p.compareAtPrice > p.price && (
+                          <s className="text-xs text-stone">
+                            {formatCurrency(p.compareAtPrice, p.currency)}
+                          </s>
+                        )}
+                      </span>
                     </Link>
                   </li>
                 ))}

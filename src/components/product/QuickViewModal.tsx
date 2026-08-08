@@ -35,7 +35,17 @@ export function QuickViewModal({
             <p className="mt-1 text-sm text-stone">{product.tagline}</p>
           </div>
           <div className="flex items-center gap-4">
-            <span className="text-lg text-ink">{formatCurrency(product.price, product.currency)}</span>
+            {/* Selling price first, then the struck-through original. */}
+            <span className="flex items-baseline gap-2.5">
+              <span className="text-lg text-ink">
+                {formatCurrency(product.price, product.currency)}
+              </span>
+              {product.compareAtPrice != null && product.compareAtPrice > product.price && (
+                <s className="text-sm text-stone">
+                  {formatCurrency(product.compareAtPrice, product.currency)}
+                </s>
+              )}
+            </span>
             <Rating value={product.rating} count={product.reviewCount} />
           </div>
           <p className="text-sm leading-relaxed text-ink-soft">{product.description}</p>

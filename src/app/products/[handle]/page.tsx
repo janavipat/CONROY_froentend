@@ -124,7 +124,17 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
             </h1>
 
             <div className="mt-7 flex items-center gap-5">
-              <span className="text-xl text-ink">{formatCurrency(product.price, product.currency)}</span>
+              {/* Selling price first, then the struck-through original. */}
+              <span className="flex items-baseline gap-3">
+                <span className="text-xl text-ink">
+                  {formatCurrency(product.price, product.currency)}
+                </span>
+                {product.compareAtPrice != null && product.compareAtPrice > product.price && (
+                  <s className="text-base text-stone">
+                    {formatCurrency(product.compareAtPrice, product.currency)}
+                  </s>
+                )}
+              </span>
               <Rating value={product.rating} count={product.reviewCount} />
             </div>
             <p className="mt-2.5 text-xs text-stone">Tax included. Shipping calculated at checkout.</p>

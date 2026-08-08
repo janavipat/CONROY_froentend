@@ -68,8 +68,14 @@ export function ProductCard({ product, priority = false }: { product: Product; p
           >
             {product.title}
           </Link>
-          <span className="text-[0.9375rem] tracking-[0.02em] text-ink-soft">
-            {formatCurrency(product.price, product.currency)}
+          {/* Selling price first, then the struck-through original. */}
+          <span className="flex items-baseline gap-2.5 text-[0.9375rem] tracking-[0.02em]">
+            <span className="text-ink">{formatCurrency(product.price, product.currency)}</span>
+            {product.compareAtPrice != null && product.compareAtPrice > product.price && (
+              <s className="text-[0.8125rem] text-stone">
+                {formatCurrency(product.compareAtPrice, product.currency)}
+              </s>
+            )}
           </span>
           <p className="text-[0.75rem] uppercase tracking-[0.14em] text-stone">{product.fit}</p>
           <Rating value={product.rating} count={product.reviewCount} showCount={false} />
