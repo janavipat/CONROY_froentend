@@ -1,15 +1,25 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import dynamic from "next/dynamic";
-import { adminGetLive, type LiveData } from "@/services/admin";
+import { adminGetLive, type LiveData, type LiveVisitorRow } from "@/services/admin";
 import { Loader } from "@/components/ui/Loader";
 import { cn } from "@/utils/cn";
 
-const LiveVisitorsMap = dynamic(
-  () => import("./LiveVisitorsMap").then((m) => m.LiveVisitorsMap),
-  { ssr: false, loading: () => <Loader label="Loading map" size="sm" className="h-full" /> },
-);
+/**
+ * "Dhrol, Jamnagar, Gujarat, India" — town, district, state, country, with
+ * duplicates dropped (a town that is its own district shouldn't repeat).
+ */
+function placeOf(v: LiveVisitorRow): string {
+  const parts = [v.city, v.district, v.region, v.country].filter(Boolean) as string[];
+  const seen = new Set<string>();
+  const unique = parts.filter((p) => {
+    const k = p.toLowerCase();
+    if (seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+  return unique.join(", ") || "Unknown";
+}
 
 // Matches the storefront beacon's ~25s heartbeat closely enough that a
 // visitor going offline shows up within one or two polls.
@@ -94,12 +104,8 @@ export function LiveVisitorsPanel() {
 
       {error && <p className="text-xs text-accent">{error}</p>}
 
-      <div className="grid gap-4 lg:grid-cols-[1.1fr_1fr]">
-        <div className="h-[360px] overflow-hidden rounded-media border border-line">
-          <LiveVisitorsMap visitors={data?.visitors ?? []} />
-        </div>
-
-        <div className="max-h-[360px] overflow-y-auto rounded-media border border-line bg-white">
+      <div className="grid gap-4">
+        <div className="max-h-[420px] overflow-y-auto rounded-media border border-line bg-white">
           {!data || data.visitors.length === 0 ? (
             <p className="p-6 text-center text-sm text-stone">No one online right now.</p>
           ) : (
@@ -126,7 +132,15 @@ export function LiveVisitorsPanel() {
                       </span>
                     </td>
                     <td className="py-2 px-3 text-ink-soft">
-                      {v.flag} {[v.city, v.region, v.country].filter(Boolean).join(", ") || "Unknown"}
+                      {v.flag} {placeOf(v)}
+                      {!v.precise && (
+                        <span
+                          title="Estimated from the visitor's IP address — they haven't shared their location"
+                          className="ml-2 rounded-full bg-mist px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-stone"
+                        >
+                          Approx
+                        </span>
+                      )}
                     </td>
                     <td className="py-2 px-3 text-right text-stone">{fmtAgo(v.lastSeen)}</td>
                   </tr>

@@ -144,6 +144,9 @@ export interface LiveVisitorRow {
   flag: string;
   region: string | null;
   city: string | null;
+  district: string | null;
+  /** true = browser GPS. false = approximate, from the request IP. */
+  precise: boolean;
   latitude: number | null;
   longitude: number | null;
   since: string;

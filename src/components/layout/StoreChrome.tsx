@@ -9,6 +9,7 @@ import { OfferPopup } from "@/components/offers/OfferPopup";
 import { LoginPopup } from "@/components/auth/LoginPopup";
 import { ChatWidget } from "@/components/chat/ChatWidget";
 import { VisitorBeacon } from "@/components/analytics/VisitorBeacon";
+import { LocationConsent } from "@/components/analytics/LocationConsent";
 
 /**
  * Renders the storefront chrome (announcement bar, header, footer) — except on
@@ -25,6 +26,7 @@ export function StoreChrome({ children }: { children: React.ReactNode }) {
   return (
     <>
       <VisitorBeacon />
+      <LocationConsent />
       <MaintenanceBanner />
       <AnnouncementBar />
       <Header />
