@@ -28,9 +28,23 @@ export function anonUserKey(): string {
   }
 }
 
-/** Records a page view + time-on-page. Uses sendBeacon so it survives unload. */
-export function trackPageView(path: string, durationMs: number): void {
-  const body = JSON.stringify({ sessionId: sessionId(), path, durationMs });
+/**
+ * Records a page view + time-on-page. Uses sendBeacon so it survives unload.
+ * Pass the signed-in shopper so the admin can replay one customer's journey
+ * instead of an anonymous session.
+ */
+export function trackPageView(
+  path: string,
+  durationMs: number,
+  who?: { phone?: string | null; email?: string | null },
+): void {
+  const body = JSON.stringify({
+    sessionId: sessionId(),
+    path,
+    durationMs,
+    phone: who?.phone || undefined,
+    email: who?.email || undefined,
+  });
   const url = `${api.defaults.baseURL ?? ""}/analytics/pageview`;
   try {
     if (typeof navigator !== "undefined" && navigator.sendBeacon) {
@@ -50,6 +64,7 @@ export function trackPageView(path: string, durationMs: number): void {
 export function trackCartAdd(
   productHandle: string,
   who?: { phone?: string | null; email?: string | null },
+  what?: { size?: string; quantity?: number; price?: number; currency?: string },
 ): void {
   api
     .post("/analytics/cart-add", {
@@ -57,6 +72,10 @@ export function trackCartAdd(
       productHandle,
       phone: who?.phone || undefined,
       email: who?.email || undefined,
+      size: what?.size,
+      quantity: what?.quantity,
+      price: what?.price,
+      currency: what?.currency,
     })
     .catch(() => {});
 }

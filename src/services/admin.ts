@@ -287,6 +287,41 @@ export async function adminListCustomers(): Promise<AdminCustomer[]> {
   return data.data ?? [];
 }
 
+/** One page the customer viewed, with how long they stayed. */
+export interface CustomerPageView {
+  path: string;
+  /** Friendly name, e.g. "Product: Men's Blue Straight Fit Jeans". */
+  label: string;
+  durationMs: number;
+  at: string;
+}
+
+/** One add-to-cart, recorded whether or not an order followed. */
+export interface CustomerCartAdd {
+  handle: string;
+  title: string;
+  image: string | null;
+  size: string | null;
+  quantity: number;
+  price: number | null;
+  currency: string;
+  at: string;
+}
+
+export interface CustomerActivity {
+  pageViews: CustomerPageView[];
+  cartAdds: CustomerCartAdd[];
+  /** False when customer-activity.sql hasn't been applied yet. */
+  migrationApplied: boolean;
+}
+
+export async function adminGetCustomerActivity(phone: string): Promise<CustomerActivity> {
+  const { data } = await api.get<ApiList<CustomerActivity>>(
+    `/admin/customers/${encodeURIComponent(phone)}/activity`,
+  );
+  return data.data ?? { pageViews: [], cartAdds: [], migrationApplied: true };
+}
+
 /* ---- Accounts (accounting overview) ------------------------------------- */
 
 export interface AccountsSummary {

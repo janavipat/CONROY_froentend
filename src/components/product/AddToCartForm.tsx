@@ -49,7 +49,13 @@ export function AddToCartForm({ product, compact = false }: { product: Product; 
       fit: product.fit,
       quantity: qty,
     });
-    trackCartAdd(product.handle, { phone: user?.phone }); // analytics: added-to-cart (attributed if signed in)
+    // Recorded the moment it's added — independent of whether an order ever
+    // follows. Price is the price right now, so history can't be rewritten.
+    trackCartAdd(
+      product.handle,
+      { phone: user?.phone },
+      { size: chosen, quantity: qty, price: product.price, currency: product.currency },
+    );
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
   }
@@ -99,7 +105,6 @@ export function AddToCartForm({ product, compact = false }: { product: Product; 
     // matches what just went into the cart. Runs once, guarded by resumedRef.
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSize(pending.size);
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setQuantity(pending.quantity);
     commitAdd(pending.size, pending.quantity);
     toast("Signed in — added to your cart.", "success");

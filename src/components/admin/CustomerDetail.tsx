@@ -3,12 +3,14 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
+  adminGetCustomerActivity,
   adminListCustomers,
   adminListOrders,
   adminListReturns,
   type AdminCustomer,
   type AdminOrder,
   type AdminReturn,
+  type CustomerActivity,
 } from "@/services/admin";
 import { formatCurrency } from "@/utils/format";
 import { ChevronLeftIcon } from "@/components/ui/Icons";
@@ -25,6 +27,43 @@ function formatDate(iso: string): string {
   } catch {
     return "";
   }
+}
+
+/** "8 Aug 2026, 03:25 PM" — the format the activity feed reads in. */
+function formatDateTime(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    }).format(new Date(iso));
+  } catch {
+    return "";
+  }
+}
+
+/** "2 min 35 sec" — spelled out rather than mm:ss, which reads as a clock. */
+function formatDuration(ms: number): string {
+  const total = Math.max(0, Math.round(ms / 1000));
+  const min = Math.floor(total / 60);
+  const sec = total % 60;
+  if (min === 0) return `${sec} sec`;
+  return sec === 0 ? `${min} min` : `${min} min ${sec} sec`;
+}
+
+/** Groups records under a date heading, newest day first. */
+function groupByDay<T extends { at: string }>(rows: T[]): [string, T[]][] {
+  const buckets = new Map<string, T[]>();
+  for (const r of rows) {
+    const key = formatDate(r.at);
+    const list = buckets.get(key);
+    if (list) list.push(r);
+    else buckets.set(key, [r]);
+  }
+  return [...buckets.entries()];
 }
 
 function orderBadge(status: string): { text: string; cls: string } {
@@ -46,6 +85,7 @@ export function CustomerDetail({ phone }: { phone: string }) {
   const [customer, setCustomer] = useState<AdminCustomer | null>(null);
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [returns, setReturns] = useState<AdminReturn[]>([]);
+  const [activity, setActivity] = useState<CustomerActivity | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -53,15 +93,23 @@ export function CustomerDetail({ phone }: { phone: string }) {
     let active = true;
     async function run() {
       try {
-        const [custs, allOrders, allReturns] = await Promise.all([
+        const [custs, allOrders, allReturns, act] = await Promise.all([
           adminListCustomers(),
           adminListOrders(),
           adminListReturns(),
+          // Activity is best-effort: a customer with none must still render.
+          adminGetCustomerActivity(phone).catch(() => null),
         ]);
         if (!active) return;
         setCustomer(custs.find((c) => c.phone === phone) ?? null);
-        setOrders(allOrders.filter((o) => o.phone === phone));
+        // Newest order first.
+        setOrders(
+          allOrders
+            .filter((o) => o.phone === phone)
+            .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt)),
+        );
         setReturns(allReturns.filter((r) => r.phone === phone));
+        setActivity(act);
       } catch {
         if (active) setError("Could not load this customer. Start the backend and try again.");
       } finally {
@@ -176,6 +224,105 @@ export function CustomerDetail({ phone }: { phone: string }) {
                   );
                 })}
               </ul>
+            )}
+          </section>
+
+          {/* Website activity — pages visited, newest day first */}
+          <section className="overflow-hidden rounded-media border border-line bg-white">
+            <div className="flex items-baseline justify-between border-b border-line px-5 py-4">
+              <h2 className="font-display text-lg text-ink">Website activity</h2>
+              {activity && activity.pageViews.length > 0 && (
+                <span className="text-xs text-stone">
+                  {activity.pageViews.length} page view
+                  {activity.pageViews.length === 1 ? "" : "s"}
+                </span>
+              )}
+            </div>
+            {!activity || activity.pageViews.length === 0 ? (
+              <p className="px-5 py-12 text-center text-sm text-stone">
+                {activity && !activity.migrationApplied
+                  ? "Run supabase/customer-activity.sql to start recording page activity."
+                  : "No page activity recorded for this customer yet. Activity is captured while they are signed in."}
+              </p>
+            ) : (
+              <div className="divide-y divide-line">
+                {groupByDay(activity.pageViews).map(([day, rows]) => (
+                  <div key={day}>
+                    <p className="bg-mist px-5 py-2 text-xs font-medium text-stone">{day}</p>
+                    <ul className="divide-y divide-line">
+                      {rows.map((v, i) => (
+                        <li
+                          key={`${v.at}-${i}`}
+                          className="flex items-center justify-between gap-4 px-5 py-3"
+                        >
+                          <div className="min-w-0">
+                            <p className="truncate text-sm text-ink">{v.label}</p>
+                            <p className="text-xs text-stone">{formatDateTime(v.at)}</p>
+                          </div>
+                          <span className="shrink-0 whitespace-nowrap text-xs text-ink-soft">
+                            Time spent: {formatDuration(v.durationMs)}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Added to cart — every add, whether or not it became an order */}
+          <section className="overflow-hidden rounded-media border border-line bg-white">
+            <div className="flex items-baseline justify-between border-b border-line px-5 py-4">
+              <h2 className="font-display text-lg text-ink">Added to cart</h2>
+              {activity && activity.cartAdds.length > 0 && (
+                <span className="text-xs text-stone">
+                  {activity.cartAdds.length} add{activity.cartAdds.length === 1 ? "" : "s"}
+                </span>
+              )}
+            </div>
+            {!activity || activity.cartAdds.length === 0 ? (
+              <p className="px-5 py-12 text-center text-sm text-stone">
+                {activity && !activity.migrationApplied
+                  ? "Run supabase/customer-activity.sql to start recording cart activity."
+                  : "This customer hasn't added anything to their cart yet."}
+              </p>
+            ) : (
+              <div className="divide-y divide-line">
+                {groupByDay(activity.cartAdds).map(([day, rows]) => (
+                  <div key={day}>
+                    <p className="bg-mist px-5 py-2 text-xs font-medium text-stone">{day}</p>
+                    <ul className="divide-y divide-line">
+                      {rows.map((c, i) => (
+                        <li key={`${c.at}-${i}`} className="flex items-center gap-4 px-5 py-3">
+                          <span className="h-14 w-11 shrink-0 overflow-hidden rounded bg-mist">
+                            {c.image && (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={c.image}
+                                alt={c.title}
+                                className="h-full w-full object-cover"
+                              />
+                            )}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm text-ink">{c.title}</p>
+                            <p className="text-xs text-stone">
+                              {c.size ? `Size ${c.size} · ` : ""}Qty {c.quantity}
+                            </p>
+                            <p className="text-xs text-stone">{formatDateTime(c.at)}</p>
+                          </div>
+                          {c.price != null && (
+                            <span className="shrink-0 text-sm font-medium text-ink">
+                              {formatCurrency(c.price * c.quantity, c.currency)}
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
             )}
           </section>
 

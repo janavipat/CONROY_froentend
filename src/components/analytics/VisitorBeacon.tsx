@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { api } from "@/services/api";
 import { sessionId, trackPageView } from "@/services/analytics";
+import { useAuth } from "@/lib/auth/auth-context";
 
 /**
  * Sends a lightweight heartbeat to the backend so the admin dashboard can show
@@ -12,6 +13,14 @@ import { sessionId, trackPageView } from "@/services/analytics";
  */
 export function VisitorBeacon() {
   const pathname = usePathname();
+  const { user } = useAuth();
+  // Read through a ref inside the unload handler: the effect below is keyed on
+  // the path, so capturing `user` directly would send a stale identity if the
+  // visitor signed in while sitting on the page.
+  const whoRef = useRef<{ phone?: string | null }>({});
+  useEffect(() => {
+    whoRef.current = { phone: user?.phone };
+  }, [user?.phone]);
 
   useEffect(() => {
     const send = () => {
@@ -38,7 +47,8 @@ export function VisitorBeacon() {
     // leaves this path (navigates away or closes the tab).
     const start = performance.now();
     const path = pathname || "/";
-    const flush = () => trackPageView(path, Math.round(performance.now() - start));
+    const flush = () =>
+      trackPageView(path, Math.round(performance.now() - start), whoRef.current);
     window.addEventListener("pagehide", flush);
 
     return () => {
