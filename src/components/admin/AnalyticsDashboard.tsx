@@ -8,6 +8,7 @@ import {
   type AnalyticsCustomer,
 } from "@/services/admin";
 import { AreaChart, BarChart, DonutChart } from "@/components/admin/charts";
+import { LiveVisitorsPanel } from "@/components/admin/LiveVisitorsPanel";
 import { Loader } from "@/components/ui/Loader";
 import { formatCurrency } from "@/utils/format";
 import { cn } from "@/utils/cn";
@@ -595,6 +596,14 @@ export function AnalyticsDashboard() {
       <p className="mt-1 text-sm text-stone">
         Revenue, customers, returns, and how people browse your store.
       </p>
+
+      <div className="mt-6">
+        <h2 className="font-display text-lg text-ink">Live visitors</h2>
+        <p className="mt-0.5 text-xs text-stone">Who&apos;s on the store right now, and roughly where from.</p>
+        <div className="mt-4">
+          <LiveVisitorsPanel />
+        </div>
+      </div>
 
       {error && (
         <p className="mt-6 rounded-md border border-accent/30 bg-accent/5 px-4 py-3 text-sm text-accent">

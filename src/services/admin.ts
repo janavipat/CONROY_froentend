@@ -127,6 +127,22 @@ export async function adminGetStats(): Promise<AdminStats> {
 
 /* ---- Live visitors ------------------------------------------------------ */
 
+export interface LiveVisitorRow {
+  id: string;
+  /** Customer name when signed in, otherwise a stable short Visitor ID. */
+  label: string;
+  loggedIn: boolean;
+  country: string;
+  countryCode: string | null;
+  flag: string;
+  region: string | null;
+  city: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  since: string;
+  lastSeen: string;
+}
+
 export interface LiveLocation {
   countryCode: string;
   country: string;
@@ -135,16 +151,14 @@ export interface LiveLocation {
   cities: string[];
 }
 
-export interface LivePage {
-  path: string;
-  count: number;
-}
-
 export interface LiveData {
   live: number;
-  totalSessions: number;
+  loggedIn: number;
+  guests: number;
+  visitors: LiveVisitorRow[];
   locations: LiveLocation[];
-  pages: LivePage[];
+  /** False when supabase/live-visitors.sql hasn't been applied yet. */
+  tableReady: boolean;
 }
 
 export async function adminGetLive(): Promise<LiveData> {

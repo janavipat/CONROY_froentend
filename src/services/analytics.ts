@@ -58,6 +58,26 @@ export function trackPageView(
 }
 
 /**
+ * Marks this session offline immediately (tab closed / navigating away), so
+ * the admin's live-visitor list doesn't wait out the presence timeout. Best
+ * effort — uses sendBeacon so it survives unload; if that's unavailable the
+ * visitor still drops off once their heartbeat goes stale.
+ */
+export function trackLeave(sid: string): void {
+  const body = JSON.stringify({ sessionId: sid });
+  const url = `${api.defaults.baseURL ?? ""}/track/leave`;
+  try {
+    if (typeof navigator !== "undefined" && navigator.sendBeacon) {
+      navigator.sendBeacon(url, new Blob([body], { type: "application/json" }));
+      return;
+    }
+  } catch {
+    /* fall through to fetch */
+  }
+  api.post("/track/leave", JSON.parse(body)).catch(() => {});
+}
+
+/**
  * Records an add-to-cart event for a product (best-effort). Pass the signed-in
  * shopper's phone/email so the admin can see customer-wise abandoned carts.
  */
