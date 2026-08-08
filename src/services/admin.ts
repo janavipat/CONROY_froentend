@@ -22,6 +22,13 @@ export interface AdminProductPayload {
   details: string[];
   badge?: string | null;
   images: ProductImageInput[];
+  // Shipping — used to compute courier charges (actual vs. volumetric weight)
+  // and to exclude non-physical products from shipment creation.
+  weightG?: number | null;
+  lengthCm?: number | null;
+  widthCm?: number | null;
+  heightCm?: number | null;
+  isShippable?: boolean;
 }
 
 interface ApiList<T> {

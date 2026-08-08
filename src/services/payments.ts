@@ -1,5 +1,6 @@
 import { api } from "./api";
 import type { CartItem } from "@/types";
+import type { ShipAddress } from "./orders";
 
 export interface RazorpayOrderResponse {
   ok: boolean;
@@ -48,6 +49,7 @@ export async function verifyRazorpayPayment(payload: {
   phone?: string | null;
   fullName?: string;
   shippingAddress?: string;
+  shipAddress?: ShipAddress;
   code?: string;
   razorpayOrderId: string;
   razorpayPaymentId: string;
@@ -60,6 +62,7 @@ export async function verifyRazorpayPayment(payload: {
       phone: payload.phone ?? undefined,
       fullName: payload.fullName?.trim() || undefined,
       shippingAddress: payload.shippingAddress?.trim() || undefined,
+      shipAddress: payload.shipAddress,
       code: payload.code?.trim() || undefined,
       items: toApiItems(payload.items),
       razorpayOrderId: payload.razorpayOrderId,

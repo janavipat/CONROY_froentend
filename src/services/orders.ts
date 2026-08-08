@@ -92,6 +92,22 @@ export function fulfillmentBadge(status: FulfillmentStatus): { text: string; cls
   }
 }
 
+/**
+ * Structured delivery address — what the courier (Delhivery) actually needs.
+ * `shippingAddress` stays the human-readable display string; this is sent
+ * alongside it, not derived from it.
+ */
+export interface ShipAddress {
+  name: string;
+  phone: string;
+  line1: string;
+  line2?: string;
+  city: string;
+  state: string;
+  pincode: string;
+  country?: string;
+}
+
 export interface OrderInput {
   email: string;
   items: CartItem[];
@@ -99,6 +115,7 @@ export interface OrderInput {
   phone?: string | null;
   fullName?: string;
   shippingAddress?: string;
+  shipAddress?: ShipAddress;
   code?: string;
 }
 
@@ -113,6 +130,7 @@ export async function createOrder(input: OrderInput): Promise<CreateOrderResult>
     phone: input.phone ?? undefined,
     fullName: input.fullName?.trim() || undefined,
     shippingAddress: input.shippingAddress?.trim() || undefined,
+    shipAddress: input.shipAddress,
     code: input.code?.trim() || undefined,
     items: input.items.map((i) => ({
       productHandle: i.productHandle,

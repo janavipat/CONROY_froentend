@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth/auth-context";
-import { createOrder, type PaymentMethod } from "@/services/orders";
+import { createOrder, type PaymentMethod, type ShipAddress } from "@/services/orders";
 import {
   createRazorpayOrder,
   verifyRazorpayPayment,
@@ -172,6 +172,20 @@ export default function PaymentPage() {
     return `${parts}. Ph: ${phone.replace(/\D/g, "")}`;
   }
 
+  /** The same address, as individual fields — what the courier actually needs. */
+  function structuredAddress(): ShipAddress {
+    return {
+      name: fullName.trim(),
+      phone: phone.replace(/\D/g, ""),
+      line1: line1.trim(),
+      line2: line2.trim() || undefined,
+      city: city.trim(),
+      state: stateName.trim(),
+      pincode: pincode.trim(),
+      country: "India",
+    };
+  }
+
   async function handlePay() {
     const problem = validate();
     if (problem) {
@@ -186,6 +200,7 @@ export default function PaymentPage() {
     // delivery phone. Name + address always come from this form.
     const orderPhone = user?.phone ?? `+91${phone.replace(/\D/g, "")}`;
     const shippingAddress = composedAddress();
+    const shipAddress = structuredAddress();
     const name = fullName.trim();
 
     try {
@@ -198,6 +213,7 @@ export default function PaymentPage() {
           phone: orderPhone,
           fullName: name,
           shippingAddress,
+          shipAddress,
           code,
         });
         if (order.ok) finish(order.orderId, "cod");
@@ -220,6 +236,7 @@ export default function PaymentPage() {
           phone: orderPhone,
           fullName: name,
           shippingAddress,
+          shipAddress,
           code,
         });
         if (order.ok) finish(order.orderId, "online");
@@ -261,6 +278,7 @@ export default function PaymentPage() {
         phone: orderPhone,
         fullName: name,
         shippingAddress,
+        shipAddress,
         code,
         razorpayOrderId: result.razorpay_order_id,
         razorpayPaymentId: result.razorpay_payment_id,

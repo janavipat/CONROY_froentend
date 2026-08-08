@@ -37,6 +37,12 @@ export interface Product {
   rating: number;
   reviewCount: number;
   badge?: string;
+  // Shipping — used to compute courier weight/volumetric-weight charges.
+  weightG?: number;
+  lengthCm?: number;
+  widthCm?: number;
+  heightCm?: number;
+  isShippable?: boolean;
 }
 
 export interface Collection {

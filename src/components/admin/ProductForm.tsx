@@ -37,6 +37,11 @@ export function ProductForm({ initial }: { initial?: Product }) {
   const [sku, setSku] = useState(initial?.sku ?? "");
   const [status, setStatus] = useState<"active" | "draft" | "archived">(initial?.status ?? "active");
   const [details, setDetails] = useState<string[]>(initial?.details?.length ? initial.details : [""]);
+  const [weightG, setWeightG] = useState(initial?.weightG ? String(initial.weightG) : "");
+  const [lengthCm, setLengthCm] = useState(initial?.lengthCm ? String(initial.lengthCm) : "");
+  const [widthCm, setWidthCm] = useState(initial?.widthCm ? String(initial.widthCm) : "");
+  const [heightCm, setHeightCm] = useState(initial?.heightCm ? String(initial.heightCm) : "");
+  const [isShippable, setIsShippable] = useState(initial?.isShippable ?? true);
   const [images, setImages] = useState<ProductImageInput[]>(
     initial?.images.map((i) => ({ src: i.src, alt: i.alt })) ?? [],
   );
@@ -89,6 +94,11 @@ export function ProductForm({ initial }: { initial?: Product }) {
       details: details.map((d) => d.trim()).filter(Boolean),
       badge: badge.trim() || null,
       images,
+      weightG: weightG.trim() ? Math.round(Number(weightG)) : null,
+      lengthCm: lengthCm.trim() ? Number(lengthCm) : null,
+      widthCm: widthCm.trim() ? Number(widthCm) : null,
+      heightCm: heightCm.trim() ? Number(heightCm) : null,
+      isShippable,
     };
 
     try {
@@ -279,6 +289,73 @@ export function ProductForm({ initial }: { initial?: Product }) {
             <option value="archived">Archived</option>
           </select>
         </div>
+      </section>
+
+      {/* Shipping */}
+      <section className="mt-6 rounded-media border border-line bg-white p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <span className={label}>Shipping</span>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-ink">
+            <input
+              type="checkbox"
+              checked={isShippable}
+              onChange={(e) => setIsShippable(e.target.checked)}
+              className="h-4 w-4 accent-ink"
+            />
+            Physical product (ships via courier)
+          </label>
+        </div>
+        {isShippable && (
+          <div className="grid gap-5 sm:grid-cols-4">
+            <div>
+              <label className={label}>Weight (g)</label>
+              <input
+                type="number"
+                min={0}
+                value={weightG}
+                onChange={(e) => setWeightG(e.target.value)}
+                placeholder="500"
+                className={field}
+              />
+            </div>
+            <div>
+              <label className={label}>Length (cm)</label>
+              <input
+                type="number"
+                min={0}
+                step="0.1"
+                value={lengthCm}
+                onChange={(e) => setLengthCm(e.target.value)}
+                placeholder="30"
+                className={field}
+              />
+            </div>
+            <div>
+              <label className={label}>Width (cm)</label>
+              <input
+                type="number"
+                min={0}
+                step="0.1"
+                value={widthCm}
+                onChange={(e) => setWidthCm(e.target.value)}
+                placeholder="24"
+                className={field}
+              />
+            </div>
+            <div>
+              <label className={label}>Height (cm)</label>
+              <input
+                type="number"
+                min={0}
+                step="0.1"
+                value={heightCm}
+                onChange={(e) => setHeightCm(e.target.value)}
+                placeholder="4"
+                className={field}
+              />
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Details / bullet points */}
