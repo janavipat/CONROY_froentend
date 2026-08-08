@@ -24,9 +24,14 @@ export type FulfillmentStatus =
   | "Confirmed"
   | "Processing"
   | "Packed"
+  // From here on, driven by courier events rather than set directly.
+  | "Manifested"
   | "Shipped"
   | "Out For Delivery"
   | "Delivered"
+  | "Attempt Failed"
+  | "Returning"
+  | "Returned"
   | "Cancelled";
 
 export type RefundStatus = "None" | "Initiated" | "Processing" | "Completed" | "Failed";
