@@ -142,17 +142,6 @@ export function ShopsSlider({ products }: { products: Product[] }) {
                     {/* Scrim so the title stays legible over any photo */}
                     <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/15 to-transparent" />
 
-                    {/* Double gold frame — the nested rule is what reads as
-                        couture rather than a plain bordered card. */}
-                    <span
-                      aria-hidden
-                      className="pointer-events-none absolute inset-3 border border-gold/70 transition-colors duration-500 group-hover:border-gold sm:inset-4"
-                    />
-                    <span
-                      aria-hidden
-                      className="pointer-events-none absolute inset-6 border border-gold/20 transition-colors duration-(--duration-base) group-hover:border-gold/40 sm:inset-8"
-                    />
-
                     {/* Title, overlaid like RL */}
                     <h3 className="absolute inset-x-0 bottom-0 px-7 pb-8 text-center font-display text-[1.7rem] leading-tight text-white sm:text-3xl">
                       {s.title}
