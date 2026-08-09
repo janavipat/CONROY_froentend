@@ -36,8 +36,10 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
                     onClick={() => setExpanded(isOpen ? null : item.label)}
                     aria-expanded={isOpen}
                     className={cn(
-                      "flex w-full items-center justify-between py-4 text-left font-display text-2xl text-ink",
-                      active && "text-stone",
+                      // Navigation is sans everywhere, drawer included: Bodoni's
+                      // hairlines start to break up below display sizes.
+                      "flex w-full items-center justify-between py-4 text-left text-[0.875rem] font-medium uppercase tracking-[0.18em] text-ink",
+                      active && "text-accent",
                     )}
                   >
                     {item.label}
@@ -77,8 +79,8 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
                 href={item.href}
                 onClick={onClose}
                 className={cn(
-                  "group flex items-center justify-between border-b border-line py-4 font-display text-2xl text-ink",
-                  active && "text-stone",
+                  "group flex items-center justify-between border-b border-line py-4 text-[0.875rem] font-medium uppercase tracking-[0.18em] text-ink",
+                  active && "text-accent",
                 )}
               >
                 {item.label}

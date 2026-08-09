@@ -7,7 +7,14 @@ interface Crumb {
   href?: string;
 }
 
-/** Editorial page banner with breadcrumb, used across content & shop pages. */
+/**
+ * Editorial page banner with breadcrumb, used across content & shop pages.
+ *
+ * Compact by design: on the `--spacing-section-sm` scale this band ran to
+ * 120px of padding above and below three short lines of type, which pushed the
+ * first row of products off the screen. The content is unchanged — only the
+ * air around it.
+ */
 export function PageHeader({
   eyebrow,
   title,
@@ -21,14 +28,17 @@ export function PageHeader({
 }) {
   return (
     <header className="border-b border-line bg-paper">
-      <Container className="py-section-sm text-center">
+      <Container className="py-8 text-center sm:py-10 lg:py-12">
         {breadcrumbs && breadcrumbs.length > 0 && (
-          <nav aria-label="Breadcrumb" className="mb-8 flex justify-center">
-            <ol className="flex items-center gap-2.5 text-xs text-stone">
+          <nav aria-label="Breadcrumb" className="mb-4 flex justify-center">
+            <ol className="flex items-center gap-2.5 text-[0.6875rem] uppercase tracking-[0.14em] text-stone">
               {breadcrumbs.map((crumb, i) => (
                 <li key={i} className="flex items-center gap-2.5">
                   {crumb.href ? (
-                    <Link href={crumb.href} className="hover:text-ink">
+                    <Link
+                      href={crumb.href}
+                      className="transition-colors duration-(--duration-quick) hover:text-accent"
+                    >
                       {crumb.label}
                     </Link>
                   ) : (
@@ -40,7 +50,7 @@ export function PageHeader({
             </ol>
           </nav>
         )}
-        <Reveal className="flex flex-col items-center gap-5 sm:gap-6">
+        <Reveal className="flex flex-col items-center gap-3.5">
           {eyebrow && <span className="eyebrow text-stone">{eyebrow}</span>}
           <h1 className="display-section text-ink">{title}</h1>
           {description && <p className="measure text-body text-ink-soft">{description}</p>}

@@ -15,6 +15,7 @@ import { Container } from "@/components/ui/Container";
 import { BagIcon, HeartIcon, MenuIcon, SearchIcon, UserIcon } from "@/components/ui/Icons";
 import { SearchModal } from "./SearchModal";
 import { MobileNav } from "./MobileNav";
+import { NewInMenu, NEW_IN_MENU_LIMIT, type NewInItem } from "./NewInMenu";
 
 /**
  * First name only — a full name would crowd the navbar. Accounts created
@@ -23,6 +24,18 @@ import { MobileNav } from "./MobileNav";
 function firstName(name?: string | null): string {
   const first = (name ?? "").trim().split(/\s+/)[0];
   return first || "My Account";
+}
+
+/** The catalogue fields the New In panel reads. Everything else is ignored. */
+interface NewInProduct {
+  handle: string;
+  title: string;
+  price?: number;
+  currency?: string;
+  isNewIn?: boolean;
+  newInOrder?: number;
+  status?: string;
+  images?: { src: string }[];
 }
 
 export function Header() {
@@ -37,6 +50,8 @@ export function Header() {
   const [openMenu, setOpenMenu] = useState<string | null>(null);
   /** Collections are admin-created, so the menu is filled at runtime. */
   const [collectionLinks, setCollectionLinks] = useState<{ label: string; href: string }[]>([]);
+  /** Products marked New In, in `newInOrder` — the New In dropdown's contents. */
+  const [newIn, setNewIn] = useState<NewInItem[]>([]);
 
   useEffect(() => {
     let active = true;
@@ -58,6 +73,45 @@ export function Header() {
     };
   }, []);
 
+  // New In is admin-curated (isNewIn / newInOrder), so the panel is filled from
+  // the live catalogue rather than a static list. Fetched once, up front, so the
+  // panel is already populated the first time a visitor hovers the link.
+  useEffect(() => {
+    let active = true;
+    void fetch(`${api.defaults.baseURL ?? ""}/products`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (!active || !j?.data) return;
+        const items = (j.data as NewInProduct[])
+          .filter((p) => p.isNewIn && (p.status ?? "active") === "active")
+          // Products without an explicit order sort last, keeping it stable.
+          .sort((a, b) => (a.newInOrder ?? Infinity) - (b.newInOrder ?? Infinity))
+          .slice(0, NEW_IN_MENU_LIMIT)
+          .map((p) => ({
+            handle: p.handle,
+            title: p.title,
+            image: p.images?.[0]?.src,
+            price: Number(p.price ?? 0),
+            currency: p.currency ?? "INR",
+          }));
+        setNewIn(items);
+      })
+      .catch(() => {
+        /* the panel falls back to its "explore the latest collection" copy */
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // A click-opened panel has no pointer to leave, so Escape is its way out.
+  useEffect(() => {
+    if (!openMenu) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpenMenu(null);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [openMenu]);
+
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
 
@@ -71,51 +125,87 @@ export function Header() {
             : "border-transparent bg-background",
         )}
       >
-        <Container className="flex h-[var(--spacing-header)] items-center justify-between gap-4">
-          {/* Left: mobile menu + desktop nav */}
-          <div className="flex items-center gap-6 lg:flex-1">
-            <button
-              className="grid h-9 w-9 place-items-center text-ink lg:hidden"
-              aria-label="Open menu"
-              onClick={() => setMenuOpen(true)}
-            >
-              <MenuIcon className="h-6 w-6" />
-            </button>
-            <nav className="hidden shrink-0 items-center gap-8 lg:flex">
-              {PRIMARY_NAV.map((item) => {
-                const children =
-                  item.dynamic === "collections"
-                    ? collectionLinks
-                    : (item.children ?? []);
-                const hasMenu = children.length > 0;
+        {/*
+         * Logo → navigation → actions, reading left to right. The wordmark was
+         * previously centred between three flex-1 columns, but the nav column
+         * is much wider than the actions column, so the "centre" landed well
+         * right of the page centre. Anchoring it to the container's left gutter
+         * removes the drift and gives the same alignment at every breakpoint.
+         */}
+        <Container className="flex h-[var(--spacing-header)] items-center gap-2 sm:gap-4">
+          {/* Menu — below xl the primary nav lives in the drawer. Pulled left by
+              the icon's own padding so its glyph lines up with the gutter. */}
+          <button
+            className="-ml-1.5 grid h-9 w-9 shrink-0 place-items-center text-ink xl:hidden"
+            aria-label="Open menu"
+            onClick={() => setMenuOpen(true)}
+          >
+            <MenuIcon className="h-6 w-6" />
+          </button>
 
-                return (
-                  <div
-                    key={item.href + item.label}
-                    className="relative"
-                    onMouseEnter={() => hasMenu && setOpenMenu(item.label)}
-                    onMouseLeave={() => setOpenMenu(null)}
+          {/* Wordmark — flush with the content container's left edge. */}
+          <Link
+            href="/"
+            className="shrink-0 font-display text-[1.375rem] leading-none tracking-[0.28em] text-ink sm:text-[1.625rem] lg:text-[1.75rem] xl:text-[2rem]"
+            aria-label={`${SITE.name} home`}
+          >
+            {SITE.name}
+          </Link>
+
+          {/* Primary navigation, sitting beside the wordmark. Shown from xl:
+              below that the six labels plus the wordmark and actions overflow
+              the container, which is what pushed the header off its gutters. */}
+          <nav className="ml-10 hidden shrink-0 items-center gap-7 xl:flex">
+            {PRIMARY_NAV.map((item) => {
+              const children =
+                item.dynamic === "collections"
+                  ? collectionLinks
+                  : (item.children ?? []);
+              const isMega = item.mega === "newIn";
+              const hasMenu = isMega || children.length > 0;
+              const isOpen = openMenu === item.label;
+
+              return (
+                <div
+                  key={item.href + item.label}
+                  className="relative"
+                  onMouseEnter={() => hasMenu && setOpenMenu(item.label)}
+                  onMouseLeave={() => setOpenMenu(null)}
+                >
+                  <Link
+                    href={item.href}
+                    // Closes the menu after a keyboard user follows a link.
+                    onFocus={() => hasMenu && setOpenMenu(item.label)}
+                    onClick={(e) => {
+                      // A mega-menu opens on click as well as hover. The first
+                      // click reveals the panel (so touch and click-first users
+                      // see it at all); a second click follows the link.
+                      if (isMega && !isOpen) {
+                        e.preventDefault();
+                        setOpenMenu(item.label);
+                      } else {
+                        setOpenMenu(null);
+                      }
+                    }}
+                    aria-expanded={hasMenu ? isOpen : undefined}
+                    className={cn(
+                      // whitespace-nowrap: a two-word label like "Shop the
+                      // Look" would otherwise wrap as the nav tightens.
+                      "nav-label relative whitespace-nowrap text-ink transition-colors duration-(--duration-base) hover:text-accent",
+                      "after:absolute after:-bottom-2 after:left-0 after:h-px after:bg-accent after:transition-all after:duration-300",
+                      isActive(item.href) ? "text-accent after:w-full" : "after:w-0 hover:after:w-full",
+                    )}
                   >
-                    <Link
-                      href={item.href}
-                      // Closes the menu after a keyboard user follows a link.
-                      onFocus={() => hasMenu && setOpenMenu(item.label)}
-                      aria-expanded={hasMenu ? openMenu === item.label : undefined}
-                      className={cn(
-                        // whitespace-nowrap: the nav sits in a flex-1 column, so a
-                        // two-word label like "About us" would otherwise wrap.
-                        "nav-label relative whitespace-nowrap text-ink-soft transition-colors duration-500 hover:text-ink",
-                        "after:absolute after:-bottom-1.5 after:left-0 after:h-px after:bg-ink after:transition-all after:duration-300",
-                        isActive(item.href) ? "text-ink after:w-full" : "after:w-0 hover:after:w-full",
-                      )}
-                    >
-                      {item.label}
-                    </Link>
+                    {item.label}
+                  </Link>
 
-                    {hasMenu && openMenu === item.label && (
-                      // Sits in the gap under the link so moving the cursor
-                      // down doesn't cross a dead zone and close it.
-                      <div className="absolute left-0 top-full z-50 pt-4">
+                  {hasMenu && isOpen && (
+                    // Sits in the gap under the link so moving the cursor
+                    // down doesn't cross a dead zone and close it.
+                    <div className="absolute left-0 top-full z-50 pt-4">
+                      {isMega ? (
+                        <NewInMenu products={newIn} onNavigate={() => setOpenMenu(null)} />
+                      ) : (
                         <ul className="min-w-48 border border-line bg-white py-2">
                           {children.map((child) => (
                             <li key={child.href + child.label}>
@@ -129,27 +219,18 @@ export function Header() {
                             </li>
                           ))}
                         </ul>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </nav>
-          </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </nav>
 
-          {/* Center: wordmark */}
-          <Link
-            href="/"
-            className="font-display text-[1.75rem] tracking-[0.28em] text-ink sm:text-[2rem] lg:flex-1 lg:text-center"
-            aria-label={`${SITE.name} home`}
-          >
-            {SITE.name}
-          </Link>
-
-          {/* Right: actions */}
-          <div className="flex items-center justify-end gap-0.5 sm:gap-1 lg:flex-1">
+          {/* Actions */}
+          <div className="ml-auto flex shrink-0 items-center justify-end gap-0 sm:gap-1">
             <button
-              className="grid h-10 w-10 place-items-center rounded-full text-ink transition-colors duration-(--duration-quick) hover:bg-mist"
+              className="grid h-9 w-9 place-items-center text-ink transition-colors duration-(--duration-quick) hover:text-accent sm:h-10 sm:w-10"
               aria-label="Search"
               onClick={() => setSearchOpen(true)}
             >
@@ -163,15 +244,16 @@ export function Header() {
               aria-label={user ? "My account" : "Login"}
               className={cn(
                 // Mobile: same icon-button treatment as its siblings.
-                "grid h-10 w-10 place-items-center rounded-full text-ink transition-colors duration-(--duration-quick) hover:bg-mist",
-                // sm+: an outlined, labelled control — quiet, not a CTA.
-                "sm:inline-flex sm:h-[38px] sm:w-auto sm:gap-2 sm:rounded-[10px] sm:border sm:border-[#E5E7EB] sm:bg-white sm:px-[14px] sm:text-sm sm:font-medium",
-                "sm:transition-all sm:duration-(--duration-base) sm:hover:-translate-y-px sm:hover:border-ink/30 sm:hover:shadow-(--shadow-lift)",
-                "sm:active:translate-y-0 sm:active:border-[#CBD5E1] sm:active:bg-[#F9FAFB]",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ink/25 focus-visible:ring-offset-2",
+                "grid h-9 w-9 place-items-center text-ink transition-colors duration-(--duration-quick) hover:text-accent",
+                // sm+: a squared, hairline-outlined label — quiet, not a CTA.
+                // No radius, no lift, no shadow: it matches the button system.
+                "sm:inline-flex sm:h-9 sm:w-auto sm:gap-2 sm:border sm:border-line sm:px-3.5",
+                "sm:text-[0.75rem] sm:font-medium sm:uppercase sm:tracking-[0.14em]",
+                "sm:transition-colors sm:duration-(--duration-base) sm:hover:border-ink sm:hover:text-ink",
+                "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
               )}
             >
-              <UserIcon className="h-5 w-5 shrink-0 text-ink-soft sm:h-[18px] sm:w-[18px]" />
+              <UserIcon className="h-5 w-5 shrink-0 sm:h-4 sm:w-4" />
               <span className="hidden max-w-[10ch] truncate sm:inline">
                 {user ? firstName(user.name) : "Login"}
               </span>
@@ -179,7 +261,7 @@ export function Header() {
             <Link
               href="/wishlist"
               aria-label={`Wishlist, ${wishlistCount} saved`}
-              className="relative grid h-10 w-10 place-items-center rounded-full text-ink transition-colors duration-(--duration-quick) hover:bg-mist"
+              className="relative grid h-9 w-9 place-items-center text-ink transition-colors duration-(--duration-quick) hover:text-accent sm:h-10 sm:w-10"
             >
               <HeartIcon className="h-5 w-5" />
               {wishlistCount > 0 && (
@@ -189,7 +271,7 @@ export function Header() {
               )}
             </Link>
             <button
-              className="relative grid h-10 w-10 place-items-center rounded-full text-ink transition-colors duration-(--duration-quick) hover:bg-mist"
+              className="relative grid h-9 w-9 place-items-center text-ink transition-colors duration-(--duration-quick) hover:text-accent sm:h-10 sm:w-10"
               aria-label={`Cart, ${count} items`}
               onClick={openCart}
             >

@@ -26,7 +26,7 @@ export function CampaignBanner() {
   return (
     <section
       ref={ref}
-      className="relative flex min-h-[560px] items-center overflow-hidden bg-ink lg:min-h-[80vh]"
+      className="relative flex min-h-[500px] items-center overflow-hidden bg-ink lg:min-h-[68vh]"
     >
       {/* Parallax layer (translate) wraps the Ken-Burns layer (scale/pan) so the
           two transforms never fight. */}
@@ -36,13 +36,10 @@ export function CampaignBanner() {
         </div>
       </motion.div>
 
-      {/* Navy scrim — deep behind the copy on the left so the headline stays
-          readable, easing off to the right so the photograph is still visible.
-          A flat wash strong enough to read as navy would hide the image. */}
-      <div className="absolute inset-0 bg-gradient-to-r from-ink/95 via-ink/70 to-ink/25" />
-
-      {/* Gentle top/bottom vignette for depth. */}
-      <div className="absolute inset-0 bg-gradient-to-t from-ink/45 via-transparent to-ink/25" />
+      {/* One flat black veil, no gradient and no vignette. The copy block below
+          carries its own contrast, so the picture only needs taking down a
+          stop rather than being faded across. */}
+      <div className="absolute inset-0 bg-ink/55" />
 
       <Container className="relative z-10 py-section">
         <motion.div
@@ -53,7 +50,7 @@ export function CampaignBanner() {
           className="max-w-xl"
         >
           <motion.p
-            className="text-[0.72rem] font-medium uppercase tracking-[0.3em] text-white/70"
+            className="eyebrow text-white/70"
             initial={reduce ? { opacity: 1, y: 0 } : { opacity: 0, y: 14 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -61,16 +58,16 @@ export function CampaignBanner() {
           >
             The CONROY Film
           </motion.p>
-          <h2 className="display-section mt-7 text-white">
+          <h2 className="display-section mt-6 text-white">
             Made to move
             <br />
             with you.
           </h2>
-          <p className="mt-8 max-w-md text-body text-white/85">
+          <p className="mt-6 max-w-md text-body text-white/80">
             Honest indigo, softened by wear. A film of everyday moments in denim built to be
             lived in — and passed on.
           </p>
-          <Button href="/collections/all" variant="light" size="lg" className="mt-12">
+          <Button href="/collections/all" variant="light" size="lg" className="mt-9">
             Explore the collection
           </Button>
         </motion.div>

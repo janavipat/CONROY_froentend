@@ -1,10 +1,21 @@
+import Image from "next/image";
 import Link from "next/link";
+import { cn } from "@/utils/cn";
 import { Container } from "@/components/ui/Container";
+import { Reveal } from "@/components/motion/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
 /**
  * An editorial band that sends shoppers into a category — the Denim Edit and
- * the T-Shirt Edit. Structure only; Phase 3 gives it its imagery and layout.
+ * the T-Shirt Edit.
+ *
+ * Given an `image` it becomes a split editorial: photograph on one side, copy
+ * on the other. Without one it collapses to a compact centred band, so a band
+ * carrying nothing but a heading and a link never reserves a screen's worth of
+ * height.
+ *
+ * `tone` rather than a className: `cn` is plain clsx, so a caller passing
+ * `bg-background` could not reliably beat a hard-coded `bg-paper`.
  */
 export function EditBanner({
   eyebrow,
@@ -12,23 +23,74 @@ export function EditBanner({
   description,
   href,
   ctaLabel,
-  className,
+  image,
+  imageAlt = "",
+  imageSide = "left",
+  tone = "paper",
 }: {
   eyebrow?: string;
   title: string;
   description?: string;
   href: string;
   ctaLabel: string;
-  className?: string;
+  /** Existing CONROY photography. Omitted, the band renders as text only. */
+  image?: string;
+  imageAlt?: string;
+  imageSide?: "left" | "right";
+  tone?: "paper" | "page";
 }) {
+  const cta = (
+    <Link
+      href={href}
+      className="nav-label inline-block text-ink transition-colors duration-(--duration-base) hover:text-accent"
+    >
+      {ctaLabel}
+    </Link>
+  );
+
+  const band = tone === "paper" ? "bg-paper" : "bg-background";
+
+  if (!image) {
+    return (
+      <section className={cn(band, "py-section-sm")}>
+        <Container>
+          <SectionHeading eyebrow={eyebrow} title={title} description={description} />
+          <div className="mt-block flex justify-center">{cta}</div>
+        </Container>
+      </section>
+    );
+  }
+
   return (
-    <section className={className ?? "bg-paper py-section"}>
+    <section className={cn(band, "py-section-sm")}>
       <Container>
-        <SectionHeading eyebrow={eyebrow} title={title} description={description} />
-        <div className="mt-block flex justify-center">
-          <Link href={href} className="nav-label text-ink-soft transition-colors hover:text-ink">
-            {ctaLabel}
-          </Link>
+        <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-20">
+          <Reveal
+            className={cn(
+              "relative aspect-[4/5] overflow-hidden bg-mist sm:aspect-[3/2] lg:aspect-[4/5]",
+              imageSide === "right" && "lg:order-last",
+            )}
+          >
+            <Image
+              src={image}
+              alt={imageAlt}
+              fill
+              sizes="(max-width: 1024px) 100vw, 45vw"
+              className="object-cover"
+            />
+          </Reveal>
+
+          <div>
+            <SectionHeading
+              align="left"
+              eyebrow={eyebrow}
+              title={title}
+              description={description}
+            />
+            <Reveal index={1}>
+              <div className="mt-10">{cta}</div>
+            </Reveal>
+          </div>
         </div>
       </Container>
     </section>

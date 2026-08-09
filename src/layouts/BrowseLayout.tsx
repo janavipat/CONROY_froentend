@@ -38,22 +38,25 @@ export function BrowseLayout({
         breadcrumbs={breadcrumbs}
       />
 
-      <section className="py-section">
+      <section className="py-section-sm">
         <Container>
-          {/* Filter · Sort · Count. The controls are structural placeholders
-              until the filter phase; the count is real. */}
-          <div className="mb-12 flex items-center justify-between gap-4 border-b border-line pb-4">
-            <div className="flex items-center gap-6">
-              <span className="text-xs tracking-[0.01em] text-stone">Filter</span>
-              <span className="text-xs tracking-[0.01em] text-stone">Sort</span>
+          {/* Filter · Sort · Count — a hairline rule with widely tracked
+              uppercase labels, the way a listing header reads in print. The
+              two controls are still structural placeholders until the filter
+              phase, so they are set as labels rather than dressed up as
+              buttons that would not do anything. The count is real. */}
+          <div className="mb-block flex items-center justify-between gap-4 border-b border-line pb-4">
+            <div className="flex items-center gap-8">
+              <span className="nav-label text-ink">Filter</span>
+              <span className="nav-label text-ink">Sort</span>
             </div>
-            <p className="text-xs tracking-[0.01em] text-stone">
+            <p className="micro-label">
               {products.length} {products.length === 1 ? "product" : "products"}
             </p>
           </div>
 
           {products.length === 0 ? (
-            <p className="py-20 text-center text-sm text-stone">{emptyMessage}</p>
+            <p className="py-16 text-center text-sm text-stone">{emptyMessage}</p>
           ) : (
             <ProductGrid products={products} columns={4} priorityCount={4} />
           )}

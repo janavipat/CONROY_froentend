@@ -1,57 +1,74 @@
 @import "tailwindcss";
 
 /*
- * CONROY — quiet-luxury design system in the register of Loro Piana, Brunello
- * Cucinelli and COS: a warm off-white ground, deep navy ink, one restrained
- * gold accent, Cormorant Garamond over Inter, square edges, hairline rules
- * instead of card borders, and long (700–1200ms) transitions so nothing snaps.
+ * CONROY — a fashion-editorial design system: an off-white ground, deep black
+ * type, and one royal blue that carries the whole brand. Bodoni Moda sets the
+ * editorial headlines, Inter runs every piece of UI — navigation, product
+ * names, prices. Square edges, hairline rules instead of card borders, flat
+ * fills instead of gradients, and nothing decorative that a photograph could
+ * do better.
+ *
+ * Three colours do all the work. Anything that needs a fourth is usually a
+ * layout problem wearing a colour costume.
  */
 @theme {
-  /* Neutrals — warm off-white ground with deep navy ink. Every surface is a
-     shade of the same warm base, so bands read as a change of light rather
-     than a change of colour. */
+  /* Neutrals — an off-white ground with near-black type. The bands are three
+     steps of the same neutral, so a change of section reads as a change of
+     light rather than a change of colour. */
   --color-white: #ffffff;
-  --color-background: #faf8f4; /* warm off-white — the page ground */
-  --color-paper: #f4f1ea; /* alt section band */
-  --color-mist: #ece7dd; /* image backdrops */
-  --color-ink: #16233b; /* headings — deep navy */
-  --color-ink-soft: #5b6678; /* body text — slate */
-  --color-stone: #97918a; /* muted text — warm grey */
-  --color-line: #e7e2d8; /* hairline borders — barely there */
+  --color-background: #f6f5f2; /* off white — the page ground */
+  --color-paper: #efeeea; /* alt section band */
+  --color-mist: #e6e5e1; /* image backdrops — sits close to the studio grey
+                            behind the product photography, so a loading or
+                            letterboxed frame doesn't flash a different tone */
+  --color-ink: #0a0a0b; /* deep black — headings and primary type */
+  --color-ink-soft: #45454a; /* body copy — black softened, never grey-blue */
+  --color-stone: #8b8b8f; /* muted labels */
+  --color-line: #dedcd7; /* hairline borders — barely there */
 
-  /* Warm section blocks */
-  --color-sky: #f1ece2;
-  --color-sage: #efeae0; /* name kept for existing usages */
-  --color-cream: #f4f1ea; /* alias kept for existing usages */
+  /* Neutral section blocks (aliases kept for existing usages) */
+  --color-sky: #efeeea;
+  --color-sage: #eae9e5;
+  --color-cream: #f6f5f2; /* the off-white, for type on dark grounds */
 
-  /* Accent — a single restrained gold. Used for emphasis, never for fill. */
-  --color-accent: #b08a4a;
-  --color-gold: #b08a4a;
+  /* Accent — CONROY royal blue. One colour, used for emphasis, links, hover
+     and the odd fill. Never a gradient. */
+  --color-accent: #1f3bc8;
+  --color-royal: #1f3bc8;
+  /* Legacy alias: the old gold. Mapped onto royal so nothing is left stranded
+     in a colour the brand no longer uses. */
+  --color-gold: #1f3bc8;
 
   /* Semantic */
   --color-foreground: var(--color-ink-soft);
 
-  /* Typography — Cormorant Garamond (display serif) over Inter (body sans).
-     Loaded via next/font in app/layout.tsx. */
-  --font-sans: var(--font-inter), "Helvetica Neue", Helvetica, Arial, sans-serif;
-  --font-serif: var(--font-cormorant), "Cormorant Garamond", Georgia, serif;
+  /* Typography — Bodoni Moda (editorial didone) over Inter (UI grotesque).
+     Loaded via next/font in app/layout.tsx.
 
-  /* Shape */
+     The split is strict: the serif is for display sizes only — hero, section
+     titles, the wordmark — where its hairline strokes read as couture. Every
+     working piece of text (nav, product names, prices, body, labels) is Inter,
+     which is what keeps the pages feeling modern rather than costumed. */
+  --font-sans: var(--font-inter), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-serif: var(--font-bodoni), "Bodoni MT", Didot, "Times New Roman", serif;
+
+  /* Shape — square. A radius is the fastest way to make a fashion page look
+     like a SaaS dashboard. */
   --radius-pill: 9999px;
   --radius-media: 0px;
 
   /* Layout */
-  --spacing-header: clamp(4.5rem, 4rem + 1.6vw, 6rem);
+  --spacing-header: clamp(4.25rem, 3.75rem + 1.4vw, 5.5rem);
 
   /* Vertical rhythm — one fluid scale drives every section band so the spacing
      stays consistent site-wide instead of each section picking its own py-*.
-     Resolves to ~64px on phones, ~95px on tablets and 150–176px on desktop,
-     the open, editorial cadence luxury houses use. */
-  --spacing-section: clamp(4rem, 2rem + 8vw, 11rem);
+     Tightened from the previous scale: the old top end (176px) left the page
+     reading as gaps between content rather than as a sequence of editorials. */
+  --spacing-section: clamp(3.5rem, 2rem + 6vw, 8rem);
   /* Denser bands (utility pages, service strips) — same curve, ~0.7 scale. */
-  --spacing-section-sm: clamp(3rem, 1.5rem + 5.5vw, 7.5rem);
+  --spacing-section-sm: clamp(2.75rem, 1.5rem + 4.25vw, 5.5rem);
   /* Gap between a section's heading block and the content it introduces. */
-  --spacing-block: clamp(2.5rem, 1.75rem + 3vw, 5rem);
+  --spacing-block: clamp(2rem, 1.5rem + 2vw, 3.25rem);
 
   /* Easing */
   --ease-luxe: cubic-bezier(0.16, 1, 0.3, 1);
@@ -63,14 +80,14 @@
   --duration-base: 400ms; /* buttons, links, icons */
   --duration-slow: 500ms; /* images, cards, section reveals */
 
-  /* Soft shadow used only on hover — a lift, never a resting box. */
-  --shadow-lift: 0 18px 40px -28px rgb(22 35 59 / 0.28);
+  /* Kept for the two floating surfaces that genuinely sit above the page —
+     the nav dropdown and the account control. Product cards do not use it. */
+  --shadow-lift: 0 22px 48px -34px rgb(10 10 11 / 0.3);
 
-  /* Buttons — a near-square corner (4px) reads as tailored; a pill reads as
-     retail. One radius, one duration, one shadow, applied everywhere. */
-  --radius-button: 4px;
+  /* Buttons — square, black, one duration. No lift, no shadow: the page has
+     no depth anywhere else and a button that rises off it looks retail. */
+  --radius-button: 0px;
   --duration-button: 350ms;
-  --shadow-button: 0 12px 30px rgb(0 0 0 / 0.12);
 }
 
 /*
@@ -101,19 +118,19 @@
     background: var(--color-background);
     color: var(--color-ink-soft);
     font-family: var(--font-sans);
-    font-size: 1.0625rem;
-    line-height: 1.75;
+    font-size: 1rem;
+    line-height: 1.7;
     font-weight: 400;
-    letter-spacing: 0.005em;
+    letter-spacing: 0.002em;
   }
 
-  /* Display headings — Cormorant Garamond. Light weight is deliberate: at
-     display sizes a high-contrast serif reads as more expensive the lighter
-     it is set. */
+  /* Display headings — Bodoni Moda. Set at 400 rather than a lighter weight:
+     a didone's thin strokes are already hairlines, and going lighter makes
+     them break up on a light ground instead of reading as refinement. */
   .font-display {
     font-family: var(--font-serif);
-    font-weight: 300;
-    letter-spacing: -0.01em;
+    font-weight: 400;
+    letter-spacing: -0.005em;
     color: var(--color-ink);
   }
 
@@ -128,54 +145,78 @@
 
   /*
    * Type scale — fluid, so headings never jump at a breakpoint.
+   *
+   * Two families, two jobs. `display-*` is the editorial serif and only ever
+   * appears at size. `display-product` is deliberately sans: product names sit
+   * beside prices and sizes, and a serif there reads as a magazine caption
+   * rather than as something you can buy.
    */
   .display-hero {
     font-family: var(--font-serif);
-    font-size: clamp(3.25rem, 1.5rem + 6vw, 6rem);
-    font-weight: 300;
-    line-height: 1.04;
-    letter-spacing: -0.02em;
+    font-size: clamp(3rem, 1.4rem + 5.4vw, 5.25rem);
+    font-weight: 400;
+    line-height: 1.02;
+    letter-spacing: -0.015em;
   }
 
   .display-section {
     font-family: var(--font-serif);
-    font-size: clamp(2.25rem, 1.4rem + 2.6vw, 3.5rem);
-    font-weight: 300;
-    line-height: 1.14;
-    letter-spacing: -0.015em;
+    font-size: clamp(2rem, 1.35rem + 2.2vw, 3.125rem);
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
   }
 
   .display-product {
-    font-family: var(--font-serif);
-    font-size: clamp(1.25rem, 1.1rem + 0.45vw, 1.625rem);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 500;
+    line-height: 1.4;
+    letter-spacing: 0.004em;
+  }
+
+  /* Prices and other figures. Tabular numerals so a column of prices lines up
+     digit for digit instead of shimmering. */
+  .price {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
     font-weight: 400;
-    line-height: 1.3;
-    letter-spacing: 0;
+    letter-spacing: 0.01em;
+    font-variant-numeric: tabular-nums;
   }
 
   /* Long-form body copy. */
   .text-body {
-    font-size: 1.0625rem;
-    line-height: 1.8;
-    letter-spacing: 0.005em;
+    font-size: 1rem;
+    line-height: 1.75;
+    letter-spacing: 0.002em;
   }
 
-  /* Small caps labels — "Heritage Icons", "Our Philosophy". */
+  /* Small caps labels — "The Edit", "Heritage Icons". */
   .eyebrow {
-    font-size: 0.75rem;
+    font-size: 0.6875rem;
     line-height: 1.4;
-    letter-spacing: 0.2em;
+    letter-spacing: 0.22em;
     text-transform: uppercase;
     font-weight: 500;
     color: var(--color-stone);
   }
 
-  /* Navigation and other quiet UI labels. */
+  /* Navigation and other working UI labels. */
   .nav-label {
-    font-size: 0.8125rem;
-    font-weight: 400;
-    letter-spacing: 0.14em;
+    font-size: 0.75rem;
+    font-weight: 500;
+    letter-spacing: 0.16em;
     text-transform: uppercase;
+  }
+
+  /* The micro label under a product name — fit, colour, category. */
+  .micro-label {
+    font-size: 0.6875rem;
+    font-weight: 400;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--color-stone);
   }
 
   /* Comfortable measure — ~65 characters. */
@@ -209,6 +250,21 @@
 .ken-burns {
   transform-origin: center;
   animation: ken-burns 24s ease-in-out infinite alternate;
+}
+
+/* Indeterminate route-progress bar — a hairline sliver travelling across a
+   2px track. Used while a browse route resolves, in place of a full-page
+   spinner: it says "working" without taking the page away. */
+@keyframes progress-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+.animate-progress-slide {
+  animation: progress-slide 1.1s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
 /* Gentle float for badges / accents */
@@ -252,12 +308,14 @@
   background: var(--color-mist);
 }
 ::-webkit-scrollbar-thumb {
-  background: #d2d2d2;
+  background: #c9c8c3;
   border-radius: 9999px;
 }
 
+/* Selection in the brand blue — the one place a flash of royal is unavoidable
+   and welcome. */
 ::selection {
-  background: var(--color-ink);
+  background: var(--color-accent);
   color: var(--color-white);
 }
 

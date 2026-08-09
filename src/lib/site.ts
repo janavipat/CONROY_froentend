@@ -37,10 +37,16 @@ export interface NavItem extends NavLink {
   children?: NavLink[];
   /** Fills children from the live collections list instead of a static array. */
   dynamic?: "collections";
+  /**
+   * Swaps the plain link list for a product panel. "newIn" shows the products
+   * an admin has marked New In — the discovery surface that used to be an
+   * always-visible (and usually empty) homepage rail.
+   */
+  mega?: "newIn";
 }
 
 export const PRIMARY_NAV: NavItem[] = [
-  { label: "New In", href: "/new-in" },
+  { label: "New In", href: "/new-in", mega: "newIn" },
   {
     label: "Denim",
     href: "/denim",

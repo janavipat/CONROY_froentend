@@ -22,7 +22,9 @@ export function SectionHeading({
   return (
     <Reveal
       className={cn(
-        "flex flex-col gap-5 sm:gap-6",
+        // Tight between eyebrow and title, looser before the lede: the eyebrow
+        // belongs to the heading, the description is a separate thought.
+        "flex flex-col gap-3.5 sm:gap-4",
         align === "center" ? "items-center text-center" : "items-start text-left",
         className,
       )}

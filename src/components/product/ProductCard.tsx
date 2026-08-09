@@ -11,8 +11,13 @@ import { QuickViewModal } from "./QuickViewModal";
 
 /**
  * Minimal product card: a tall image doing all the work, with the name, price
- * and fit set quietly beneath it. No border, no card surface, no hover panel —
- * the only motion is the second image crossfading in over a long beat.
+ * and fit set quietly beneath it.
+ *
+ * There is no card. No border, no surface, no radius, no resting or hover
+ * shadow — the photograph sits directly on the page ground and the type sits
+ * under it. The only motion is the second image crossfading in over a long
+ * beat, and the quick-view bar arriving as a flat white band rather than a
+ * gradient wash.
  */
 export function ProductCard({ product, priority = false }: { product: Product; priority?: boolean }) {
   const [quickView, setQuickView] = useState(false);
@@ -22,9 +27,10 @@ export function ProductCard({ product, priority = false }: { product: Product; p
   return (
     <>
       <article className="group flex flex-col">
-        {/* 3:4 rather than 4:5 — a taller frame reads as editorial. The shadow
-            is a hover-only lift: at rest the card has no box at all. */}
-        <div className="relative aspect-[3/4] overflow-hidden bg-mist transition-shadow duration-(--duration-slow) ease-[var(--ease-luxe)] group-hover:shadow-(--shadow-lift)">
+        {/* 3:4 — a taller frame reads as editorial, and it is the crop the
+            studio photography was shot for. The mist ground matches the
+            backdrop in those frames, so the fill never shows as a seam. */}
+        <div className="relative aspect-[3/4] overflow-hidden bg-mist">
           <Link href={`/products/${product.handle}`} aria-label={product.title}>
             <Image
               src={primary.src}
@@ -56,16 +62,17 @@ export function ProductCard({ product, priority = false }: { product: Product; p
             className="absolute right-4 top-4 opacity-0 transition-opacity duration-(--duration-base) focus-within:opacity-100 group-hover:opacity-100"
           />
 
-          {/* Quick view — a hairline word at the foot, not a filled bar. */}
+          {/* Quick view — a flat white band at the foot. A gradient scrim was
+              the one piece of decoration left on the card. */}
           <button
             onClick={() => setQuickView(true)}
-            className="nav-label absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/35 to-transparent py-6 text-white opacity-0 transition-opacity duration-(--duration-base) ease-[var(--ease-luxe)] group-hover:opacity-100"
+            className="nav-label absolute inset-x-0 bottom-0 translate-y-full bg-white/95 py-4 text-ink transition-transform duration-(--duration-base) ease-[var(--ease-luxe)] group-hover:translate-y-0 focus-visible:translate-y-0"
           >
             Quick view
           </button>
         </div>
 
-        <div className="mt-7 flex flex-col items-start gap-2.5">
+        <div className="mt-5 flex flex-col items-start gap-2">
           <Link
             href={`/products/${product.handle}`}
             className="display-product text-ink transition-colors duration-(--duration-quick) hover:text-accent"
@@ -73,7 +80,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
             {product.title}
           </Link>
           {/* Selling price first, then the struck-through original. */}
-          <span className="flex items-baseline gap-2.5 text-[0.9375rem] tracking-[0.02em]">
+          <span className="price flex items-baseline gap-2.5">
             <span className="text-ink">{formatCurrency(product.price, product.currency)}</span>
             {product.compareAtPrice != null && product.compareAtPrice > product.price && (
               <s className="text-[0.8125rem] text-stone">
@@ -81,7 +88,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
               </s>
             )}
           </span>
-          <p className="text-[0.75rem] uppercase tracking-[0.14em] text-stone">{product.fit}</p>
+          <p className="micro-label">{product.fit}</p>
           <Rating value={product.rating} count={product.reviewCount} showCount={false} />
         </div>
       </article>

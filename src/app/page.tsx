@@ -1,93 +1,71 @@
 import { Hero } from "@/sections/Hero";
 import { ProductRail } from "@/sections/ProductRail";
 import { EditBanner } from "@/sections/EditBanner";
+import { FeaturedEdit } from "@/sections/FeaturedEdit";
+import { ShopTheLookEdit } from "@/sections/ShopTheLookEdit";
 import { HeritageStory } from "@/sections/HeritageStory";
 import { CampaignBanner } from "@/sections/CampaignBanner";
 import { ServiceFeatures } from "@/sections/ServiceFeatures";
 import { fetchSiteSettings, isOn } from "@/services/settings";
-import { browseProducts, fetchBestSellers, fetchNewIn } from "@/services/browse";
+import { browseProducts, fetchBestSellers } from "@/services/browse";
 
 /**
  * Homepage composition — a fashion-brand storytelling order rather than a
  * catalogue dump:
  *
- *   Hero → New In → Denim Edit → Featured → Brand Story → Shop the Look
- *        → Best Sellers → T-Shirt Edit → Newsletter (in the footer)
+ *   Hero → Denim Edit → Featured → T-Shirt Edit → Best Sellers
+ *        → Shop the Look → Brand Story → Newsletter (in the footer)
  *
- * Rails that have no products render nothing rather than an empty state, so
- * the page stays coherent while New In and Best Sellers are still unset.
- * Section visibility remains admin-controlled through site settings.
+ * New In is deliberately absent: it is admin-curated, so as a permanent
+ * homepage rail it sat empty (or one card wide in a four-column grid) and left
+ * a hole near the top of the page. It now lives in the header's New In menu,
+ * where an under-filled rail costs nothing.
+ *
+ * Every band here is sized by its content. Data-driven sections render nothing
+ * at all when they have no products, so a section that isn't curated yet
+ * disappears instead of reserving space. Section visibility remains
+ * admin-controlled through site settings.
  */
 export default async function HomePage() {
   const settings = await fetchSiteSettings();
   const show = (key: string) => isOn(settings, key);
 
-  const [newIn, bestSellers, denim, tshirts] = await Promise.all([
-    fetchNewIn(),
+  const [bestSellers, denim, tshirts] = await Promise.all([
     fetchBestSellers(),
     browseProducts({ category: "Denim" }),
     browseProducts({ category: "T-Shirts" }),
   ]);
+
+  // The Denim Edit's photograph comes from the catalogue itself, so it is
+  // always real CONROY product photography and never a placeholder.
+  const denimImage = denim.find((p) => p.images[0]?.src)?.images[0];
 
   return (
     <>
       {/* 1 — Hero */}
       <Hero />
 
-      {/* 2 — New In. Admin-curated; hidden until something is marked. */}
-      <ProductRail
-        eyebrow="Just arrived"
-        title="New In"
-        description="The latest pieces to join the collection."
-        products={newIn}
-        href="/new-in"
-        ctaLabel="View all new in"
-      />
-
-      {/* 3 — Denim Edit */}
-      {show("section.heritage") && <HeritageStory />}
+      {/* 2 — Denim Edit */}
       <EditBanner
         eyebrow="The edit"
         title="Denim, made to last"
         description="Slim, straight and relaxed cuts in honest indigo and washed black."
         href="/denim"
         ctaLabel="Shop all denim"
+        image={denimImage?.src}
+        imageAlt={denimImage?.alt ?? "CONROY denim"}
       />
 
-      {/* 4 — Featured products */}
-      <ProductRail
+      {/* 3 — Featured. Photography-led, built from live products. */}
+      <FeaturedEdit
         eyebrow="The collection"
         title="Featured"
         products={denim}
         href="/denim"
         ctaLabel="Shop all denim"
-        className="bg-paper py-section"
       />
 
-      {/* 5 — Brand story */}
-      {show("section.campaign") && <CampaignBanner />}
-
-      {/* 6 — Shop the Look */}
-      <EditBanner
-        eyebrow="Styled by CONROY"
-        title="Shop the Look"
-        description="Complete outfits, put together by our team."
-        href="/shop-the-look"
-        ctaLabel="Explore the looks"
-        className="py-section"
-      />
-
-      {/* 7 — Best Sellers. Admin-curated, like New In. */}
-      <ProductRail
-        eyebrow="Loved most"
-        title="Best Sellers"
-        products={bestSellers}
-        href="/denim"
-        ctaLabel="Shop all denim"
-        className="bg-paper py-section"
-      />
-
-      {/* 8 — T-Shirt Edit. Hidden entirely until T-shirts exist. */}
+      {/* 4 — T-Shirt Edit. Hidden entirely until T-shirts exist. */}
       {tshirts.length > 0 && (
         <EditBanner
           eyebrow="The edit"
@@ -95,12 +73,38 @@ export default async function HomePage() {
           description="Everyday essentials in honest cotton."
           href="/t-shirts"
           ctaLabel="Shop all t-shirts"
-          className="py-section"
+          image={tshirts.find((p) => p.images[0]?.src)?.images[0]?.src}
+          imageAlt="CONROY t-shirts"
+          imageSide="right"
         />
       )}
 
+      {/* 5 — Best Sellers. Admin-curated; renders nothing until something is
+          marked, and narrows to however many products there are. */}
+      <ProductRail
+        eyebrow="Loved most"
+        title="Best Sellers"
+        products={bestSellers}
+        href="/denim"
+        ctaLabel="Shop all denim"
+        className="bg-paper py-section-sm"
+      />
+
+      {/* 6 — Shop the Look */}
+      {denim.length > 0 && (
+        <ShopTheLookEdit
+          products={denim}
+          href="/shop-the-look"
+          ctaLabel="Explore the look"
+        />
+      )}
+
+      {/* 7 — Brand story */}
+      {show("section.heritage") && <HeritageStory />}
+      {show("section.campaign") && <CampaignBanner />}
+
       {show("section.services") && <ServiceFeatures />}
-      {/* 9 — Newsletter and 10 — Footer are rendered by StoreChrome. */}
+      {/* 8 — Newsletter and 9 — Footer are rendered by StoreChrome. */}
     </>
   );
 }

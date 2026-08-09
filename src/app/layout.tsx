@@ -1,24 +1,27 @@
 import type { Metadata, Viewport } from "next";
-import { Cormorant_Garamond, Inter } from "next/font/google";
+import { Bodoni_Moda, Inter } from "next/font/google";
 import "./globals.css";
 import { SITE } from "@/lib/site";
 import { StoreChrome } from "@/components/layout/StoreChrome";
 import { Providers } from "./providers";
 
-// Display — Cormorant Garamond: a high-contrast old-style serif in the Canela /
-// Editorial New register, the quiet-luxury house style. Headings only.
-const cormorant = Cormorant_Garamond({
-  variable: "--font-cormorant",
+// Display — Bodoni Moda: the didone the fashion press is set in. Extreme
+// stroke contrast, so it is used at display sizes only; below about 24px the
+// hairlines start to disappear and Inter takes over.
+const bodoni = Bodoni_Moda({
+  variable: "--font-bodoni",
   subsets: ["latin"],
-  weight: ["300", "400", "500"],
+  weight: ["400", "500"],
+  style: ["normal", "italic"],
   display: "swap",
 });
 
-// Body & UI — Inter: a neutral grotesque that stays out of the serif's way.
+// Body & UI — Inter: a neutral grotesque that stays out of the serif's way and
+// does the actual work — navigation, product names, prices, forms.
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["300", "400", "500"],
+  weight: ["400", "500", "600"],
   display: "swap",
 });
 
@@ -73,8 +76,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  // Matches the icon plate and --color-ink.
-  themeColor: "#15243c",
+  // Matches --color-ink.
+  themeColor: "#0a0a0b",
   width: "device-width",
   initialScale: 1,
 };
@@ -85,7 +88,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${cormorant.variable} ${inter.variable} h-full antialiased`}>
+    <html lang="en" className={`${bodoni.variable} ${inter.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-background">
         <Providers>
           <StoreChrome>{children}</StoreChrome>

@@ -15,35 +15,34 @@ type Size = "sm" | "md" | "lg";
  *   light     — for dark photography, where navy would disappear
  */
 // `cn` is plain clsx (no tailwind-merge), so a later class cannot override an
-// earlier one — the lift lives on the variants that want it rather than in the
-// base with a "shadow-none" opt-out, which would not win.
-const LIFT = "hover:-translate-y-0.5 hover:shadow-(--shadow-button)";
-
+// No lift and no shadow. Nothing else on the page has depth, so a button that
+// rises off it announces itself as a retail control; the colour change alone
+// is the affordance. Black at rest, royal blue on hover — the brand's only
+// two-colour move.
 const VARIANTS: Record<Variant, string> = {
-  primary: `bg-ink text-white border border-transparent hover:bg-accent hover:border-accent ${LIFT}`,
-  outline: `bg-transparent text-ink border border-ink/25 hover:bg-ink hover:text-white hover:border-ink ${LIFT}`,
-  // A quiet text action: no fill, so a shadow would float with nothing under it.
+  primary: "bg-ink text-white border border-ink hover:bg-accent hover:border-accent",
+  outline: "bg-transparent text-ink border border-ink/30 hover:bg-ink hover:text-white hover:border-ink",
+  // A quiet text action: no fill, no border.
   ghost: "bg-transparent text-ink border border-transparent hover:text-accent",
-  light: `bg-transparent text-white border border-white/60 hover:bg-white hover:text-ink hover:border-white ${LIFT}`,
+  light: "bg-transparent text-white border border-white/70 hover:bg-white hover:text-ink hover:border-white",
 };
 
-// Heights 52–56px, horizontal padding 32–48px, 15–16px type.
+// Heights 48–56px, horizontal padding 32–48px, 13–14px type. Tighter than
+// before: the type is uppercase and widely tracked, so the box can sit closer.
 const SIZES: Record<Size, string> = {
-  sm: "h-[52px] px-8 text-[0.9375rem]",
-  md: "h-[54px] px-10 text-[0.9375rem]",
-  lg: "h-14 px-12 text-base",
+  sm: "h-11 px-7 text-[0.75rem]",
+  md: "h-12 px-9 text-[0.8125rem]",
+  lg: "h-[54px] px-11 text-[0.8125rem]",
 };
 
 const baseClasses = [
   "inline-flex items-center justify-center gap-2.5 whitespace-nowrap",
-  "rounded-(--radius-button) font-medium uppercase tracking-[0.08em] leading-none",
-  "transition-[background-color,border-color,color,transform,box-shadow] duration-(--duration-button) ease-out",
+  "rounded-(--radius-button) font-medium uppercase tracking-[0.16em] leading-none",
+  "transition-[background-color,border-color,color] duration-(--duration-button) ease-out",
   "cursor-pointer",
-  "active:translate-y-0 active:shadow-none",
-  // Gold ring reads clearly against both the navy fill and the ivory ground.
+  // Royal ring reads clearly against both the black fill and the off-white ground.
   "focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-accent",
-  // Disabled must not lift or shadow — it should look inert, not hoverable.
-  "disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none",
+  "disabled:opacity-40 disabled:cursor-not-allowed",
 ].join(" ");
 
 interface CommonProps {
