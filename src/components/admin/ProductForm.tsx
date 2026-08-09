@@ -13,9 +13,16 @@ import {
 import { Button } from "@/components/ui/Button";
 import { CloseIcon, PlusIcon } from "@/components/ui/Icons";
 import { cn } from "@/utils/cn";
+import {
+  CATEGORIES,
+  CATEGORY_FOR_TYPE,
+  PRODUCT_TYPES,
+  STANDARD_COLORS,
+  fitsFor,
+  suggestStandardColor,
+} from "@/lib/catalog-taxonomy";
 
 const SIZE_OPTIONS = ["28", "30", "32", "34", "36", "38", "40"];
-const TYPE_OPTIONS = ["Straight fit", "Relax fit", "Slim fit"];
 const COLOR_OPTIONS = ["Black", "Blue", "Grey", "Beige"];
 
 const field = "h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-ink placeholder:text-stone focus:border-ink focus:outline-none";
@@ -27,7 +34,22 @@ export function ProductForm({ initial }: { initial?: Product }) {
 
   const [title, setTitle] = useState(initial?.title ?? "");
   const [fit, setFit] = useState(initial?.fit ?? "");
+  const [productType, setProductType] = useState(initial?.productType ?? "Jeans");
+  const [category, setCategory] = useState(initial?.category ?? "Denim");
   const [color, setColor] = useState(initial?.color ?? "");
+  // Prefilled from the display colour only when the product predates the
+  // field; an explicit saved value always wins.
+  const [standardColor, setStandardColor] = useState(
+    initial?.standardColor ?? suggestStandardColor(initial?.color ?? ""),
+  );
+  const [isNewIn, setIsNewIn] = useState(initial?.isNewIn ?? false);
+  const [newInOrder, setNewInOrder] = useState(
+    initial?.newInOrder != null ? String(initial.newInOrder) : "",
+  );
+  const [isBestSeller, setIsBestSeller] = useState(initial?.isBestSeller ?? false);
+  const [bestSellerOrder, setBestSellerOrder] = useState(
+    initial?.bestSellerOrder != null ? String(initial.bestSellerOrder) : "",
+  );
   const [price, setPrice] = useState(String(initial?.price ?? ""));
   const [tagline, setTagline] = useState(initial?.tagline ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
@@ -73,7 +95,7 @@ export function ProductForm({ initial }: { initial?: Product }) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!title.trim()) return setError("Name is required.");
-    if (!fit.trim()) return setError("Type is required.");
+    if (!fit.trim()) return setError("Fit is required.");
     const priceNum = Number(price);
     if (!Number.isFinite(priceNum) || priceNum < 0) return setError("Enter a valid price.");
 
@@ -85,6 +107,15 @@ export function ProductForm({ initial }: { initial?: Product }) {
       description: description.trim(),
       color: color.trim(),
       fit: fit.trim(),
+      productType: productType.trim() || "Jeans",
+      category: category.trim() || "Denim",
+      standardColor: standardColor.trim() || null,
+      isNewIn,
+      newInOrder: newInOrder.trim() ? Math.max(0, Math.round(Number(newInOrder))) : null,
+      isBestSeller,
+      bestSellerOrder: bestSellerOrder.trim()
+        ? Math.max(0, Math.round(Number(bestSellerOrder)))
+        : null,
       price: Math.round(priceNum),
       currency: initial?.currency ?? "INR",
       stock: Math.max(0, Math.round(Number(stock) || 0)),
@@ -189,10 +220,45 @@ export function ProductForm({ initial }: { initial?: Product }) {
         </div>
 
         <div>
-          <label className={label}>Type</label>
-          <input value={fit} onChange={(e) => setFit(e.target.value)} placeholder="Relax fit" className={field} list="type-options" />
-          <datalist id="type-options">
-            {TYPE_OPTIONS.map((t) => (
+          <label className={label}>Product type</label>
+          <select
+            value={productType}
+            onChange={(e) => {
+              const next = e.target.value;
+              setProductType(next);
+              // Keep category in step; the admin can still override it.
+              const cat = CATEGORY_FOR_TYPE[next];
+              if (cat) setCategory(cat);
+            }}
+            className={field}
+          >
+            {PRODUCT_TYPES.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className={label}>Category</label>
+          <select value={category} onChange={(e) => setCategory(e.target.value)} className={field}>
+            {CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          {/* Renamed from "Type" — it was being confused with Product type. */}
+          <label className={label}>Fit</label>
+          <input value={fit} onChange={(e) => setFit(e.target.value)} placeholder="Slim Fit" className={field} list="fit-options" />
+          {/* A datalist, not a select: two products still carry the legacy
+              "Vintage Collection" value and a select would silently drop it. */}
+          <datalist id="fit-options">
+            {fitsFor(category).map((t) => (
               <option key={t} value={t} />
             ))}
           </datalist>
@@ -200,12 +266,42 @@ export function ProductForm({ initial }: { initial?: Product }) {
 
         <div>
           <label className={label}>Colour</label>
-          <input value={color} onChange={(e) => setColor(e.target.value)} placeholder="Black" className={field} list="color-options" />
+          <input
+            value={color}
+            onChange={(e) => {
+              const next = e.target.value;
+              setColor(next);
+              // Suggest a bucket while it's still empty; never overwrite a
+              // choice the admin has already made.
+              if (!standardColor) setStandardColor(suggestStandardColor(next));
+            }}
+            placeholder="Jet Black"
+            className={field}
+            list="color-options"
+          />
           <datalist id="color-options">
             {COLOR_OPTIONS.map((c) => (
               <option key={c} value={c} />
             ))}
           </datalist>
+          <p className="mt-1 text-xs text-stone">Shown to customers, e.g. &ldquo;Jet Black&rdquo;.</p>
+        </div>
+
+        <div>
+          <label className={label}>Standard colour</label>
+          <select
+            value={standardColor}
+            onChange={(e) => setStandardColor(e.target.value)}
+            className={field}
+          >
+            <option value="">— not set —</option>
+            {STANDARD_COLORS.map((c) => (
+              <option key={c} value={c}>
+                {c}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-stone">Used for filtering only.</p>
         </div>
 
         <div>
@@ -289,6 +385,60 @@ export function ProductForm({ initial }: { initial?: Product }) {
             <option value="archived">Archived</option>
           </select>
         </div>
+      </section>
+
+      {/* Merchandising — which homepage rails this product appears in. Both
+          are deliberately manual: New In is a buying decision, not an age, and
+          there isn't enough sales volume yet to rank Best Sellers. */}
+      <section className="mt-6 rounded-media border border-line bg-white p-5">
+        <span className={label}>Merchandising</span>
+
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-ink">
+              <input
+                type="checkbox"
+                checked={isNewIn}
+                onChange={(e) => setIsNewIn(e.target.checked)}
+                className="h-4 w-4 accent-ink"
+              />
+              Show in New In
+            </label>
+            <input
+              type="number"
+              min={0}
+              value={newInOrder}
+              onChange={(e) => setNewInOrder(e.target.value)}
+              disabled={!isNewIn}
+              placeholder="Order, e.g. 1"
+              className={cn(field, "mt-2", !isNewIn && "opacity-50")}
+            />
+          </div>
+
+          <div>
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-ink">
+              <input
+                type="checkbox"
+                checked={isBestSeller}
+                onChange={(e) => setIsBestSeller(e.target.checked)}
+                className="h-4 w-4 accent-ink"
+              />
+              Show in Best Sellers
+            </label>
+            <input
+              type="number"
+              min={0}
+              value={bestSellerOrder}
+              onChange={(e) => setBestSellerOrder(e.target.value)}
+              disabled={!isBestSeller}
+              placeholder="Order, e.g. 1"
+              className={cn(field, "mt-2", !isBestSeller && "opacity-50")}
+            />
+          </div>
+        </div>
+        <p className="mt-3 text-xs text-stone">
+          Lower order numbers appear first. Leave blank to sort last.
+        </p>
       </section>
 
       {/* Shipping */}

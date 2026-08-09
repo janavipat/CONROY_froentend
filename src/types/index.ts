@@ -22,8 +22,22 @@ export interface Product {
   tagline: string;
   /** Long-form description (rendered as paragraphs). */
   description: string;
-  color: "Black" | "Blue";
+  /** Customer-facing merchandising name, e.g. "Jet Black". Free text. */
+  color: string;
   fit: FitType;
+  /** What the garment is — "Jeans", "T-Shirt". */
+  productType?: string;
+  /** The department — "Denim", "T-Shirts". */
+  category?: string;
+  /** Filterable colour bucket, e.g. "Black" for a "Jet Black" product. */
+  standardColor?: string;
+  /** Merchandising rails — admin-controlled, never derived from createdAt. */
+  isNewIn?: boolean;
+  newInOrder?: number;
+  isBestSeller?: boolean;
+  bestSellerOrder?: number;
+  /** For "Newest" sorting only. Does NOT determine New In. */
+  createdAt?: string;
   price: number;
   compareAtPrice?: number;
   currency: string;

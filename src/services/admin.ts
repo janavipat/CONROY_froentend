@@ -13,6 +13,13 @@ export interface AdminProductPayload {
   description: string;
   color: string;
   fit: string;
+  productType: string;
+  category: string;
+  standardColor?: string | null;
+  isNewIn: boolean;
+  newInOrder?: number | null;
+  isBestSeller: boolean;
+  bestSellerOrder?: number | null;
   price: number;
   currency: string;
   stock: number;
