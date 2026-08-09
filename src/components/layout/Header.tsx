@@ -2,15 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { PRIMARY_NAV, SITE } from "@/lib/site";
+import { api } from "@/services/api";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useWishlist } from "@/lib/wishlist-context";
 import { useScrollPosition } from "@/hooks/useScrollPosition";
 import { cn } from "@/utils/cn";
 import { Container } from "@/components/ui/Container";
-import { BagIcon, MenuIcon, SearchIcon, UserIcon } from "@/components/ui/Icons";
+import { BagIcon, HeartIcon, MenuIcon, SearchIcon, UserIcon } from "@/components/ui/Icons";
 import { SearchModal } from "./SearchModal";
 import { MobileNav } from "./MobileNav";
 
@@ -28,8 +30,33 @@ export function Header() {
   const scrolled = useScrollPosition(20);
   const { count, openCart } = useCart();
   const { user } = useAuth();
+  const { count: wishlistCount } = useWishlist();
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  /** Which dropdown is open, by label. Null means none. */
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  /** Collections are admin-created, so the menu is filled at runtime. */
+  const [collectionLinks, setCollectionLinks] = useState<{ label: string; href: string }[]>([]);
+
+  useEffect(() => {
+    let active = true;
+    void fetch(`${api.defaults.baseURL ?? ""}/collections`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        if (!active || !j?.data) return;
+        setCollectionLinks(
+          (j.data as { handle: string; title: string }[])
+            .filter((c) => c.handle !== "all")
+            .map((c) => ({ label: c.title, href: `/collections/${c.handle}` })),
+        );
+      })
+      .catch(() => {
+        /* menu simply falls back to the Collections index link */
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
@@ -54,22 +81,59 @@ export function Header() {
             >
               <MenuIcon className="h-6 w-6" />
             </button>
-            <nav className="hidden shrink-0 items-center gap-10 lg:flex">
-              {PRIMARY_NAV.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className={cn(
-                    // whitespace-nowrap: the nav sits in a flex-1 column, so a
-                    // two-word label like "About us" would otherwise wrap.
-                    "nav-label relative whitespace-nowrap text-ink-soft transition-colors duration-500 hover:text-ink",
-                    "after:absolute after:-bottom-1.5 after:left-0 after:h-px after:bg-ink after:transition-all after:duration-300",
-                    isActive(link.href) ? "text-ink after:w-full" : "after:w-0 hover:after:w-full",
-                  )}
-                >
-                  {link.label}
-                </Link>
-              ))}
+            <nav className="hidden shrink-0 items-center gap-8 lg:flex">
+              {PRIMARY_NAV.map((item) => {
+                const children =
+                  item.dynamic === "collections"
+                    ? collectionLinks
+                    : (item.children ?? []);
+                const hasMenu = children.length > 0;
+
+                return (
+                  <div
+                    key={item.href + item.label}
+                    className="relative"
+                    onMouseEnter={() => hasMenu && setOpenMenu(item.label)}
+                    onMouseLeave={() => setOpenMenu(null)}
+                  >
+                    <Link
+                      href={item.href}
+                      // Closes the menu after a keyboard user follows a link.
+                      onFocus={() => hasMenu && setOpenMenu(item.label)}
+                      aria-expanded={hasMenu ? openMenu === item.label : undefined}
+                      className={cn(
+                        // whitespace-nowrap: the nav sits in a flex-1 column, so a
+                        // two-word label like "About us" would otherwise wrap.
+                        "nav-label relative whitespace-nowrap text-ink-soft transition-colors duration-500 hover:text-ink",
+                        "after:absolute after:-bottom-1.5 after:left-0 after:h-px after:bg-ink after:transition-all after:duration-300",
+                        isActive(item.href) ? "text-ink after:w-full" : "after:w-0 hover:after:w-full",
+                      )}
+                    >
+                      {item.label}
+                    </Link>
+
+                    {hasMenu && openMenu === item.label && (
+                      // Sits in the gap under the link so moving the cursor
+                      // down doesn't cross a dead zone and close it.
+                      <div className="absolute left-0 top-full z-50 pt-4">
+                        <ul className="min-w-48 border border-line bg-white py-2">
+                          {children.map((child) => (
+                            <li key={child.href + child.label}>
+                              <Link
+                                href={child.href}
+                                onClick={() => setOpenMenu(null)}
+                                className="block whitespace-nowrap px-5 py-2 text-sm text-ink-soft transition-colors duration-(--duration-quick) hover:text-ink"
+                              >
+                                {child.label}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </nav>
           </div>
 
@@ -111,6 +175,18 @@ export function Header() {
               <span className="hidden max-w-[10ch] truncate sm:inline">
                 {user ? firstName(user.name) : "Login"}
               </span>
+            </Link>
+            <Link
+              href="/wishlist"
+              aria-label={`Wishlist, ${wishlistCount} saved`}
+              className="relative grid h-10 w-10 place-items-center rounded-full text-ink transition-colors duration-(--duration-quick) hover:bg-mist"
+            >
+              <HeartIcon className="h-5 w-5" />
+              {wishlistCount > 0 && (
+                <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-accent px-1 text-[0.6rem] font-medium text-white">
+                  {wishlistCount}
+                </span>
+              )}
             </Link>
             <button
               className="relative grid h-10 w-10 place-items-center rounded-full text-ink transition-colors duration-(--duration-quick) hover:bg-mist"

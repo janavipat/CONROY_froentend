@@ -26,30 +26,73 @@ export const SITE = {
   },
 } as const;
 
-export const PRIMARY_NAV: NavLink[] = [
-  { label: "Home", href: "/" },
-  { label: "Collection", href: "/collections/all" },
-  { label: "About us", href: "/about" },
-  { label: "Contact", href: "/contact" },
+/**
+ * The storefront's primary navigation — one model driving the desktop header,
+ * the mega-menu and the mobile drawer, so the three can't drift apart.
+ *
+ * `children` turns an item into a dropdown. Collections are fetched at runtime
+ * rather than listed here, since the admin creates them.
+ */
+export interface NavItem extends NavLink {
+  children?: NavLink[];
+  /** Fills children from the live collections list instead of a static array. */
+  dynamic?: "collections";
+}
+
+export const PRIMARY_NAV: NavItem[] = [
+  { label: "New In", href: "/new-in" },
+  {
+    label: "Denim",
+    href: "/denim",
+    children: [
+      { label: "All Denim", href: "/denim" },
+      // Fits — how the garment is cut.
+      { label: "Slim", href: "/denim/slim" },
+      { label: "Straight", href: "/denim/straight" },
+      { label: "Relaxed", href: "/denim/relaxed" },
+      // A merchandising grouping, not a fit — resolved via the collection.
+      { label: "Vintage", href: "/denim/vintage" },
+    ],
+  },
+  {
+    label: "T-Shirts",
+    href: "/t-shirts",
+    children: [
+      { label: "All T-Shirts", href: "/t-shirts" },
+      { label: "T-Shirt Collections", href: "/collections" },
+    ],
+  },
+  { label: "Collections", href: "/collections", dynamic: "collections" },
+  { label: "Shop the Look", href: "/shop-the-look" },
+  { label: "About", href: "/about" },
 ];
 
 export const FOOTER_NAV: { title: string; links: NavLink[] }[] = [
   {
     title: "Shop",
     links: [
-      { label: "All Products", href: "/collections/all" },
-      { label: "Straight Fit", href: "/collections/romano-fit-noir-classique" },
-      { label: "Slim Fit", href: "/collections/slim-fit" },
-      { label: "Relax Fit", href: "/collections/romano-fit-bleu-heritage" },
-      { label: "Search", href: "/search" },
+      { label: "New In", href: "/new-in" },
+      { label: "Denim", href: "/denim" },
+      { label: "T-Shirts", href: "/t-shirts" },
+      { label: "Collections", href: "/collections" },
     ],
   },
   {
-    title: "Company",
+    title: "Help",
     links: [
-      { label: "About us", href: "/about" },
-      { label: "Contact us", href: "/contact" },
-      { label: "Store Policy", href: "/policy" },
+      // Shipping, Returns and Size Guide live inside the policy page today;
+      // they get their own routes when that content is split out.
+      { label: "Shipping", href: "/policy" },
+      { label: "Returns", href: "/policy" },
+      { label: "Size Guide", href: "/policy" },
+      { label: "Contact", href: "/contact" },
+    ],
+  },
+  {
+    title: "About",
+    links: [
+      { label: "About CONROY", href: "/about" },
+      { label: "Our Story", href: "/about" },
     ],
   },
   {
@@ -57,7 +100,8 @@ export const FOOTER_NAV: { title: string; links: NavLink[] }[] = [
     links: [
       { label: "Login", href: "/account/login" },
       { label: "Register", href: "/account/register" },
-      { label: "Cart", href: "/cart" },
+      { label: "Wishlist", href: "/wishlist" },
+      { label: "Bag", href: "/cart" },
     ],
   },
 ];

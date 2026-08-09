@@ -1,6 +1,7 @@
 import "server-only";
 import type { Collection, Product } from "@/types";
 import {
+  COLLECTIONS,
   getAllProducts,
   getCollectionByHandle,
   getProductByHandle,
@@ -67,6 +68,26 @@ export async function fetchAllProducts(): Promise<Product[]> {
   const data = await apiGet<Record<string, unknown>[]>("/products");
   if (data && data.length) return data.map(normalizeProduct);
   return getAllProducts();
+}
+
+/**
+ * Every collection the admin has created, for the Collections index. Falls
+ * back to the bundled catalogue when the API is unreachable, like the other
+ * readers here.
+ */
+export async function fetchCollections(): Promise<Collection[]> {
+  const data = await apiGet<Record<string, unknown>[]>("/collections");
+  if (data && data.length) {
+    return data.map((c) => ({
+      handle: String(c.handle),
+      title: String(c.title),
+      subtitle: String(c.subtitle ?? ""),
+      description: String(c.description ?? ""),
+      image: String(c.image ?? ""),
+      productHandles: [],
+    }));
+  }
+  return COLLECTIONS;
 }
 
 export async function fetchProductByHandle(handle: string): Promise<Product | undefined> {

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { PRIMARY_NAV, SITE } from "@/lib/site";
 import { Modal } from "@/components/ui/Modal";
 import { ArrowRightIcon, InstagramIcon, BagIcon } from "@/components/ui/Icons";
@@ -11,6 +12,8 @@ import { cn } from "@/utils/cn";
 export function MobileNav({ open, onClose }: { open: boolean; onClose: () => void }) {
   const pathname = usePathname();
   const { user } = useAuth();
+  /** Which section is expanded, by label. One at a time keeps it scannable. */
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   return (
     <Modal open={open} onClose={onClose} position="right" label="Menu" className="h-full w-[86vw] max-w-sm">
@@ -18,24 +21,90 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
         <span className="font-display text-xl tracking-[0.3em] text-ink">{SITE.name}</span>
 
         <nav className="mt-10 flex flex-col">
-          {PRIMARY_NAV.map((link) => {
-            const active = link.href === "/" ? pathname === "/" : pathname.startsWith(link.href);
+          {PRIMARY_NAV.map((item) => {
+            const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+            const children = item.children ?? [];
+            const expandable = children.length > 0;
+            const isOpen = expanded === item.label;
+
+            // A section with children expands in place rather than navigating,
+            // so the whole hierarchy stays reachable with one thumb.
+            if (expandable) {
+              return (
+                <div key={item.label} className="border-b border-line">
+                  <button
+                    onClick={() => setExpanded(isOpen ? null : item.label)}
+                    aria-expanded={isOpen}
+                    className={cn(
+                      "flex w-full items-center justify-between py-4 text-left font-display text-2xl text-ink",
+                      active && "text-stone",
+                    )}
+                  >
+                    {item.label}
+                    <span
+                      aria-hidden
+                      className={cn(
+                        "text-lg transition-transform duration-(--duration-base)",
+                        isOpen && "rotate-45",
+                      )}
+                    >
+                      +
+                    </span>
+                  </button>
+
+                  {isOpen && (
+                    <ul className="pb-4 pl-1">
+                      {children.map((child) => (
+                        <li key={child.href + child.label}>
+                          <Link
+                            href={child.href}
+                            onClick={onClose}
+                            className="block py-2.5 text-base text-ink-soft"
+                          >
+                            {child.label}
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            }
+
             return (
               <Link
-                key={link.href}
-                href={link.href}
+                key={item.href}
+                href={item.href}
                 onClick={onClose}
                 className={cn(
                   "group flex items-center justify-between border-b border-line py-4 font-display text-2xl text-ink",
                   active && "text-stone",
                 )}
               >
-                {link.label}
+                {item.label}
                 <ArrowRightIcon className="h-5 w-5 -translate-x-1 opacity-0 transition-all duration-(--duration-base) group-hover:translate-x-0 group-hover:opacity-100" />
               </Link>
             );
           })}
         </nav>
+
+        {/* Account · Wishlist · Bag — the same actions as the desktop header. */}
+        <div className="mt-6 flex flex-col">
+          {[
+            { label: "Account", href: user ? "/account/profile" : "/account/login" },
+            { label: "Wishlist", href: "/wishlist" },
+            { label: "Bag", href: "/cart" },
+          ].map((a) => (
+            <Link
+              key={a.label}
+              href={a.href}
+              onClick={onClose}
+              className="border-b border-line py-3 text-sm text-ink-soft"
+            >
+              {a.label}
+            </Link>
+          ))}
+        </div>
 
         {/* Account: signed-in customers get a direct path to their orders + returns */}
         {user ? (
