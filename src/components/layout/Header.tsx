@@ -16,6 +16,7 @@ import { BagIcon, HeartIcon, MenuIcon, SearchIcon, UserIcon } from "@/components
 import { SearchModal } from "./SearchModal";
 import { MobileNav } from "./MobileNav";
 import { NewInMenu, NEW_IN_MENU_LIMIT, type NewInItem } from "./NewInMenu";
+import { CollectionsMenu, type ProductTypeImages } from "./CollectionsMenu";
 
 /**
  * First name only — a full name would crowd the navbar. Accounts created
@@ -26,16 +27,17 @@ function firstName(name?: string | null): string {
   return first || "My Account";
 }
 
-/** The catalogue fields the New In panel reads. Everything else is ignored. */
-interface NewInProduct {
+/** The catalogue fields the header's panels read. Everything else is ignored. */
+interface NavProduct {
   handle: string;
   title: string;
   price?: number;
   currency?: string;
   isNewIn?: boolean;
   newInOrder?: number;
+  productType?: string;
   status?: string;
-  images?: { src: string }[];
+  images?: { src: string; alt?: string }[];
 }
 
 export function Header() {
@@ -48,56 +50,53 @@ export function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
   /** Which dropdown is open, by label. Null means none. */
   const [openMenu, setOpenMenu] = useState<string | null>(null);
-  /** Collections are admin-created, so the menu is filled at runtime. */
-  const [collectionLinks, setCollectionLinks] = useState<{ label: string; href: string }[]>([]);
   /** Products marked New In, in `newInOrder` — the New In dropdown's contents. */
   const [newIn, setNewIn] = useState<NewInItem[]>([]);
+  /** One photograph per product type, for the Collections panel. */
+  const [typeImages, setTypeImages] = useState<ProductTypeImages>({});
 
-  useEffect(() => {
-    let active = true;
-    void fetch(`${api.defaults.baseURL ?? ""}/collections`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => {
-        if (!active || !j?.data) return;
-        setCollectionLinks(
-          (j.data as { handle: string; title: string }[])
-            .filter((c) => c.handle !== "all")
-            .map((c) => ({ label: c.title, href: `/collections/${c.handle}` })),
-        );
-      })
-      .catch(() => {
-        /* menu simply falls back to the Collections index link */
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  // New In is admin-curated (isNewIn / newInOrder), so the panel is filled from
-  // the live catalogue rather than a static list. Fetched once, up front, so the
-  // panel is already populated the first time a visitor hovers the link.
+  // Both panels are filled from the live catalogue rather than a static list:
+  // New In is admin-curated (isNewIn / newInOrder), and the Collections panel
+  // shows the first real photograph of each product type. One request serves
+  // both, made up front so a panel is already populated on first hover.
   useEffect(() => {
     let active = true;
     void fetch(`${api.defaults.baseURL ?? ""}/products`)
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
         if (!active || !j?.data) return;
-        const items = (j.data as NewInProduct[])
-          .filter((p) => p.isNewIn && (p.status ?? "active") === "active")
-          // Products without an explicit order sort last, keeping it stable.
-          .sort((a, b) => (a.newInOrder ?? Infinity) - (b.newInOrder ?? Infinity))
-          .slice(0, NEW_IN_MENU_LIMIT)
-          .map((p) => ({
-            handle: p.handle,
-            title: p.title,
-            image: p.images?.[0]?.src,
-            price: Number(p.price ?? 0),
-            currency: p.currency ?? "INR",
-          }));
-        setNewIn(items);
+        const products = (j.data as NavProduct[]).filter(
+          (p) => (p.status ?? "active") === "active",
+        );
+
+        setNewIn(
+          products
+            .filter((p) => p.isNewIn)
+            // Products without an explicit order sort last, keeping it stable.
+            .sort((a, b) => (a.newInOrder ?? Infinity) - (b.newInOrder ?? Infinity))
+            .slice(0, NEW_IN_MENU_LIMIT)
+            .map((p) => ({
+              handle: p.handle,
+              title: p.title,
+              image: p.images?.[0]?.src,
+              price: Number(p.price ?? 0),
+              currency: p.currency ?? "INR",
+            })),
+        );
+
+        // First product of each type that actually has a photograph wins.
+        const images: ProductTypeImages = {};
+        for (const p of products) {
+          const type = p.productType?.trim();
+          const first = p.images?.[0];
+          if (!type || !first?.src || images[type]) continue;
+          images[type] = { src: first.src, alt: first.alt || p.title };
+        }
+        setTypeImages(images);
       })
       .catch(() => {
-        /* the panel falls back to its "explore the latest collection" copy */
+        /* New In falls back to its invitation copy, Collections to the brand
+           still-life — neither panel depends on the request succeeding */
       });
     return () => {
       active = false;
@@ -157,11 +156,8 @@ export function Header() {
               the container, which is what pushed the header off its gutters. */}
           <nav className="ml-10 hidden shrink-0 items-center gap-7 xl:flex">
             {PRIMARY_NAV.map((item) => {
-              const children =
-                item.dynamic === "collections"
-                  ? collectionLinks
-                  : (item.children ?? []);
-              const isMega = item.mega === "newIn";
+              const children = item.children ?? [];
+              const isMega = Boolean(item.mega);
               const hasMenu = isMega || children.length > 0;
               const isOpen = openMenu === item.label;
 
@@ -203,8 +199,13 @@ export function Header() {
                     // Sits in the gap under the link so moving the cursor
                     // down doesn't cross a dead zone and close it.
                     <div className="absolute left-0 top-full z-50 pt-4">
-                      {isMega ? (
+                      {item.mega === "newIn" ? (
                         <NewInMenu products={newIn} onNavigate={() => setOpenMenu(null)} />
+                      ) : item.mega === "productTypes" ? (
+                        <CollectionsMenu
+                          images={typeImages}
+                          onNavigate={() => setOpenMenu(null)}
+                        />
                       ) : (
                         <ul className="min-w-48 border border-line bg-white py-2">
                           {children.map((child) => (

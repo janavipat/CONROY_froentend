@@ -30,20 +30,41 @@ export const SITE = {
  * The storefront's primary navigation — one model driving the desktop header,
  * the mega-menu and the mobile drawer, so the three can't drift apart.
  *
- * `children` turns an item into a dropdown. Collections are fetched at runtime
- * rather than listed here, since the admin creates them.
+ * `children` turns an item into a dropdown; `mega` upgrades that dropdown to a
+ * panel with photography. Every item is listed here rather than fetched, so
+ * the navigation can't change shape depending on what an admin happens to have
+ * created.
  */
 export interface NavItem extends NavLink {
   children?: NavLink[];
-  /** Fills children from the live collections list instead of a static array. */
-  dynamic?: "collections";
   /**
-   * Swaps the plain link list for a product panel. "newIn" shows the products
-   * an admin has marked New In — the discovery surface that used to be an
-   * always-visible (and usually empty) homepage rail.
+   * Swaps the plain link list for a product panel.
+   *
+   *   newIn         the products an admin has marked New In — the discovery
+   *                 surface that used to be an always-visible (and usually
+   *                 empty) homepage rail
+   *   productTypes  what CONROY makes, one entry per product type, with a
+   *                 photograph beside it
    */
-  mega?: "newIn";
+  mega?: "newIn" | "productTypes";
 }
+
+/**
+ * The product types the Collections menu offers, in order.
+ *
+ * These are types — what the garment is — not the merchandising collections an
+ * admin creates ("Romano Fit · Bleu Heritage" and the like). Those still exist
+ * and remain reachable at /collections/[handle]; they are simply not what a
+ * shopper opens a Collections menu expecting to find.
+ *
+ * `productType` matches the catalogue field of the same name, which is how the
+ * menu finds a photograph for each entry. T-Shirts is listed before any
+ * T-shirt exists: the entry is the placeholder, not an empty image box.
+ */
+export const PRODUCT_TYPE_NAV: (NavLink & { productType: string })[] = [
+  { label: "Jeans", href: "/denim", productType: "Jeans" },
+  { label: "T-Shirts", href: "/t-shirts", productType: "T-Shirt" },
+];
 
 export const PRIMARY_NAV: NavItem[] = [
   { label: "New In", href: "/new-in", mega: "newIn" },
@@ -68,7 +89,14 @@ export const PRIMARY_NAV: NavItem[] = [
       { label: "T-Shirt Collections", href: "/collections" },
     ],
   },
-  { label: "Collections", href: "/collections", dynamic: "collections" },
+  {
+    label: "Collections",
+    href: "/collections",
+    mega: "productTypes",
+    // The same two entries the desktop panel shows, so the mobile drawer can
+    // expand them without a second list to keep in step.
+    children: PRODUCT_TYPE_NAV.map(({ label, href }) => ({ label, href })),
+  },
   { label: "Shop the Look", href: "/shop-the-look" },
   { label: "About", href: "/about" },
 ];
