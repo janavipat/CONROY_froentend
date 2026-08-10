@@ -21,11 +21,23 @@ export interface AdminProductPayload {
   isBestSeller: boolean;
   bestSellerOrder?: number | null;
   price: number;
+  /**
+   * The struck-through "was" price (MRP). Null clears it. Always send it —
+   * the backend writes `compare_at_price: compareAtPrice ?? null`, so omitting
+   * the field wipes the original price off the product.
+   */
+  compareAtPrice?: number | null;
   currency: string;
   stock: number;
   sku: string;
   status: "active" | "draft" | "archived";
   sizes: string[];
+  /**
+   * Collection handles this product belongs to. Omit to leave membership
+   * untouched; an empty array clears it. Never derived — the admin ticks the
+   * boxes on the product form.
+   */
+  collections?: string[];
   details: string[];
   badge?: string | null;
   images: ProductImageInput[];
@@ -627,6 +639,12 @@ export async function adminGetCollectionProducts(handle: string): Promise<string
     `/collections/${handle}`,
   );
   return (data.data.products ?? []).map((p) => p.handle);
+}
+
+/** The collection handles a product currently belongs to (for the product form). */
+export async function adminGetProductCollections(handle: string): Promise<string[]> {
+  const { data } = await api.get<ApiList<string[]>>(`/admin/products/${handle}/collections`);
+  return data.data ?? [];
 }
 
 export async function adminSetCollectionProducts(handle: string, productHandles: string[]) {

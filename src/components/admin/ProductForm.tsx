@@ -2,27 +2,31 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { Product } from "@/types";
 import {
   adminCreateProduct,
+  adminGetProductCollections,
+  adminListCollections,
   adminUpdateProduct,
   adminUploadImage,
+  type AdminCollection,
   type ProductImageInput,
 } from "@/services/admin";
 import { Button } from "@/components/ui/Button";
 import { CloseIcon, PlusIcon } from "@/components/ui/Icons";
 import { cn } from "@/utils/cn";
 import {
-  CATEGORIES,
   CATEGORY_FOR_TYPE,
   PRODUCT_TYPES,
   STANDARD_COLORS,
+  categoriesFor,
+  collectionsFor,
   fitsFor,
+  sizesFor,
   suggestStandardColor,
 } from "@/lib/catalog-taxonomy";
 
-const SIZE_OPTIONS = ["28", "30", "32", "34", "36", "38", "40"];
 const COLOR_OPTIONS = ["Black", "Blue", "Grey", "Beige"];
 
 const field = "h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-ink placeholder:text-stone focus:border-ink focus:outline-none";
@@ -51,6 +55,9 @@ export function ProductForm({ initial }: { initial?: Product }) {
     initial?.bestSellerOrder != null ? String(initial.bestSellerOrder) : "",
   );
   const [price, setPrice] = useState(String(initial?.price ?? ""));
+  const [compareAtPrice, setCompareAtPrice] = useState(
+    initial?.compareAtPrice != null ? String(initial.compareAtPrice) : "",
+  );
   const [tagline, setTagline] = useState(initial?.tagline ?? "");
   const [description, setDescription] = useState(initial?.description ?? "");
   const [badge, setBadge] = useState(initial?.badge ?? "");
@@ -68,13 +75,89 @@ export function ProductForm({ initial }: { initial?: Product }) {
     initial?.images.map((i) => ({ src: i.src, alt: i.alt })) ?? [],
   );
 
+  // Collection membership. `null` until loaded so an unticked-everything save
+  // is never sent before the product's real collections have arrived.
+  const [allCollections, setAllCollections] = useState<AdminCollection[] | null>(null);
+  const [collections, setCollections] = useState<string[] | null>(editing ? null : []);
+  const [collectionsFailed, setCollectionsFailed] = useState(false);
+
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  useEffect(() => {
+    let active = true;
+    async function load() {
+      try {
+        // "all" is derived server-side (every product is in it), so it isn't
+        // something an admin picks.
+        const cols = await adminListCollections();
+        if (active) setAllCollections(cols.filter((c) => c.handle !== "all"));
+      } catch {
+        if (active) {
+          setAllCollections([]);
+          setCollectionsFailed(true);
+        }
+      }
+      if (!initial) return;
+      try {
+        const mine = await adminGetProductCollections(initial.handle);
+        if (active) setCollections(mine);
+      } catch {
+        // Deliberately leaves `collections` null so the save omits the field
+        // and the product's existing membership survives — defaulting to an
+        // empty list here would silently remove it from every collection.
+        if (active) setCollectionsFailed(true);
+      }
+    }
+    void load();
+    return () => {
+      active = false;
+    };
+  }, [initial]);
+
   function toggleSize(s: string) {
     setSizes((prev) => (prev.includes(s) ? prev.filter((x) => x !== s) : [...prev, s]));
   }
+
+  function toggleCollection(handle: string) {
+    setCollections((prev) =>
+      prev === null
+        ? prev
+        : prev.includes(handle)
+          ? prev.filter((h) => h !== handle)
+          : [...prev, handle],
+    );
+  }
+
+  // Category options follow Product type. A saved value outside that list is
+  // appended rather than hidden — a <select> whose value isn't an option
+  // renders blank and would silently rewrite the category on the next save.
+  const categoryOptions = useMemo(() => {
+    const opts = categoriesFor(productType);
+    return category && !opts.includes(category) ? [...opts, category] : opts;
+  }, [productType, category]);
+
+  // Collections offered for this product type. Memberships outside the list
+  // stay in `collections` state and are still sent on save, so filtering the
+  // options can never quietly drop a product out of a collection.
+  const collectionOptions = useMemo(
+    () => (allCollections ? collectionsFor(productType, allCollections) : null),
+    [productType, allCollections],
+  );
+
+  const visibleSelectedCount = collections
+    ? collections.filter((h) => collectionOptions?.some((c) => c.handle === h)).length
+    : 0;
+
+  const sizeOptions = sizesFor(productType);
+  // Sizes already saved on the product that aren't in the current type's list —
+  // shown separately rather than dropped, so switching Product Type never
+  // silently discards what an existing product was sold in.
+  const offListSizes = useMemo(
+    () => sizes.filter((s) => !sizeOptions.includes(s)),
+    [sizes, sizeOptions],
+  );
 
   async function handleFiles(files: FileList | null) {
     if (!files?.length) return;
@@ -97,7 +180,19 @@ export function ProductForm({ initial }: { initial?: Product }) {
     if (!title.trim()) return setError("Name is required.");
     if (!fit.trim()) return setError("Fit is required.");
     const priceNum = Number(price);
-    if (!Number.isFinite(priceNum) || priceNum < 0) return setError("Enter a valid price.");
+    if (!Number.isFinite(priceNum) || priceNum < 0) return setError("Enter a valid selling price.");
+
+    // Blank means "no was-price", which is valid — only a filled-in value is checked.
+    const compareTrimmed = compareAtPrice.trim();
+    const compareNum = compareTrimmed ? Number(compareTrimmed) : null;
+    if (compareNum !== null && (!Number.isFinite(compareNum) || compareNum < 0)) {
+      return setError("Enter a valid original price, or leave it blank.");
+    }
+    // The storefront only strikes through an original price above the selling
+    // price, so anything lower would be saved and then silently never shown.
+    if (compareNum !== null && compareNum <= priceNum) {
+      return setError("Original price must be higher than the selling price.");
+    }
 
     setError("");
     setSubmitting(true);
@@ -117,11 +212,15 @@ export function ProductForm({ initial }: { initial?: Product }) {
         ? Math.max(0, Math.round(Number(bestSellerOrder)))
         : null,
       price: Math.round(priceNum),
+      compareAtPrice: compareNum === null ? null : Math.round(compareNum),
       currency: initial?.currency ?? "INR",
       stock: Math.max(0, Math.round(Number(stock) || 0)),
       sku: sku.trim(),
       status,
       sizes,
+      // Omitted while still loading — the backend then leaves membership alone
+      // rather than reading an empty list as "remove from everything".
+      ...(collections ? { collections } : {}),
       details: details.map((d) => d.trim()).filter(Boolean),
       badge: badge.trim() || null,
       images,
@@ -243,12 +342,51 @@ export function ProductForm({ initial }: { initial?: Product }) {
         <div>
           <label className={label}>Category</label>
           <select value={category} onChange={(e) => setCategory(e.target.value)} className={field}>
-            {CATEGORIES.map((c) => (
+            {categoryOptions.map((c) => (
               <option key={c} value={c}>
                 {c}
               </option>
             ))}
           </select>
+        </div>
+
+        {/* Collections — options follow Product type, so jeans collections and
+            T-shirt collections are never offered together. Membership itself
+            stays an explicit choice; nothing is auto-assigned. */}
+        <div className="sm:col-span-2">
+          <label className={label}>
+            Collections{visibleSelectedCount ? ` (${visibleSelectedCount} selected)` : ""}
+          </label>
+          {collectionsFailed ? (
+            <p className="text-sm text-stone">
+              Could not load collections — this product&rsquo;s collections are left unchanged
+              when you save.
+            </p>
+          ) : collectionOptions === null || collections === null ? (
+            <p className="text-sm text-stone">Loading collections…</p>
+          ) : collectionOptions.length === 0 ? (
+            <p className="text-sm text-stone">
+              No {productType} collections yet — create one under Collections first.
+            </p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {collectionOptions.map((c) => (
+                <button
+                  key={c.handle}
+                  type="button"
+                  onClick={() => toggleCollection(c.handle)}
+                  className={cn(
+                    "h-10 rounded-md border px-3 text-sm transition-colors",
+                    collections.includes(c.handle)
+                      ? "border-ink bg-ink text-white"
+                      : "border-line text-ink hover:border-ink",
+                  )}
+                >
+                  {c.title}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>
@@ -305,8 +443,24 @@ export function ProductForm({ initial }: { initial?: Product }) {
         </div>
 
         <div>
-          <label className={label}>Price (₹)</label>
-          <input type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} placeholder="2000" className={field} />
+          <label className={label}>Selling price (₹)</label>
+          <input type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} placeholder="1799" className={field} />
+          <p className="mt-1 text-xs text-stone">What the customer pays.</p>
+        </div>
+
+        <div>
+          <label className={label}>Original price (₹)</label>
+          <input
+            type="number"
+            min={0}
+            value={compareAtPrice}
+            onChange={(e) => setCompareAtPrice(e.target.value)}
+            placeholder="2499"
+            className={field}
+          />
+          <p className="mt-1 text-xs text-stone">
+            MRP, shown struck through. Leave blank for no was-price.
+          </p>
         </div>
 
         <div>
@@ -331,11 +485,12 @@ export function ProductForm({ initial }: { initial?: Product }) {
         </div>
       </section>
 
-      {/* Sizes */}
+      {/* Sizes — the options follow Product type: waist inches for Jeans,
+          letter sizes for T-Shirts. */}
       <section className="mt-6 rounded-media border border-line bg-white p-5">
         <span className={label}>Sizes</span>
         <div className="flex flex-wrap gap-2">
-          {SIZE_OPTIONS.map((s) => (
+          {sizeOptions.map((s) => (
             <button
               key={s}
               type="button"
@@ -349,6 +504,26 @@ export function ProductForm({ initial }: { initial?: Product }) {
             </button>
           ))}
         </div>
+        {offListSizes.length > 0 && (
+          <div className="mt-4 border-t border-line pt-4">
+            <p className="mb-2 text-xs text-stone">
+              Saved on this product but not part of the {productType} size set — still selected.
+              Untick to remove.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {offListSizes.map((s) => (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => toggleSize(s)}
+                  className="h-10 min-w-11 rounded-md border border-ink bg-ink px-3 text-sm text-white transition-colors"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Inventory */}
