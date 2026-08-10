@@ -66,6 +66,19 @@ export const PRODUCT_TYPE_NAV: (NavLink & { productType: string })[] = [
   { label: "T-Shirts", href: "/t-shirts", productType: "T-Shirt" },
 ];
 
+/**
+ * The T-shirt collections, by handle.
+ *
+ * These are merchandising collections in the catalogue — the fabric a shirt is
+ * cut from — so they live at /collections/[handle] like any other. Listed here
+ * rather than fetched so the menu keeps a fixed shape; a collection that has
+ * not been created yet is a broken link, not a missing menu.
+ */
+export const TSHIRT_COLLECTION_NAV: NavLink[] = [
+  { label: "Cotton T-Shirt", href: "/collections/cotton-tshirt" },
+  { label: "Cotton Lycra T-Shirt", href: "/collections/cotton-lycra-tshirt" },
+];
+
 export const PRIMARY_NAV: NavItem[] = [
   { label: "New In", href: "/new-in", mega: "newIn" },
   {
@@ -86,7 +99,10 @@ export const PRIMARY_NAV: NavItem[] = [
     href: "/t-shirts",
     children: [
       { label: "All T-Shirts", href: "/t-shirts" },
-      { label: "T-Shirt Collections", href: "/collections" },
+      // Fabric, the way denim's children are cut. The old "T-Shirt
+      // Collections" entry pointed at /collections, which now lists
+      // categories rather than collections, so it led nowhere useful.
+      ...TSHIRT_COLLECTION_NAV,
     ],
   },
   {
