@@ -26,6 +26,20 @@ import { browseProducts, fetchBestSellers } from "@/services/browse";
  * disappears instead of reserving space. Section visibility remains
  * admin-controlled through site settings.
  */
+/**
+ * Alternates two lists, so a mixed band leads with one of each instead of all
+ * the denim followed by all the t-shirts. Whichever list runs out first simply
+ * stops contributing, so a catalogue with only one category still fills.
+ */
+function interleave<T>(a: T[], b: T[]): T[] {
+  const out: T[] = [];
+  for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
+    if (a[i]) out.push(a[i]);
+    if (b[i]) out.push(b[i]);
+  }
+  return out;
+}
+
 export default async function HomePage() {
   const settings = await fetchSiteSettings();
   const show = (key: string) => isOn(settings, key);
@@ -39,6 +53,10 @@ export default async function HomePage() {
   // The Denim Edit's photograph comes from the catalogue itself, so it is
   // always real CONROY product photography and never a placeholder.
   const denimImage = denim.find((p) => p.images[0]?.src)?.images[0];
+
+  // Featured and Shop the Look both show the range rather than one category,
+  // alternating so the mix is visible in the first few tiles.
+  const mixed = interleave(denim, tshirts);
 
   return (
     <>
@@ -56,11 +74,12 @@ export default async function HomePage() {
         imageAlt={denimImage?.alt ?? "CONROY denim"}
       />
 
-      {/* 3 — Featured. Photography-led, built from live products. */}
+      {/* 3 — Featured. Photography-led, built from live products across both
+          categories rather than denim alone. */}
       <FeaturedEdit
         eyebrow="The collection"
         title="Featured"
-        products={denim}
+        products={mixed}
         href="/denim"
         ctaLabel="Shop all denim"
       />
@@ -91,9 +110,9 @@ export default async function HomePage() {
       />
 
       {/* 6 — Shop the Look */}
-      {denim.length > 0 && (
+      {mixed.length > 0 && (
         <ShopTheLookEdit
-          products={denim}
+          products={mixed}
           href="/shop-the-look"
           ctaLabel="Explore the look"
         />

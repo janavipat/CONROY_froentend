@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Product } from "@/types";
 import { formatCurrency } from "@/utils/format";
+import { productDisplayTitle } from "@/lib/catalog-taxonomy";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/motion/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
@@ -45,7 +46,6 @@ export function ShopTheLookEdit({
           <SectionHeading
             eyebrow="Styled by CONROY"
             title="Shop the Look"
-            description="Complete outfits, put together by our team."
             className="mb-block"
           />
         )}
@@ -97,7 +97,7 @@ export function ShopTheLookEdit({
                       </span>
                       <span className="min-w-0 flex-1">
                         <span className="display-product block truncate text-ink transition-colors duration-(--duration-quick) group-hover:text-accent">
-                          {p.title}
+                          {productDisplayTitle(p)}
                         </span>
                         <span className="price mt-1 block text-stone">
                           {formatCurrency(p.price, p.currency)}

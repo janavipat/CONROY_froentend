@@ -1,6 +1,6 @@
 import Image from "next/image";
-import Link from "next/link";
 import { cn } from "@/utils/cn";
+import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/motion/Reveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
@@ -39,13 +39,13 @@ export function EditBanner({
   imageSide?: "left" | "right";
   tone?: "paper" | "page";
 }) {
+  // The house button rather than a bare text link: this is the band's only
+  // action, and as `nav-label` text it read as a caption beside the copy.
+  // Button renders a next/link when given href, so navigation is unchanged.
   const cta = (
-    <Link
-      href={href}
-      className="nav-label inline-block text-ink transition-colors duration-(--duration-base) hover:text-accent"
-    >
+    <Button href={href} size="lg">
       {ctaLabel}
-    </Link>
+    </Button>
   );
 
   const band = tone === "paper" ? "bg-paper" : "bg-background";
