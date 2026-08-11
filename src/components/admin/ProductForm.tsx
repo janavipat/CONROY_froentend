@@ -177,22 +177,13 @@ export function ProductForm({ initial }: { initial?: Product }) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!title.trim()) return setError("Name is required.");
-    if (!fit.trim()) return setError("Fit is required.");
+    // No field is required — a partial product saves, and the admin fills in
+    // the rest later. Blanks become empty strings or 0 rather than blocking.
     const priceNum = Number(price);
-    if (!Number.isFinite(priceNum) || priceNum < 0) return setError("Enter a valid selling price.");
-
-    // Blank means "no was-price", which is valid — only a filled-in value is checked.
     const compareTrimmed = compareAtPrice.trim();
-    const compareNum = compareTrimmed ? Number(compareTrimmed) : null;
-    if (compareNum !== null && (!Number.isFinite(compareNum) || compareNum < 0)) {
-      return setError("Enter a valid original price, or leave it blank.");
-    }
-    // The storefront only strikes through an original price above the selling
-    // price, so anything lower would be saved and then silently never shown.
-    if (compareNum !== null && compareNum <= priceNum) {
-      return setError("Original price must be higher than the selling price.");
-    }
+    const compareNum = compareTrimmed && Number.isFinite(Number(compareTrimmed))
+      ? Number(compareTrimmed)
+      : null;
 
     setError("");
     setSubmitting(true);
@@ -211,8 +202,8 @@ export function ProductForm({ initial }: { initial?: Product }) {
       bestSellerOrder: bestSellerOrder.trim()
         ? Math.max(0, Math.round(Number(bestSellerOrder)))
         : null,
-      price: Math.round(priceNum),
-      compareAtPrice: compareNum === null ? null : Math.round(compareNum),
+      price: Number.isFinite(priceNum) ? Math.max(0, Math.round(priceNum)) : 0,
+      compareAtPrice: compareNum === null ? null : Math.max(0, Math.round(compareNum)),
       currency: initial?.currency ?? "INR",
       stock: Math.max(0, Math.round(Number(stock) || 0)),
       sku: sku.trim(),
@@ -314,8 +305,10 @@ export function ProductForm({ initial }: { initial?: Product }) {
       {/* Core fields */}
       <section className="mt-6 grid gap-5 rounded-media border border-line bg-white p-5 sm:grid-cols-2">
         <div className="sm:col-span-2">
-          <label className={label}>Name</label>
-          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Black Relax Fit" className={field} />
+          <label className={label} htmlFor="product-title">
+            Name
+          </label>
+          <input id="product-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Black Relax Fit" className={field} />
         </div>
 
         <div>
@@ -391,8 +384,10 @@ export function ProductForm({ initial }: { initial?: Product }) {
 
         <div>
           {/* Renamed from "Type" — it was being confused with Product type. */}
-          <label className={label}>Fit</label>
-          <input value={fit} onChange={(e) => setFit(e.target.value)} placeholder="Slim Fit" className={field} list="fit-options" />
+          <label className={label} htmlFor="product-fit">
+            Fit
+          </label>
+          <input id="product-fit" value={fit} onChange={(e) => setFit(e.target.value)} placeholder="Slim Fit" className={field} list="fit-options" />
           {/* A datalist, not a select: two products still carry the legacy
               "Vintage Collection" value and a select would silently drop it. */}
           <datalist id="fit-options">
@@ -443,14 +438,17 @@ export function ProductForm({ initial }: { initial?: Product }) {
         </div>
 
         <div>
-          <label className={label}>Selling price (₹)</label>
-          <input type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} placeholder="1799" className={field} />
+          <label className={label} htmlFor="product-price">
+            Selling price (₹)
+          </label>
+          <input id="product-price" type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} placeholder="1799" className={field} />
           <p className="mt-1 text-xs text-stone">What the customer pays.</p>
         </div>
 
         <div>
-          <label className={label}>Original price (₹)</label>
+          <label className={label} htmlFor="product-compare-price">Original price (₹)</label>
           <input
+            id="product-compare-price"
             type="number"
             min={0}
             value={compareAtPrice}
@@ -716,6 +714,15 @@ export function ProductForm({ initial }: { initial?: Product }) {
           <PlusIcon className="h-4 w-4" /> Add detail
         </button>
       </section>
+
+      {/* Repeated next to the button: the banner at the top of the form is far
+          off-screen from here, which made a rejected submit look like a dead
+          button with no request sent. */}
+      {error && (
+        <p className="mt-6 rounded-md border border-accent/30 bg-accent/5 px-4 py-3 text-sm text-accent">
+          {error}
+        </p>
+      )}
 
       <div className="mt-6 flex gap-3">
         <Button type="submit" size="lg" disabled={submitting || uploading}>
