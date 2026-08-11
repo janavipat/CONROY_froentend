@@ -9,7 +9,15 @@ export function ProductGallery({ images }: { images: ProductImage[] }) {
   const [active, setActive] = useState(0);
 
   return (
-    <div className="flex flex-col-reverse gap-3 lg:flex-row">
+    /* lg:items-start is load-bearing. The gallery is a grid item, so it
+       stretches to the row height set by the taller info column, and a flex
+       row stretches its children to match — which overrode the main image's
+       aspect-[4/5] and let the image grow as tall as the copy beside it.
+       Starting the items keeps the declared 4:5 ratio, so every product gets
+       the same frame regardless of how much description it carries.
+       Only from lg: below that the gallery is a column and stretch is what
+       makes the image span the full width. */
+    <div className="flex flex-col-reverse gap-3 lg:flex-row lg:items-start">
       {/* Thumbnails */}
       <div className="flex gap-3 overflow-x-auto lg:flex-col lg:overflow-visible">
         {images.map((img, i) => (
