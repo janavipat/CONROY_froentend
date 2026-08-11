@@ -196,7 +196,12 @@ export function ChatWidget() {
         aria-expanded={open}
         whileHover={{ scale: 1.06 }}
         whileTap={{ scale: 0.94 }}
-        className="fixed bottom-6 right-4 z-[90] grid h-14 w-14 place-items-center rounded-full bg-ink text-white shadow-lg transition-colors hover:bg-accent sm:right-6"
+        /* WhatsApp green (#25D366) so the button reads instantly as "message
+           us" rather than as another piece of site chrome — it was bg-ink,
+           the same near-black as the header and footer. Hover darkens to
+           #1DA851, the same hue a shade down. Position, size, icon and
+           behaviour are untouched. */
+        className="fixed bottom-6 right-4 z-[90] grid h-14 w-14 place-items-center rounded-full bg-[#25D366] text-white shadow-lg transition-colors hover:bg-[#1DA851] sm:right-6"
       >
         <AnimatePresence mode="wait" initial={false}>
           <motion.span
