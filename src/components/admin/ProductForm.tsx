@@ -175,6 +175,19 @@ export function ProductForm({ initial }: { initial?: Product }) {
     }
   }
 
+  /**
+   * Stops the mouse wheel from editing a number field.
+   *
+   * A focused <input type="number"> increments/decrements on wheel, so
+   * scrolling this form — which runs well past a screen, with the price fields
+   * in the middle — silently walked the value the admin had just typed: enter
+   * 999, scroll down two notches to reach the button, save 997. Blurring on
+   * wheel lets the page scroll and leaves the value alone.
+   */
+  function blurOnWheel(e: React.WheelEvent<HTMLInputElement>) {
+    e.currentTarget.blur();
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     // No field is required — a partial product saves, and the admin fills in
@@ -441,7 +454,7 @@ export function ProductForm({ initial }: { initial?: Product }) {
           <label className={label} htmlFor="product-price">
             Selling price (₹)
           </label>
-          <input id="product-price" type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} placeholder="1799" className={field} />
+          <input id="product-price" type="number" min={0} value={price} onChange={(e) => setPrice(e.target.value)} onWheel={blurOnWheel} placeholder="1799" className={field} />
           <p className="mt-1 text-xs text-stone">What the customer pays.</p>
         </div>
 
@@ -453,6 +466,7 @@ export function ProductForm({ initial }: { initial?: Product }) {
             min={0}
             value={compareAtPrice}
             onChange={(e) => setCompareAtPrice(e.target.value)}
+            onWheel={blurOnWheel}
             placeholder="2499"
             className={field}
           />
@@ -533,6 +547,7 @@ export function ProductForm({ initial }: { initial?: Product }) {
             min={0}
             value={stock}
             onChange={(e) => setStock(e.target.value)}
+            onWheel={blurOnWheel}
             placeholder="0"
             className={field}
           />
@@ -582,6 +597,7 @@ export function ProductForm({ initial }: { initial?: Product }) {
               min={0}
               value={newInOrder}
               onChange={(e) => setNewInOrder(e.target.value)}
+              onWheel={blurOnWheel}
               disabled={!isNewIn}
               placeholder="Order, e.g. 1"
               className={cn(field, "mt-2", !isNewIn && "opacity-50")}
@@ -603,6 +619,7 @@ export function ProductForm({ initial }: { initial?: Product }) {
               min={0}
               value={bestSellerOrder}
               onChange={(e) => setBestSellerOrder(e.target.value)}
+              onWheel={blurOnWheel}
               disabled={!isBestSeller}
               placeholder="Order, e.g. 1"
               className={cn(field, "mt-2", !isBestSeller && "opacity-50")}
@@ -637,6 +654,7 @@ export function ProductForm({ initial }: { initial?: Product }) {
                 min={0}
                 value={weightG}
                 onChange={(e) => setWeightG(e.target.value)}
+                onWheel={blurOnWheel}
                 placeholder="500"
                 className={field}
               />
@@ -649,6 +667,7 @@ export function ProductForm({ initial }: { initial?: Product }) {
                 step="0.1"
                 value={lengthCm}
                 onChange={(e) => setLengthCm(e.target.value)}
+                onWheel={blurOnWheel}
                 placeholder="30"
                 className={field}
               />
@@ -661,6 +680,7 @@ export function ProductForm({ initial }: { initial?: Product }) {
                 step="0.1"
                 value={widthCm}
                 onChange={(e) => setWidthCm(e.target.value)}
+                onWheel={blurOnWheel}
                 placeholder="24"
                 className={field}
               />
@@ -673,6 +693,7 @@ export function ProductForm({ initial }: { initial?: Product }) {
                 step="0.1"
                 value={heightCm}
                 onChange={(e) => setHeightCm(e.target.value)}
+                onWheel={blurOnWheel}
                 placeholder="4"
                 className={field}
               />
