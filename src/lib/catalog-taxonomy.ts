@@ -152,3 +152,36 @@ export function collectionsFor<T extends { handle: string }>(
 export function sizesFor(productType: string): string[] {
   return SIZES_BY_TYPE[productType] ?? SIZES_BY_TYPE.Jeans;
 }
+
+/** Display titles for the T-shirt collections, keyed by handle. */
+export const TSHIRT_COLLECTION_TITLES: Record<string, string> = {
+  "cotton-tshirt": "Cotton T-Shirt",
+  "cotton-lycra-tshirt": "Cotton Lycra T-Shirt",
+};
+
+/**
+ * The small label under a product name on cards and listings.
+ *
+ * Denim shows its fit — Slim / Straight / Relaxed. A T-shirt has no denim fit
+ * and must never borrow one, so it shows the fabric collection it's assigned
+ * to instead. Falls back to an empty string rather than to `fit`, so an
+ * unassigned T-shirt shows nothing at all instead of a denim label.
+ */
+export function productLabel(product: {
+  productType?: string;
+  fit?: string;
+  collections?: string[];
+}): string {
+  if (product.productType !== "T-Shirt") return product.fit ?? "";
+  const handle = (product.collections ?? []).find((h) => h in TSHIRT_COLLECTION_TITLES);
+  return handle ? TSHIRT_COLLECTION_TITLES[handle] : "";
+}
+
+/**
+ * The product name as shown to shoppers. T-shirt names are uppercased at
+ * render time — the stored title is left exactly as the admin typed it, so
+ * this changes no product data.
+ */
+export function productDisplayTitle(product: { productType?: string; title: string }): string {
+  return product.productType === "T-Shirt" ? product.title.toUpperCase() : product.title;
+}

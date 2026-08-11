@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Product } from "@/types";
 import { formatCurrency } from "@/utils/format";
 import { Modal } from "@/components/ui/Modal";
+import { productDisplayTitle } from "@/lib/catalog-taxonomy";
 import { Rating } from "@/components/ui/Rating";
 import { AddToCartForm } from "./AddToCartForm";
 
@@ -31,7 +32,7 @@ export function QuickViewModal({
         </div>
         <div className="flex flex-col gap-4 p-6 sm:p-8">
           <div>
-            <h2 className="font-display text-2xl text-ink">{product.title}</h2>
+            <h2 className="font-display text-2xl text-ink">{productDisplayTitle(product)}</h2>
             <p className="mt-1 text-sm text-stone">{product.tagline}</p>
           </div>
           <div className="flex items-center gap-4">

@@ -8,6 +8,7 @@ import {
   getProductsForCollection,
 } from "@/lib/products";
 import { getApiBase, hasRemoteApi } from "@/lib/api";
+import { TSHIRT_COLLECTION_TITLES } from "@/lib/catalog-taxonomy";
 
 /**
  * Catalog data access. When a backend API is configured and reachable, data is
@@ -64,9 +65,36 @@ async function apiGet<T>(path: string): Promise<T | null> {
   }
 }
 
+/**
+ * Fills in `collections` for T-shirts.
+ *
+ * The products API doesn't return collection membership, and a T-shirt's card
+ * label is the fabric collection it belongs to. Rather than change the API,
+ * this reads the two T-shirt collections from the existing public endpoint and
+ * tags the matching products. Skipped entirely when a list holds no T-shirts,
+ * so denim-only pages make no extra requests.
+ */
+async function withTshirtCollections(products: Product[]): Promise<Product[]> {
+  if (!products.some((p) => p.productType === "T-Shirt")) return products;
+
+  const memberships = await Promise.all(
+    Object.keys(TSHIRT_COLLECTION_TITLES).map(async (handle) => {
+      const data = await apiGet<{ products?: { handle: string }[] }>(`/collections/${handle}`);
+      return [handle, new Set((data?.products ?? []).map((p) => p.handle))] as const;
+    }),
+  );
+
+  return products.map((p) => {
+    if (p.productType !== "T-Shirt") return p;
+    const owned = memberships.filter(([, members]) => members.has(p.handle)).map(([h]) => h);
+    if (!owned.length) return p;
+    return { ...p, collections: [...new Set([...p.collections, ...owned])] };
+  });
+}
+
 export async function fetchAllProducts(): Promise<Product[]> {
   const data = await apiGet<Record<string, unknown>[]>("/products");
-  if (data && data.length) return data.map(normalizeProduct);
+  if (data && data.length) return withTshirtCollections(data.map(normalizeProduct));
   return getAllProducts();
 }
 
@@ -92,7 +120,7 @@ export async function fetchCollections(): Promise<Collection[]> {
 
 export async function fetchProductByHandle(handle: string): Promise<Product | undefined> {
   const data = await apiGet<Record<string, unknown>>(`/products/${handle}`);
-  if (data) return normalizeProduct(data);
+  if (data) return (await withTshirtCollections([normalizeProduct(data)]))[0];
   return getProductByHandle(handle);
 }
 
@@ -111,7 +139,10 @@ export async function fetchCollection(
       image: String(data.image ?? ""),
       productHandles: (data.products ?? []).map((p) => String(p.handle)),
     };
-    return { collection, products: (data.products ?? []).map(normalizeProduct) };
+    return {
+      collection,
+      products: await withTshirtCollections((data.products ?? []).map(normalizeProduct)),
+    };
   }
 
   // Fallback to static data.

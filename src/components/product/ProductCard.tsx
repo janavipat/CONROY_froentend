@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import type { Product } from "@/types";
 import { formatCurrency } from "@/utils/format";
+import { productDisplayTitle, productLabel } from "@/lib/catalog-taxonomy";
 import { Rating } from "@/components/ui/Rating";
 import { LikeButton } from "./LikeButton";
 import { QuickViewModal } from "./QuickViewModal";
@@ -77,7 +78,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
             href={`/products/${product.handle}`}
             className="display-product text-ink transition-colors duration-(--duration-quick) hover:text-accent"
           >
-            {product.title}
+            {productDisplayTitle(product)}
           </Link>
           {/* Selling price first, then the struck-through original. */}
           <span className="price flex items-baseline gap-2.5">
@@ -88,7 +89,9 @@ export function ProductCard({ product, priority = false }: { product: Product; p
               </s>
             )}
           </span>
-          <p className="micro-label">{product.fit}</p>
+          {/* Denim shows its fit; a T-shirt shows its fabric collection and
+              never borrows a denim fit label. */}
+          <p className="micro-label">{productLabel(product)}</p>
           <Rating value={product.rating} count={product.reviewCount} showCount={false} />
         </div>
       </article>

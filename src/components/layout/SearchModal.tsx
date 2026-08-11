@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { searchProducts } from "@/lib/products";
 import { TRENDING_SEARCHES } from "@/lib/site";
 import { formatCurrency } from "@/utils/format";
+import { productDisplayTitle, productLabel } from "@/lib/catalog-taxonomy";
 import { Modal } from "@/components/ui/Modal";
 import { SearchIcon } from "@/components/ui/Icons";
 
@@ -67,8 +68,8 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
                         />
                       </span>
                       <span className="flex-1">
-                        <span className="block text-sm text-ink">{p.title}</span>
-                        <span className="block text-xs text-stone">{p.fit}</span>
+                        <span className="block text-sm text-ink">{productDisplayTitle(p)}</span>
+                        <span className="block text-xs text-stone">{productLabel(p)}</span>
                       </span>
                       <span className="flex items-baseline gap-2">
                         <span className="text-sm text-ink">{formatCurrency(p.price, p.currency)}</span>

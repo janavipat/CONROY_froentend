@@ -5,6 +5,7 @@ import { PRODUCTS, getProductByHandle } from "@/lib/products";
 import { fetchAllProducts, fetchProductByHandle } from "@/services/catalog";
 import { SITE } from "@/lib/site";
 import { formatCurrency } from "@/utils/format";
+import { productDisplayTitle, productLabel } from "@/lib/catalog-taxonomy";
 import { Container } from "@/components/ui/Container";
 import { Rating } from "@/components/ui/Rating";
 import { Accordion } from "@/components/ui/Accordion";
@@ -110,7 +111,7 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
               </Link>
             </li>
             <li aria-hidden>/</li>
-            <li className="text-ink">{product.title}</li>
+            <li className="text-ink">{productDisplayTitle(product)}</li>
           </ol>
         </nav>
 
@@ -118,9 +119,16 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
           <ProductGallery images={product.images} />
 
           <div className="lg:py-6">
-            <p className="eyebrow text-stone">{product.color} Denim</p>
+            {/* "Denim" was hardcoded here, so it appeared above T-shirts too.
+                Denim keeps its colour + category; a T-shirt shows the fabric
+                collection it belongs to. */}
+            <p className="eyebrow text-stone">
+              {product.productType === "T-Shirt"
+                ? productLabel(product)
+                : `${product.color} Denim`}
+            </p>
             <h1 className="display-section mt-5 text-ink">
-              {product.title}
+              {productDisplayTitle(product)}
             </h1>
 
             <div className="mt-7 flex items-center gap-5">
