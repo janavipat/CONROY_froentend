@@ -85,6 +85,12 @@ export function ProductForm({ initial }: { initial?: Product }) {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  // Image management. `replacingIndex` drives the per-tile spinner so a replace
+  // doesn't disable the whole Upload control; drag/over indices drive reorder.
+  const [replacingIndex, setReplacingIndex] = useState<number | null>(null);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [overIndex, setOverIndex] = useState<number | null>(null);
+
   useEffect(() => {
     let active = true;
     async function load() {
@@ -173,6 +179,45 @@ export function ProductForm({ initial }: { initial?: Product }) {
     } finally {
       setUploading(false);
     }
+  }
+
+  /**
+   * Swaps one image's file, leaving every other image untouched.
+   *
+   * Only this tile's `src` changes — its alt text, and the whole rest of the
+   * list, are carried through — so replacing a photo never means re-uploading
+   * the others. The old object stays in Supabase Storage; the product simply
+   * stops pointing at it.
+   */
+  async function handleReplace(index: number, file: File | undefined) {
+    if (!file) return;
+    setError("");
+    setReplacingIndex(index);
+    try {
+      const url = await adminUploadImage(file);
+      setImages((prev) => prev.map((img, i) => (i === index ? { ...img, src: url } : img)));
+    } catch {
+      setError("Image upload failed. Check the backend + Supabase Storage bucket.");
+    } finally {
+      setReplacingIndex(null);
+    }
+  }
+
+  /**
+   * Moves an image within the list. Order IS the stored order: the backend
+   * writes `position: i` from this array, and the storefront treats the first
+   * image as the primary one.
+   */
+  function moveImage(from: number, to: number) {
+    setImages((prev) => {
+      if (from === to || from < 0 || to < 0 || from >= prev.length || to >= prev.length) {
+        return prev;
+      }
+      const next = [...prev];
+      const [moved] = next.splice(from, 1);
+      next.splice(to, 0, moved);
+      return next;
+    });
   }
 
   /**
@@ -274,16 +319,76 @@ export function ProductForm({ initial }: { initial?: Product }) {
         <span className={label}>Images</span>
         <div className="flex flex-wrap gap-3">
           {images.map((img, i) => (
-            <div key={img.src} className="group relative h-28 w-24 overflow-hidden rounded-md bg-mist">
-              <Image src={img.src} alt={img.alt ?? ""} fill sizes="96px" className="object-cover" />
+            <div
+              key={img.src}
+              draggable
+              onDragStart={() => setDragIndex(i)}
+              onDragEnd={() => {
+                setDragIndex(null);
+                setOverIndex(null);
+              }}
+              // preventDefault on dragover is what marks this a valid drop target.
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (overIndex !== i) setOverIndex(i);
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                if (dragIndex !== null) moveImage(dragIndex, i);
+                setDragIndex(null);
+                setOverIndex(null);
+              }}
+              className={cn(
+                "group relative h-28 w-24 shrink-0 cursor-grab overflow-hidden rounded-md bg-mist active:cursor-grabbing",
+                dragIndex === i && "opacity-40",
+                overIndex === i && dragIndex !== null && dragIndex !== i && "ring-2 ring-ink",
+              )}
+            >
+              {/* draggable={false} so the browser drags the tile, not the <img>. */}
+              <Image
+                src={img.src}
+                alt={img.alt ?? ""}
+                fill
+                sizes="96px"
+                draggable={false}
+                className="object-cover"
+              />
+
+              {i === 0 && (
+                <span className="absolute left-1 top-1 rounded bg-ink/85 px-1.5 py-0.5 text-[0.5625rem] uppercase tracking-wide text-white">
+                  Main
+                </span>
+              )}
+
+              {replacingIndex === i && (
+                <span className="absolute inset-0 grid place-items-center bg-white/70">
+                  <span className="h-5 w-5 animate-spin rounded-full border-2 border-line border-t-ink" />
+                </span>
+              )}
+
               <button
                 type="button"
                 onClick={() => setImages((prev) => prev.filter((_, idx) => idx !== i))}
                 className="absolute right-1 top-1 grid h-6 w-6 place-items-center rounded-full bg-ink/80 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                aria-label="Remove image"
+                aria-label={`Delete image ${i + 1}`}
               >
                 <CloseIcon className="h-3.5 w-3.5" />
               </button>
+
+              <label className="absolute inset-x-0 bottom-0 cursor-pointer bg-ink/80 py-1 text-center text-[0.5625rem] uppercase tracking-wide text-white opacity-0 transition-opacity group-hover:opacity-100">
+                Replace
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  aria-label={`Replace image ${i + 1}`}
+                  onChange={(e) => {
+                    void handleReplace(i, e.target.files?.[0]);
+                    // Reset so picking the same file again still fires change.
+                    e.target.value = "";
+                  }}
+                />
+              </label>
             </div>
           ))}
 
@@ -311,7 +416,9 @@ export function ProductForm({ initial }: { initial?: Product }) {
           </label>
         </div>
         <p className="mt-2 text-xs text-stone">
-          Images are stored in Supabase Storage — only the URL is saved to the database.
+          Drag to reorder — the first image is the main product image. Hover an image to
+          replace or delete it. Images are stored in Supabase Storage; only the URL is saved
+          to the database.
         </p>
       </section>
 
