@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import type { Product } from "@/types";
+import { SITE } from "@/lib/site";
 import { formatCurrency } from "@/utils/format";
 import { productDisplayTitle, productLabel } from "@/lib/catalog-taxonomy";
 import { DiscountBadge } from "./DiscountBadge";
@@ -23,6 +24,8 @@ import { QuickViewModal } from "./QuickViewModal";
  */
 export function ProductCard({ product, priority = false }: { product: Product; priority?: boolean }) {
   const [quickView, setQuickView] = useState(false);
+  const [primaryFailed, setPrimaryFailed] = useState(false);
+  const [secondaryFailed, setSecondaryFailed] = useState(false);
   const primary = product.images[0];
   const secondary = product.images[1] ?? product.images[0];
 
@@ -34,21 +37,40 @@ export function ProductCard({ product, priority = false }: { product: Product; p
             backdrop in those frames, so the fill never shows as a seam. */}
         <div className="relative aspect-[3/4] overflow-hidden bg-mist">
           <Link href={`/products/${product.handle}`} aria-label={product.title}>
-            <Image
-              src={primary.src}
-              alt={primary.alt}
-              fill
-              priority={priority}
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className="object-cover transition-[opacity,transform] duration-(--duration-slow) ease-[var(--ease-luxe)] group-hover:scale-[1.03] group-hover:opacity-0"
-            />
-            <Image
-              src={secondary.src}
-              alt={secondary.alt}
-              fill
-              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className="object-cover opacity-0 transition-[opacity,transform] duration-(--duration-slow) ease-[var(--ease-luxe)] group-hover:scale-[1.03] group-hover:opacity-100"
-            />
+            {primaryFailed ? (
+              /* A failed photograph used to paint the browser's own alt text
+                 across the frame — a paragraph of sentence-case copy sprawling
+                 over the card. The frame keeps its ground and shows the
+                 wordmark instead; the product name is still on the link above,
+                 so nothing is lost to assistive tech. */
+              <span className="absolute inset-0 grid place-items-center bg-mist">
+                <span className="font-display text-[0.5rem] uppercase tracking-[0.28em] text-stone sm:text-[0.625rem]">
+                  {SITE.name}
+                </span>
+              </span>
+            ) : (
+              <>
+                <Image
+                  src={primary.src}
+                  alt=""
+                  fill
+                  priority={priority}
+                  onError={() => setPrimaryFailed(true)}
+                  sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                  className="object-cover transition-[opacity,transform] duration-(--duration-slow) ease-[var(--ease-luxe)] group-hover:scale-[1.03] group-hover:opacity-0"
+                />
+                {!secondaryFailed && (
+                  <Image
+                    src={secondary.src}
+                    alt=""
+                    fill
+                    onError={() => setSecondaryFailed(true)}
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                    className="object-cover opacity-0 transition-[opacity,transform] duration-(--duration-slow) ease-[var(--ease-luxe)] group-hover:scale-[1.03] group-hover:opacity-100"
+                  />
+                )}
+              </>
+            )}
           </Link>
 
           {/* Solid label, not bare text. `top-4 left-4` mirrors the wishlist
@@ -74,18 +96,29 @@ export function ProductCard({ product, priority = false }: { product: Product; p
           </button>
         </div>
 
-        <div className="mt-5 flex flex-col items-start gap-2">
+        <div className="mt-5 flex w-full min-w-0 flex-col items-start gap-2">
+          {/* Reserves three lines on phones so a two- and a three-line name
+              don't push their cards' prices and ratings out of step with each
+              other. Names still wrap in full — nothing is clamped — and the
+              reservation is dropped from sm: up, where the grid is wider and
+              names fit on one or two lines anyway. */}
           <Link
             href={`/products/${product.handle}`}
-            className="display-product text-ink transition-colors duration-(--duration-quick) hover:text-accent"
+            className="display-product min-h-[4rem] w-full break-words text-ink transition-colors duration-(--duration-quick) hover:text-accent sm:min-h-0"
           >
             {productDisplayTitle(product)}
           </Link>
-          {/* Selling price first, then the struck-through original. */}
-          <span className="price flex items-baseline gap-2.5">
-            <span className="text-ink">{formatCurrency(product.price, product.currency)}</span>
+          {/* Selling price first, then the struck-through original, then the
+              saving. Wraps as whole items — in a two-column phone grid the
+              three together are wider than the card, and as a nowrap row they
+              spilled past its edge. Each part stays on one line, so the badge
+              drops whole rather than splitting. */}
+          <span className="price flex w-full flex-wrap items-baseline gap-x-2.5 gap-y-1">
+            <span className="whitespace-nowrap text-ink">
+              {formatCurrency(product.price, product.currency)}
+            </span>
             {product.compareAtPrice != null && product.compareAtPrice > product.price && (
-              <s className="text-[0.8125rem] text-stone">
+              <s className="whitespace-nowrap text-[0.8125rem] text-stone">
                 {formatCurrency(product.compareAtPrice, product.currency)}
               </s>
             )}

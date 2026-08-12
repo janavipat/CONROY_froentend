@@ -20,6 +20,10 @@ export function DiscountBadge({
 }) {
   if (percent == null || percent <= 0) return null;
   return (
-    <span className={cn("font-medium text-red-600", className)}>{percent}% Off</span>
+    /* whitespace-nowrap keeps "28% Off" together. Squeezed into a narrow
+       column it was breaking after the number, stacking "28%" over "Off". */
+    <span className={cn("whitespace-nowrap font-medium text-red-600", className)}>
+      {percent}% Off
+    </span>
   );
 }
