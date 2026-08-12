@@ -116,10 +116,13 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
           </ol>
         </nav>
 
-        <div className="grid gap-14 lg:grid-cols-2 lg:gap-24">
+        {/* min-w-0 on the columns: grid tracks are auto-sized, so without it a
+            column can never be narrower than its content's minimum and any wide
+            child widens the page instead of being contained. */}
+        <div className="grid gap-14 lg:grid-cols-2 lg:gap-24 [&>*]:min-w-0">
           <ProductGallery images={product.images} />
 
-          <div className="lg:py-6">
+          <div className="min-w-0 lg:py-6">
             {/* "Denim" was hardcoded here, so it appeared above T-shirts too.
                 Denim keeps its colour + category; a T-shirt shows the fabric
                 collection it belongs to. */}
@@ -132,7 +135,10 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
               {productDisplayTitle(product)}
             </h1>
 
-            <div className="mt-7 flex items-center gap-5">
+            {/* Wraps rather than overflowing: price, was-price, % off and the
+                rating together exceed a small phone's width, and none of them
+                can shrink. No effect where the row already fits. */}
+            <div className="mt-7 flex flex-wrap items-center gap-x-5 gap-y-2">
               {/* Selling price first, then the struck-through original. */}
               <span className="flex items-baseline gap-3">
                 <span className="text-xl text-ink">

@@ -346,7 +346,9 @@ export default function PaymentPage() {
 
       <h1 className="font-display text-3xl text-ink sm:text-4xl">Payment</h1>
 
-      <div className="mt-8 grid gap-10 lg:grid-cols-[1.4fr_1fr]">
+      {/* [&>*]:min-w-0 — auto-sized grid tracks cannot go below their content's
+          minimum, so the form column widened the page instead of wrapping. */}
+      <div className="mt-8 grid gap-10 lg:grid-cols-[1.4fr_1fr] [&>*]:min-w-0">
         {/* Left: contact + methods */}
         <div>
           <section>
@@ -500,13 +502,16 @@ export default function PaymentPage() {
                   setCouponMsg("");
                 }}
                 placeholder="Enter code"
-                className="h-11 flex-1 rounded-md border border-line bg-white px-3 text-sm uppercase text-ink placeholder:normal-case placeholder:text-stone focus:border-ink focus:outline-none"
+                /* min-w-0: an <input> carries a default intrinsic width, so
+                   flex-1 alone could not shrink it and the row pushed the page
+                   wider than a small phone. */
+                className="h-11 min-w-0 flex-1 rounded-md border border-line bg-white px-3 text-sm uppercase text-ink placeholder:normal-case placeholder:text-stone focus:border-ink focus:outline-none"
               />
               <button
                 type="button"
                 onClick={applyCoupon}
                 disabled={applying || !code.trim()}
-                className="rounded-md border border-ink px-4 text-sm font-medium text-ink transition-colors hover:bg-ink hover:text-white disabled:opacity-40"
+                className="shrink-0 rounded-md border border-ink px-4 text-sm font-medium text-ink transition-colors hover:bg-ink hover:text-white disabled:opacity-40"
               >
                 {applying ? "…" : "Apply"}
               </button>

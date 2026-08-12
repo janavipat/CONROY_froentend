@@ -145,7 +145,10 @@ export function Header() {
           {/* Wordmark — flush with the content container's left edge. */}
           <Link
             href="/"
-            className="shrink-0 font-display text-[1.375rem] leading-none tracking-[0.28em] text-ink sm:text-[1.625rem] lg:text-[1.75rem] xl:text-[2rem]"
+            /* The wordmark's wide tracking makes it ~135px, which with the menu
+               button and the four actions cannot fit 320px. It steps down below
+               360px only — the size and tracking are untouched from 360px up. */
+            className="shrink-0 font-display text-[1.05rem] tracking-[0.18em] leading-none text-ink min-[360px]:text-[1.375rem] min-[360px]:tracking-[0.28em] sm:text-[1.625rem] lg:text-[1.75rem] xl:text-[2rem]"
             aria-label={`${SITE.name} home`}
           >
             {SITE.name}

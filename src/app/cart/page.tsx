@@ -50,7 +50,9 @@ export default function CartPage() {
         {count} {count === 1 ? "item" : "items"}
       </p>
 
-      <div className="mt-10 grid gap-10 lg:grid-cols-[1.6fr_1fr]">
+      {/* [&>*]:min-w-0 — auto-sized grid tracks cannot go below their content's
+          minimum, so a wide line item widened the page instead of wrapping. */}
+      <div className="mt-10 grid gap-10 lg:grid-cols-[1.6fr_1fr] [&>*]:min-w-0">
         {/* Items */}
         <div>
           <ul className="space-y-4">
@@ -122,7 +124,13 @@ export default function CartPage() {
         </div>
 
         {/* Summary */}
-        <aside className="h-fit rounded-media border border-line bg-paper p-7 lg:sticky lg:top-28">
+        {/* A sticky box taller than the space below its top offset can never be
+            scrolled to the end of — it stays pinned, so the overflow is not
+            merely below the fold, it is unreachable. Capping the height to what
+            is actually on screen and letting it scroll internally keeps the
+            total and the pay button reachable on short windows. Taller windows
+            never hit the cap, so the desktop appearance is unchanged. */}
+        <aside className="h-fit rounded-media border border-line bg-paper p-7 lg:sticky lg:top-28 lg:max-h-[calc(100dvh-8rem)] lg:overflow-y-auto">
           <h2 className="font-display text-2xl text-ink">Order Summary</h2>
           <dl className="mt-6 space-y-3 text-sm">
             <div className="flex justify-between">

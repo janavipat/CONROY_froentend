@@ -17,9 +17,16 @@ export function ProductGallery({ images }: { images: ProductImage[] }) {
        the same frame regardless of how much description it carries.
        Only from lg: below that the gallery is a column and stretch is what
        makes the image span the full width. */
-    <div className="flex flex-col-reverse gap-3 lg:flex-row lg:items-start">
+    /* min-w-0 is load-bearing on all three boxes below. A flex/grid item's
+       automatic minimum size is its content, so the fixed-width thumbnail row
+       propagated its full width (n × 64 + gaps) up through the gallery and
+       into the PDP's grid column — the column grew past the container and the
+       whole page scrolled sideways on phones. min-w-0 lets each box shrink to
+       the space it is given; the strip then scrolls horizontally as intended
+       instead of pushing the layout wider. Thumbnail size is unchanged. */
+    <div className="flex min-w-0 flex-col-reverse gap-3 lg:flex-row lg:items-start">
       {/* Thumbnails */}
-      <div className="flex gap-3 overflow-x-auto lg:flex-col lg:overflow-visible">
+      <div className="flex min-w-0 max-w-full gap-3 overflow-x-auto lg:flex-col lg:overflow-visible">
         {images.map((img, i) => (
           <button
             key={img.src}
@@ -36,7 +43,7 @@ export function ProductGallery({ images }: { images: ProductImage[] }) {
       </div>
 
       {/* Main image */}
-      <div className="relative aspect-[4/5] flex-1 overflow-hidden rounded-media bg-mist">
+      <div className="relative aspect-[4/5] min-w-0 flex-1 overflow-hidden rounded-media bg-mist">
         <Image
           key={images[active].src}
           src={images[active].src}

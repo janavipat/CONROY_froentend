@@ -151,8 +151,13 @@ export function AddToCartForm({ product, compact = false }: { product: Product; 
 
       {/* Quantity + actions */}
       <div className="flex flex-col gap-4">
-        <div className="flex items-stretch gap-4">
-          <div className="flex items-center border border-line">
+        {/* The stepper (~130px) and the Add to cart button (~173px of padding
+            and nowrap label) together need more width than a small phone has,
+            and neither can shrink without clipping. Below 400px they stack:
+            both keep their full size and stay tappable, and the row stops
+            widening the page. Unchanged from 400px up. */}
+        <div className="flex items-stretch gap-4 max-[400px]:flex-col max-[400px]:items-start">
+          <div className="flex shrink-0 items-center border border-line">
             <button
               onClick={() => setQuantity((q) => Math.max(1, q - 1))}
               className="grid h-11 w-11 place-items-center text-ink hover:bg-ink/5"
@@ -169,7 +174,11 @@ export function AddToCartForm({ product, compact = false }: { product: Product; 
               <PlusIcon className="h-4 w-4" />
             </button>
           </div>
-          <Button onClick={handleAdd} className="flex-1" size={compact ? "md" : "lg"}>
+          <Button
+            onClick={handleAdd}
+            className="min-w-0 flex-1 max-[400px]:w-full max-[400px]:flex-none"
+            size={compact ? "md" : "lg"}
+          >
             {added ? (
               <>
                 <CheckIcon className="h-4 w-4" /> Added
