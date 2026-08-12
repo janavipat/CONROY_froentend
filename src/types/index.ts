@@ -40,6 +40,12 @@ export interface Product {
   createdAt?: string;
   price: number;
   compareAtPrice?: number;
+  /**
+   * Saving as a whole percent, computed by the API from price vs
+   * compareAtPrice. Absent when there is no real discount — the UI renders it
+   * as-is and never derives its own figure.
+   */
+  discountPercent?: number;
   currency: string;
   sizes: string[];
   images: ProductImage[];

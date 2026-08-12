@@ -36,6 +36,7 @@ function normalizeProduct(raw: Record<string, unknown>): Product {
     createdAt: (raw.createdAt as string) ?? undefined,
     price: Number(raw.price ?? 0),
     compareAtPrice: raw.compareAtPrice ? Number(raw.compareAtPrice) : undefined,
+    discountPercent: raw.discountPercent ? Number(raw.discountPercent) : undefined,
     currency: String(raw.currency ?? "INR"),
     sizes: (raw.sizes as string[]) ?? [],
     images: ((raw.images as { src: string; alt: string }[]) ?? []).map((i) => ({

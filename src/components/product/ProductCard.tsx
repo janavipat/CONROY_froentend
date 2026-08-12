@@ -6,6 +6,7 @@ import { useState } from "react";
 import type { Product } from "@/types";
 import { formatCurrency } from "@/utils/format";
 import { productDisplayTitle, productLabel } from "@/lib/catalog-taxonomy";
+import { DiscountBadge } from "./DiscountBadge";
 import { Rating } from "@/components/ui/Rating";
 import { LikeButton } from "./LikeButton";
 import { QuickViewModal } from "./QuickViewModal";
@@ -88,6 +89,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
                 {formatCurrency(product.compareAtPrice, product.currency)}
               </s>
             )}
+            <DiscountBadge percent={product.discountPercent} className="text-[0.8125rem]" />
           </span>
           {/* Denim shows its fit; a T-shirt shows its fabric collection and
               never borrows a denim fit label. */}

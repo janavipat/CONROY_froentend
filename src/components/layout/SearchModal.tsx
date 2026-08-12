@@ -7,6 +7,7 @@ import { searchProducts } from "@/lib/products";
 import { TRENDING_SEARCHES } from "@/lib/site";
 import { formatCurrency } from "@/utils/format";
 import { productDisplayTitle, productLabel } from "@/lib/catalog-taxonomy";
+import { DiscountBadge } from "@/components/product/DiscountBadge";
 import { Modal } from "@/components/ui/Modal";
 import { SearchIcon } from "@/components/ui/Icons";
 
@@ -78,6 +79,7 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
                             {formatCurrency(p.compareAtPrice, p.currency)}
                           </s>
                         )}
+                        <DiscountBadge percent={p.discountPercent} className="text-xs" />
                       </span>
                     </Link>
                   </li>

@@ -8,6 +8,7 @@ import { Modal } from "@/components/ui/Modal";
 import { productDisplayTitle } from "@/lib/catalog-taxonomy";
 import { Rating } from "@/components/ui/Rating";
 import { AddToCartForm } from "./AddToCartForm";
+import { DiscountBadge } from "./DiscountBadge";
 
 export function QuickViewModal({
   product,
@@ -46,6 +47,7 @@ export function QuickViewModal({
                   {formatCurrency(product.compareAtPrice, product.currency)}
                 </s>
               )}
+              <DiscountBadge percent={product.discountPercent} className="text-sm" />
             </span>
             <Rating value={product.rating} count={product.reviewCount} />
           </div>

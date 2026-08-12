@@ -9,6 +9,7 @@ import { productDisplayTitle, productLabel } from "@/lib/catalog-taxonomy";
 import { Container } from "@/components/ui/Container";
 import { Rating } from "@/components/ui/Rating";
 import { Accordion } from "@/components/ui/Accordion";
+import { DiscountBadge } from "@/components/product/DiscountBadge";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { AddToCartForm } from "@/components/product/AddToCartForm";
 import { ProductGrid } from "@/components/product/ProductGrid";
@@ -142,6 +143,7 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
                     {formatCurrency(product.compareAtPrice, product.currency)}
                   </s>
                 )}
+                <DiscountBadge percent={product.discountPercent} className="text-base" />
               </span>
               <Rating value={product.rating} count={product.reviewCount} />
             </div>
