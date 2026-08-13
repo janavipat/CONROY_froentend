@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useEffect, useId, useState } from "react";
 import { cn } from "@/utils/cn";
 
 /**
@@ -176,6 +176,69 @@ export function Sparkline({
 
 export function Skeleton({ className }: { className?: string }) {
   return <div className={cn("animate-pulse rounded-md bg-[#EFEFED]", className)} />;
+}
+
+/* ──────────────────────────────- Count up ───────────────────────────────── */
+
+/**
+ * Counts a figure up from zero once, on mount.
+ *
+ * Driven by requestAnimationFrame against elapsed time rather than a per-frame
+ * increment, so the run takes the same ~700ms on any refresh rate and always
+ * lands exactly on the target. `format` keeps currency and plain counts on the
+ * same component. Respects prefers-reduced-motion by rendering the final value
+ * immediately.
+ */
+export function CountUp({
+  value,
+  format,
+  duration = 700,
+}: {
+  value: number;
+  format?: (n: number) => string;
+  duration?: number;
+}) {
+  const [shown, setShown] = useState(0);
+
+  useEffect(() => {
+    let raf = 0;
+    const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+    /**
+     * The animation is decoration; the number is not. requestAnimationFrame is
+     * paused entirely while a page isn't compositing — a background tab, a
+     * hidden embed — and an rAF-only counter would sit at 0 for as long as
+     * that lasts, reading as "no orders" rather than "not animated yet". This
+     * timer is the guarantee: whatever happens to the frames, the true figure
+     * is shown. It is a no-op when the animation did run.
+     */
+    const settle = setTimeout(() => setShown(value), duration + 80);
+
+    // Every state write happens inside a callback, never in the effect body —
+    // writing synchronously here would cascade a render on mount.
+    if (reduced || value === 0) {
+      raf = requestAnimationFrame(() => setShown(value));
+      return () => {
+        cancelAnimationFrame(raf);
+        clearTimeout(settle);
+      };
+    }
+
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3); // ease-out: fast, then settles
+      setShown(Math.round(value * eased));
+      if (t < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(settle);
+    };
+  }, [value, duration]);
+
+  return <>{format ? format(shown) : shown.toLocaleString("en-IN")}</>;
 }
 
 /* ─────────────────────────── Branded loader ─────────────────────────────── */

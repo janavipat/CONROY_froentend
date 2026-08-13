@@ -9,6 +9,7 @@ import { printPackingSlips } from "@/lib/packing-slip";
 import { cn } from "@/utils/cn";
 import { SearchIcon, ChevronRightIcon } from "@/components/ui/Icons";
 import { Loader } from "@/components/ui/Loader";
+import { StatusBadge, CountUp } from "./ui";
 
 function formatDate(iso: string): string {
   try {
@@ -23,22 +24,6 @@ function formatDate(iso: string): string {
   }
 }
 
-/** Maps an order status to a Shopify-style subtle pill + colored dot. */
-function payment(status: string): { text: string; dot: string } {
-  switch (status) {
-    case "paid":
-      return { text: "Paid", dot: "bg-green-500" };
-    case "cod_pending":
-      return { text: "Payment pending", dot: "bg-amber-500" };
-    case "cancelled":
-      return { text: "Cancelled", dot: "bg-rose-500" };
-    case "refunded":
-      return { text: "Refunded", dot: "bg-stone/50" };
-    default:
-      return { text: "Processing", dot: "bg-stone/50" };
-  }
-}
-
 function methodLabel(m: string): string {
   const k = (m || "").toLowerCase();
   if (k.includes("cod") || k.includes("cash")) return "Cash on Delivery";
@@ -49,13 +34,15 @@ function methodLabel(m: string): string {
 
 const itemCount = (o: AdminOrder) => o.items.reduce((s, it) => s + it.quantity, 0);
 
-function Badge({ dot, text }: { dot: string; text: string }) {
-  return (
-    <span className="inline-flex items-center gap-1.5 rounded-md bg-mist px-2 py-0.5 text-xs text-ink-soft">
-      <span className={cn("h-1.5 w-1.5 rounded-full", dot)} />
-      {text}
-    </span>
-  );
+/**
+ * The status pill. Was a grey chip with a coloured dot: the colour carried no
+ * weight, and "Payment pending" wrapped onto two lines inside it, which made
+ * every row of the table taller than it needed to be. StatusBadge is the same
+ * pill used on the dashboard and order detail — tinted by meaning, and set to
+ * never wrap.
+ */
+function Badge({ status }: { status: string }) {
+  return <StatusBadge status={status} />;
 }
 
 type Filter = "all" | "paid" | "cod_pending" | "cancelled";
@@ -133,14 +120,22 @@ export function OrdersTable() {
       {/* Summary strip */}
       <div className="mt-6 grid grid-cols-2 divide-line rounded-media border border-line bg-white sm:grid-cols-4 sm:divide-x">
         {[
-          { label: "Orders", value: String(stats.orders) },
-          { label: "Items ordered", value: String(stats.items) },
-          { label: "Total sales", value: formatCurrency(stats.sales) },
-          { label: "Paid orders", value: String(stats.paid) },
+          { label: "Orders", value: stats.orders },
+          { label: "Items ordered", value: stats.items },
+          { label: "Total sales", value: stats.sales, currency: true },
+          { label: "Paid orders", value: stats.paid },
         ].map((s) => (
           <div key={s.label} className="px-5 py-4">
             <p className="text-xs text-stone">{s.label}</p>
-            <p className="mt-1 font-display text-xl text-ink">{s.value}</p>
+            {/* Counts up once the figures arrive. Keyed on the value so the run
+                starts when the data lands, not while the table is still empty. */}
+            <p className="mt-1 font-display text-xl tabular-nums text-ink">
+              <CountUp
+                key={s.label + s.value}
+                value={s.value}
+                format={s.currency ? (n) => formatCurrency(n) : undefined}
+              />
+            </p>
           </div>
         ))}
       </div>
@@ -228,7 +223,6 @@ export function OrdersTable() {
               </thead>
               <tbody className="divide-y divide-line">
                 {filtered.map((o) => {
-                  const p = payment(o.status);
                   const cancelled = o.status === "cancelled";
                   return (
                     <tr
@@ -268,7 +262,7 @@ export function OrdersTable() {
                         {formatCurrency(o.subtotal, o.currency)}
                       </td>
                       <td className="px-3 py-3">
-                        <Badge dot={p.dot} text={p.text} />
+                        <Badge status={o.status} />
                       </td>
                       <td className="whitespace-nowrap px-3 py-3 text-ink-soft">
                         {methodLabel(o.paymentMethod)}
