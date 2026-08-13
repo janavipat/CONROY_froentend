@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getAdminKey, clearAdminKey } from "@/lib/admin-auth";
 import { adminVerifyKey } from "@/services/admin";
-import { Loader } from "@/components/ui/Loader";
+import { BrandLoader } from "./ui";
 
 /** Blocks admin content until a valid admin key is present. */
 export function AdminGate({ children }: { children: React.ReactNode }) {
@@ -34,12 +34,11 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
     };
   }, [router]);
 
+  // The first thing anyone sees on opening an admin page — the key check runs
+  // before the page's own data fetch, so this is the loading state that
+  // actually shows. It uses the branded loader for that reason.
   if (state === "checking") {
-    return (
-      <div className="grid min-h-[50vh] place-items-center">
-        <Loader label="Verifying" />
-      </div>
-    );
+    return <BrandLoader label="Verifying your session" />;
   }
 
   return <>{children}</>;

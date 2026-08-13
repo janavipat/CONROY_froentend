@@ -1,173 +1,203 @@
 "use client";
 
-import Link from "next/link";
+import Link, { useLinkStatus } from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { cn } from "@/utils/cn";
 import { clearAdminKey } from "@/lib/admin-auth";
 import {
   BagIcon,
   ArrowRightIcon,
+  BoxIcon,
   TruckIcon,
   UserIcon,
   GridIcon,
   ChartIcon,
+  LayersIcon,
   MegaphoneIcon,
   TagIcon,
   ReceiptIcon,
+  ReturnIcon,
   CogIcon,
   HeadsetIcon,
   ChatIcon,
 } from "@/components/ui/Icons";
 
-interface NavChild {
-  label: string;
-  href: string;
-}
 interface NavItem {
   label: string;
   href: string;
   icon: typeof GridIcon;
-  children?: NavChild[];
+  /** Exact match only — "/admin" would otherwise light up on every sub-route. */
+  exact?: boolean;
+}
+interface NavGroup {
+  label: string;
+  items: NavItem[];
 }
 
-// Shopify-style information architecture: top-level sections with sub-items.
-const NAV: NavItem[] = [
-  { label: "Home", href: "/admin", icon: GridIcon },
-  { label: "Analytics", href: "/admin/analytics", icon: ChartIcon },
+/**
+ * Grouped by what an operator is trying to do, rather than one flat list.
+ *
+ * Every entry points at a route that exists. The brief also asked for a
+ * Content group (Homepage, Shop The Look, Banners) and split Analytics pages —
+ * there are no admin routes behind those yet, and linking to them would put
+ * 404s in the primary navigation, so they are left out rather than stubbed.
+ */
+const GROUPS: NavGroup[] = [
   {
-    label: "Orders",
-    href: "/admin/orders",
-    icon: TruckIcon,
-    children: [
-      { label: "Returns", href: "/admin/returns" },
-      { label: "Abandoned checkouts", href: "/admin/orders/abandoned" },
+    label: "Overview",
+    items: [
+      { label: "Dashboard", href: "/admin", icon: GridIcon, exact: true },
+      { label: "Analytics", href: "/admin/analytics", icon: ChartIcon },
     ],
   },
   {
-    label: "Products",
-    href: "/admin/products",
-    icon: BagIcon,
-    children: [
-      { label: "Collections", href: "/admin/collections" },
-      { label: "Inventory", href: "/admin/inventory" },
+    label: "Store",
+    items: [
+      { label: "Orders", href: "/admin/orders", icon: TruckIcon },
+      { label: "Returns", href: "/admin/returns", icon: ReturnIcon },
+      { label: "Products", href: "/admin/products", icon: BagIcon },
+      { label: "Collections", href: "/admin/collections", icon: LayersIcon },
+      { label: "Inventory", href: "/admin/inventory", icon: BoxIcon },
+      { label: "Customers", href: "/admin/customers", icon: UserIcon },
+      { label: "Discounts", href: "/admin/offers", icon: TagIcon },
     ],
   },
-  { label: "Customers", href: "/admin/customers", icon: UserIcon },
-  { label: "Messages", href: "/admin/contacts", icon: HeadsetIcon },
-  { label: "Chat Messages", href: "/admin/chat", icon: ChatIcon },
-  { label: "Accounts", href: "/admin/accounts", icon: ReceiptIcon },
-  { label: "Marketing", href: "/admin/marketing", icon: MegaphoneIcon },
-  { label: "Discounts", href: "/admin/offers", icon: TagIcon },
+  {
+    label: "Engagement",
+    items: [
+      { label: "Messages", href: "/admin/contacts", icon: HeadsetIcon },
+      { label: "Chat", href: "/admin/chat", icon: ChatIcon },
+      { label: "Marketing", href: "/admin/marketing", icon: MegaphoneIcon },
+    ],
+  },
+  {
+    label: "Finance",
+    items: [{ label: "Accounts", href: "/admin/accounts", icon: ReceiptIcon }],
+  },
+  {
+    label: "System",
+    items: [{ label: "Settings", href: "/admin/settings", icon: CogIcon }],
+  },
 ];
 
-// Pinned at the very bottom, like Shopify's Settings.
-const SETTINGS_ITEM = { label: "Settings", href: "/admin/settings", icon: CogIcon };
+/**
+ * Spinner for the nav row you just clicked.
+ *
+ * useLinkStatus reads the enclosing Link's pending state, so this has to be a
+ * child of the Link rather than something the sidebar tracks itself. It covers
+ * the gap loading.tsx leaves: the route's fallback only appears once the
+ * navigation is under way, whereas this responds to the click.
+ */
+function NavPending() {
+  const { pending } = useLinkStatus();
+  if (!pending) return null;
+  return (
+    <span
+      aria-hidden
+      className="ml-auto h-3 w-3 shrink-0 animate-spin rounded-full border border-white/30 border-t-white"
+    />
+  );
+}
 
-export function AdminSidebar() {
+export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
   const router = useRouter();
 
-  // "/admin" must match exactly, else it'd highlight for every sub-route.
-  const isActive = (href: string) =>
-    href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
+  const isActive = (item: NavItem) =>
+    item.exact ? pathname === item.href : pathname.startsWith(item.href);
 
   function logout() {
     clearAdminKey();
+    onNavigate?.();
     router.replace("/admin/login");
   }
 
   return (
-    <aside className="hidden w-60 shrink-0 flex-col border-r border-line bg-white md:flex">
-      <div className="flex h-16 items-center border-b border-line px-6">
-        <Link href="/admin" className="font-display text-lg font-semibold tracking-[0.14em] text-ink">
+    <div className="flex h-full min-h-0 w-full flex-col bg-[#111111] text-white">
+      {/* Wordmark — the one place the brand serif belongs in here. */}
+      <div className="flex h-14 shrink-0 items-center gap-2 border-b border-white/10 px-5">
+        <Link
+          href="/admin"
+          onClick={onNavigate}
+          className="font-display text-[1.05rem] leading-none tracking-[0.22em] text-white"
+        >
           CONROY
         </Link>
-        <span className="ml-2 rounded-full bg-mist px-2 py-0.5 text-[0.6rem] uppercase tracking-wide text-stone">
+        <span className="rounded bg-white/10 px-1.5 py-0.5 text-[0.5625rem] font-medium uppercase tracking-[0.12em] text-white/60">
           Admin
         </span>
       </div>
 
-      <nav className="flex-1 space-y-0.5 px-3 py-4">
-        {NAV.map((item) => {
-          const active = isActive(item.href);
-          const childActive = item.children?.some((c) => isActive(c.href)) ?? false;
-          const sectionOpen = active || childActive;
-
-          return (
-            <div key={item.href}>
-              <Link
-                href={item.href}
-                className={cn(
-                  "group relative flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors",
-                  active ? "text-white" : "text-ink-soft hover:bg-mist hover:text-ink",
-                )}
-              >
-                {active && (
-                  <motion.span
-                    layoutId="adminActivePill"
-                    className="absolute inset-0 rounded-md bg-ink"
-                    transition={{ type: "spring", stiffness: 400, damping: 34 }}
-                  />
-                )}
-                <item.icon className="relative z-10 h-4.5 w-4.5 transition-transform duration-200 group-hover:scale-110" />
-                <span className="relative z-10">{item.label}</span>
-              </Link>
-
-              {/* Sub-items (e.g. Returns under Orders) — shown when the section is active */}
-              {item.children && sectionOpen && (
-                <div className="mt-0.5 space-y-0.5">
-                  {item.children.map((child) => {
-                    const cActive = isActive(child.href);
-                    return (
-                      <Link
-                        key={child.href}
-                        href={child.href}
-                        className={cn(
-                          "relative ml-[1.35rem] flex items-center rounded-md border-l border-line py-2 pl-4 pr-3 text-sm transition-colors",
-                          cActive
-                            ? "border-ink font-medium text-ink"
-                            : "text-stone hover:text-ink",
-                        )}
-                      >
-                        {child.label}
-                      </Link>
-                    );
-                  })}
-                </div>
-              )}
+      {/* The nav scrolls when the viewport is short. Left unstyled the browser
+          paints its default light track straight down the dark rail, which
+          reads as a seam between the sidebar and the content. This makes it a
+          thin translucent thumb on a transparent track — invisible at rest,
+          legible while scrolling. */}
+      <nav
+        className={cn(
+          "min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-3 py-4",
+          "[scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.16)_transparent]",
+          "[&::-webkit-scrollbar]:w-1.5",
+          "[&::-webkit-scrollbar-track]:bg-transparent",
+          "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/15",
+          "hover:[&::-webkit-scrollbar-thumb]:bg-white/25",
+        )}
+      >
+        {GROUPS.map((group) => (
+          <div key={group.label}>
+            <p className="px-3 pb-1.5 text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-white/35">
+              {group.label}
+            </p>
+            <div className="space-y-0.5">
+              {group.items.map((item) => {
+                const active = isActive(item);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={onNavigate}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "group relative flex items-center gap-2.5 rounded-lg py-2 pl-3 pr-2.5 text-[0.8125rem] transition-colors duration-150",
+                      active
+                        ? "bg-white/10 font-medium text-white"
+                        : "text-white/60 hover:bg-white/[0.06] hover:text-white",
+                    )}
+                  >
+                    {/* Small rail marks the active row without shouting. */}
+                    <span
+                      className={cn(
+                        "absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r bg-white transition-opacity",
+                        active ? "opacity-100" : "opacity-0",
+                      )}
+                    />
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{item.label}</span>
+                    <NavPending />
+                  </Link>
+                );
+              })}
             </div>
-          );
-        })}
+          </div>
+        ))}
       </nav>
 
-      <div className="m-3 space-y-2">
-        <Link
-          href={SETTINGS_ITEM.href}
-          className={cn(
-            "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm transition-colors",
-            isActive(SETTINGS_ITEM.href)
-              ? "bg-ink text-white"
-              : "text-ink-soft hover:bg-mist hover:text-ink",
-          )}
-        >
-          <SETTINGS_ITEM.icon className="h-4.5 w-4.5" />
-          {SETTINGS_ITEM.label}
-        </Link>
+      <div className="shrink-0 space-y-1 border-t border-white/10 p-3">
         <Link
           href="/"
-          className="flex items-center justify-between rounded-md border border-line px-3 py-2.5 text-sm text-ink-soft transition-colors hover:border-ink hover:text-ink"
+          onClick={onNavigate}
+          className="flex items-center justify-between rounded-lg px-3 py-2 text-[0.8125rem] text-white/60 transition-colors hover:bg-white/[0.06] hover:text-white"
         >
           View store
-          <ArrowRightIcon className="h-4 w-4" />
+          <ArrowRightIcon className="h-3.5 w-3.5" />
         </Link>
         <button
           onClick={logout}
-          className="w-full rounded-md px-3 py-2 text-left text-sm text-stone transition-colors hover:text-accent"
+          className="w-full rounded-lg px-3 py-2 text-left text-[0.8125rem] text-white/45 transition-colors hover:bg-white/[0.06] hover:text-white"
         >
           Log out
         </button>
       </div>
-    </aside>
+    </div>
   );
 }
