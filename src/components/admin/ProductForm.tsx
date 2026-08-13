@@ -1,11 +1,13 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import type { Product } from "@/types";
 import {
   adminCreateProduct,
+  adminDeleteProduct,
   adminGetProductCollections,
   adminListCollections,
   adminUpdateProduct,
@@ -14,8 +16,10 @@ import {
   type ProductImageInput,
 } from "@/services/admin";
 import { Button } from "@/components/ui/Button";
+import { ConfirmDialog } from "./ui";
 import { CloseIcon, PlusIcon } from "@/components/ui/Icons";
 import { cn } from "@/utils/cn";
+import { formatCurrency } from "@/utils/format";
 import {
   CATEGORY_FOR_TYPE,
   PRODUCT_TYPES,
@@ -83,6 +87,8 @@ export function ProductForm({ initial }: { initial?: Product }) {
 
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [error, setError] = useState("");
 
   // Image management. `replacingIndex` drives the per-tile spinner so a replace
@@ -298,14 +304,32 @@ export function ProductForm({ initial }: { initial?: Product }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-3xl">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-2xl text-ink sm:text-3xl">
-          {editing ? "Edit product" : "New product"}
-        </h1>
-        <Button href="/admin/products" variant="ghost" size="sm">
-          Cancel
-        </Button>
+    /* Was max-w-3xl, which left most of a desktop screen empty. The form now
+       spans a normal admin container and pairs with a sticky summary column. */
+    <form onSubmit={handleSubmit} className="mx-auto min-w-0 max-w-[1400px]">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <nav aria-label="Breadcrumb" className="text-[0.75rem] text-[#737373]">
+            <Link href="/admin/products" className="hover:text-[#171717]">
+              Products
+            </Link>
+            {editing && initial && (
+              <>
+                <span className="mx-1.5 text-[#D4D4D4]">/</span>
+                <span className="text-[#171717]">{initial.title}</span>
+              </>
+            )}
+            <span className="mx-1.5 text-[#D4D4D4]">/</span>
+            <span className="text-[#171717]">{editing ? "Edit" : "New"}</span>
+          </nav>
+          <h1 className="mt-1 truncate text-[1.5rem] font-semibold tracking-[-0.02em] text-[#171717] sm:text-[1.75rem]">
+            {editing ? initial?.title || "Edit product" : "New product"}
+          </h1>
+        </div>
+
+        {/* Save and Cancel live in the sticky sidebar card only. A second pair
+            here sat directly beside it and, unlike the sidebar, scrolled out of
+            reach on a form this long. */}
       </div>
 
       {error && (
@@ -313,6 +337,10 @@ export function ProductForm({ initial }: { initial?: Product }) {
           {error}
         </p>
       )}
+
+      <div className="mt-5 grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+        {/* ── Left: the form itself ─────────────────────────────────────── */}
+        <div className="min-w-0 space-y-5 [&>section]:mt-0">
 
       {/* Images */}
       <section className="mt-6 rounded-media border border-line bg-white p-5">
@@ -645,8 +673,10 @@ export function ProductForm({ initial }: { initial?: Product }) {
         )}
       </section>
 
-      {/* Inventory */}
-      <section className="mt-6 grid gap-5 rounded-media border border-line bg-white p-5 sm:grid-cols-3">
+      {/* Inventory. Status used to sit here as a third column; it now lives in
+          the sidebar so the product's state reads at a glance. Same state,
+          same value on save. */}
+      <section className="mt-6 grid gap-5 rounded-media border border-line bg-white p-5 sm:grid-cols-2">
         <div>
           <label className={label}>Stock</label>
           <input
@@ -667,18 +697,6 @@ export function ProductForm({ initial }: { initial?: Product }) {
             placeholder="CNRY-BLK-01"
             className={field}
           />
-        </div>
-        <div>
-          <label className={label}>Status</label>
-          <select
-            value={status}
-            onChange={(e) => setStatus(e.target.value as "active" | "draft" | "archived")}
-            className={cn(field, "capitalize")}
-          >
-            <option value="active">Active</option>
-            <option value="draft">Draft</option>
-            <option value="archived">Archived</option>
-          </select>
         </div>
       </section>
 
@@ -843,23 +861,193 @@ export function ProductForm({ initial }: { initial?: Product }) {
         </button>
       </section>
 
-      {/* Repeated next to the button: the banner at the top of the form is far
+      {/* Repeated at the foot of the form: the banner at the top is far
           off-screen from here, which made a rejected submit look like a dead
           button with no request sent. */}
-      {error && (
-        <p className="mt-6 rounded-md border border-accent/30 bg-accent/5 px-4 py-3 text-sm text-accent">
-          {error}
-        </p>
-      )}
+          {error && (
+            <p className="rounded-md border border-accent/30 bg-accent/5 px-4 py-3 text-sm text-accent">
+              {error}
+            </p>
+          )}
+        </div>
 
-      <div className="mt-6 flex gap-3">
-        <Button type="submit" size="lg" disabled={submitting || uploading}>
-          {submitting ? "Saving…" : editing ? "Save changes" : "Create product"}
-        </Button>
-        <Button href="/admin/products" variant="outline" size="lg">
-          Cancel
-        </Button>
+        {/* ── Right: sticky summary ─────────────────────────────────────── */}
+        <aside className="min-w-0 space-y-4 lg:sticky lg:top-6">
+          {/* Save */}
+          <div className="rounded-xl border border-[#E5E5E5] bg-white p-4">
+            <Button
+              type="submit"
+              size="md"
+              className="w-full"
+              disabled={submitting || uploading}
+            >
+              {submitting ? "Saving…" : editing ? "Save changes" : "Create product"}
+            </Button>
+            <Button href="/admin/products" variant="outline" size="md" className="mt-2 w-full">
+              Cancel
+            </Button>
+          </div>
+
+          {/* Status — the same state the form saves; moved out of Inventory so
+              it reads at a glance without scrolling. */}
+          <div className="rounded-xl border border-[#E5E5E5] bg-white p-4">
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.06em] text-[#737373]">
+              Product status
+            </p>
+            <div className="mt-2 flex items-center gap-2">
+              <span
+                className={cn(
+                  "h-2 w-2 shrink-0 rounded-full",
+                  status === "active"
+                    ? "bg-[#16803C]"
+                    : status === "draft"
+                      ? "bg-[#D97706]"
+                      : "bg-[#A3A3A3]",
+                )}
+              />
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as "active" | "draft" | "archived")}
+                className="h-11 w-full min-w-0 rounded-md border border-line bg-white px-2 text-sm capitalize text-ink focus:border-ink focus:outline-none"
+              >
+                <option value="active">Active</option>
+                <option value="draft">Draft</option>
+                <option value="archived">Archived</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Summary — reflects what's in the form right now, not what was saved. */}
+          <div className="rounded-xl border border-[#E5E5E5] bg-white p-4">
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.06em] text-[#737373]">
+              Summary
+            </p>
+            <div className="mt-3 flex gap-3">
+              <span className="relative grid h-16 w-14 shrink-0 place-items-center overflow-hidden rounded-md border border-[#E5E5E5] bg-[#FAFAF9] text-[0.625rem] text-[#A3A3A3]">
+                {images[0]?.src ? (
+                  <Image src={images[0].src} alt="" fill sizes="56px" className="object-cover" />
+                ) : (
+                  "No image"
+                )}
+              </span>
+              <div className="min-w-0">
+                <p className="break-words text-[0.8125rem] font-medium text-[#171717]">
+                  {title || "Untitled product"}
+                </p>
+                <p className="mt-1 flex flex-wrap items-baseline gap-2">
+                  <span className="text-[0.9375rem] font-semibold tabular-nums text-[#171717]">
+                    {price ? formatCurrency(Number(price) || 0) : "—"}
+                  </span>
+                  {compareAtPrice && Number(compareAtPrice) > Number(price) && (
+                    <s className="text-[0.75rem] text-[#A3A3A3]">
+                      {formatCurrency(Number(compareAtPrice))}
+                    </s>
+                  )}
+                </p>
+              </div>
+            </div>
+            <dl className="mt-3 space-y-1.5 border-t border-[#F0F0EE] pt-3 text-[0.75rem]">
+              {[
+                ["Type", productType],
+                ["Category", category],
+                ["Fit", fit || "—"],
+                ["Colour", color || "—"],
+              ].map(([k, v]) => (
+                <div key={k} className="flex justify-between gap-3">
+                  <dt className="text-[#737373]">{k}</dt>
+                  <dd className="min-w-0 truncate text-[#171717]">{v}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+
+          {/* Organization */}
+          <div className="rounded-xl border border-[#E5E5E5] bg-white p-4">
+            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.06em] text-[#737373]">
+              Organization
+            </p>
+            {collections === null ? (
+              <p className="mt-2 text-[0.75rem] text-[#A3A3A3]">Loading…</p>
+            ) : collections.length === 0 ? (
+              <p className="mt-2 text-[0.75rem] text-[#A3A3A3]">No collection selected</p>
+            ) : (
+              <ul className="mt-2 flex flex-wrap gap-1.5">
+                {collections.map((h) => {
+                  const c = allCollections?.find((x) => x.handle === h);
+                  return (
+                    <li
+                      key={h}
+                      className="rounded-md bg-[#F5F5F4] px-2 py-1 text-[0.6875rem] text-[#525252]"
+                    >
+                      {c?.title ?? h}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </div>
+
+          {/* Danger zone — edit only; creating a product has nothing to delete. */}
+          {editing && initial && (
+            <div className="rounded-xl border border-[#DC2626]/25 bg-white p-4">
+              <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.06em] text-[#DC2626]">
+                Danger zone
+              </p>
+              <p className="mt-1.5 text-[0.75rem] leading-relaxed text-[#737373]">
+                Deleting removes this product from the storefront. This can&apos;t be undone.
+              </p>
+              <button
+                type="button"
+                disabled={deleting}
+                onClick={() => setConfirmDelete(true)}
+                className="mt-3 w-full rounded-lg border border-[#DC2626]/30 px-3 py-2 text-[0.8125rem] font-medium text-[#DC2626] transition-colors hover:bg-[#DC2626]/5 disabled:opacity-50"
+              >
+                {deleting ? "Deleting…" : "Delete product"}
+              </button>
+            </div>
+          )}
+        </aside>
       </div>
+
+      {/* Confirms the Danger zone delete. Kept inside the form only for
+          placement — it is fixed-position, and every button in it is
+          type="button", so it can never submit. */}
+      {editing && initial && (
+        <ConfirmDialog
+          open={confirmDelete}
+          busy={deleting}
+          title="Delete this product?"
+          description="It will be removed from the storefront immediately. This can’t be undone."
+          detail={
+            <div className="flex items-center gap-3">
+              <span className="relative h-12 w-10 shrink-0 overflow-hidden rounded-md bg-[#EFEFED]">
+                {images[0]?.src && (
+                  <Image src={images[0].src} alt="" fill sizes="40px" className="object-cover" />
+                )}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-[0.8125rem] font-medium text-[#171717]">
+                  {initial.title}
+                </span>
+                <span className="block truncate text-[0.75rem] text-[#737373]">{initial.handle}</span>
+              </span>
+            </div>
+          }
+          onCancel={() => setConfirmDelete(false)}
+          onConfirm={async () => {
+            setDeleting(true);
+            try {
+              await adminDeleteProduct(initial.handle);
+              router.push("/admin/products");
+              router.refresh();
+            } catch {
+              setConfirmDelete(false);
+              setError("Could not delete this product. Please retry.");
+              setDeleting(false);
+            }
+          }}
+        />
+      )}
     </form>
   );
 }

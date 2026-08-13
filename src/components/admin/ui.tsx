@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/utils/cn";
 
 /**
@@ -239,6 +240,151 @@ export function CountUp({
   }, [value, duration]);
 
   return <>{format ? format(shown) : shown.toLocaleString("en-IN")}</>;
+}
+
+/* ────────────────────────── Confirm dialog ──────────────────────────────── */
+
+/**
+ * Confirmation before a destructive action.
+ *
+ * This replaces `window.confirm`. The native dialog does technically ask, but
+ * it asks in the browser's chrome rather than the console's — unstyled, unable
+ * to name the record in anything but plain text, and dismissible with a stray
+ * Enter because the browser focuses OK by default. Deleting a product is not
+ * undoable, so the ask is worth doing properly: the product's name and image
+ * are shown, Cancel takes focus, and Escape or a backdrop click both cancel.
+ *
+ * The confirming button is never the default action — an operator who mashes
+ * Enter cancels rather than deletes.
+ */
+export function ConfirmDialog({
+  open,
+  title,
+  description,
+  detail,
+  confirmLabel = "Delete",
+  busyLabel = "Deleting…",
+  cancelLabel = "Cancel",
+  busy = false,
+  onConfirm,
+  onCancel,
+}: {
+  open: boolean;
+  title: string;
+  description?: string;
+  /** Optional record identity — the thing being destroyed, shown verbatim. */
+  detail?: React.ReactNode;
+  confirmLabel?: string;
+  busyLabel?: string;
+  cancelLabel?: string;
+  busy?: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  const headingId = useId();
+  const cancelRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    // Escape always cancels — but not mid-delete, when there is nothing left to
+    // call off and closing would only hide the outcome.
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !busy) onCancel();
+    };
+    document.addEventListener("keydown", onKey);
+
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    // Focus lands on Cancel, so Enter and Space are safe.
+    const focus = requestAnimationFrame(() => cancelRef.current?.focus());
+
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prev;
+      cancelAnimationFrame(focus);
+    };
+  }, [open, busy, onCancel]);
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <div className="fixed inset-0 z-[80] grid place-items-center p-4">
+          <motion.div
+            className="absolute inset-0 bg-black/45"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            onClick={() => !busy && onCancel()}
+          />
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={headingId}
+            className="relative w-full max-w-[420px] rounded-2xl border border-[#E5E5E5] bg-white p-5 shadow-[0_20px_60px_rgba(16,16,16,0.22)]"
+            initial={{ opacity: 0, scale: 0.96, y: 8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98, y: 4 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <div className="flex gap-3.5">
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-[#DC2626]/10">
+                <svg viewBox="0 0 20 20" className="h-5 w-5 text-[#DC2626]" aria-hidden>
+                  <path
+                    d="M10 6.5v4.2M10 13.6v.05M8.6 2.9 1.9 15.1a1.6 1.6 0 0 0 1.4 2.4h13.4a1.6 1.6 0 0 0 1.4-2.4L11.4 2.9a1.6 1.6 0 0 0-2.8 0Z"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+              <div className="min-w-0 flex-1">
+                <h2
+                  id={headingId}
+                  className="text-[0.9375rem] font-semibold tracking-[-0.01em] text-[#171717]"
+                >
+                  {title}
+                </h2>
+                {description && (
+                  <p className="mt-1.5 text-[0.8125rem] leading-relaxed text-[#737373]">
+                    {description}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {detail && (
+              <div className="mt-4 rounded-lg border border-[#E5E5E5] bg-[#FAFAF9] p-3">{detail}</div>
+            )}
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                ref={cancelRef}
+                type="button"
+                onClick={onCancel}
+                disabled={busy}
+                className="rounded-lg border border-[#E5E5E5] px-4 py-2 text-[0.8125rem] font-medium text-[#171717] transition-colors hover:bg-[#F5F5F4] disabled:opacity-50"
+              >
+                {cancelLabel}
+              </button>
+              <button
+                type="button"
+                onClick={onConfirm}
+                disabled={busy}
+                className="rounded-lg bg-[#DC2626] px-4 py-2 text-[0.8125rem] font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+              >
+                {busy ? busyLabel : confirmLabel}
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
+  );
 }
 
 /* ─────────────────────────── Branded loader ─────────────────────────────── */

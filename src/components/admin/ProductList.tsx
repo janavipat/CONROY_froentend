@@ -9,12 +9,15 @@ import { formatCurrency } from "@/utils/format";
 import { Button } from "@/components/ui/Button";
 import { PlusIcon } from "@/components/ui/Icons";
 import { Loader } from "@/components/ui/Loader";
+import { ConfirmDialog } from "./ui";
 
 export function ProductList() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
+  /** The product awaiting confirmation. Nothing is sent until it is confirmed. */
+  const [pending, setPending] = useState<Product | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -37,13 +40,18 @@ export function ProductList() {
     };
   }, []);
 
-  async function handleDelete(handle: string, title: string) {
-    if (!window.confirm(`Delete “${title}”? This cannot be undone.`)) return;
+  async function confirmDelete() {
+    if (!pending) return;
+    const { handle } = pending;
     setDeleting(handle);
     try {
       await adminDeleteProduct(handle);
       setProducts((prev) => prev.filter((p) => p.handle !== handle));
+      setPending(null);
     } catch {
+      // The dialog closes either way — the error belongs on the page, where it
+      // stays visible instead of vanishing with the overlay.
+      setPending(null);
       setError("Delete failed. Please try again.");
     } finally {
       setDeleting(null);
@@ -134,7 +142,7 @@ export function ProductList() {
                     Edit
                   </Link>
                   <button
-                    onClick={() => handleDelete(p.handle, p.title)}
+                    onClick={() => setPending(p)}
                     disabled={deleting === p.handle}
                     className="rounded-md border border-line px-3 py-1.5 text-xs text-accent transition-colors hover:border-accent disabled:opacity-50"
                   >
@@ -146,6 +154,42 @@ export function ProductList() {
           </ul>
         )}
       </div>
+
+      {/* Shows which product is about to go, so the wrong row can't be deleted
+          from muscle memory. */}
+      <ConfirmDialog
+        open={pending !== null}
+        busy={deleting !== null}
+        title="Delete this product?"
+        description="It will be removed from the storefront immediately. This can’t be undone."
+        detail={
+          pending && (
+            <div className="flex items-center gap-3">
+              <span className="relative h-12 w-10 shrink-0 overflow-hidden rounded-md bg-[#EFEFED]">
+                {pending.images[0] && (
+                  <Image
+                    src={pending.images[0].src}
+                    alt=""
+                    fill
+                    sizes="40px"
+                    className="object-cover"
+                  />
+                )}
+              </span>
+              <span className="min-w-0">
+                <span className="block truncate text-[0.8125rem] font-medium text-[#171717]">
+                  {pending.title}
+                </span>
+                <span className="block truncate text-[0.75rem] text-[#737373]">
+                  {formatCurrency(pending.price, pending.currency)} · {pending.handle}
+                </span>
+              </span>
+            </div>
+          )
+        }
+        onConfirm={confirmDelete}
+        onCancel={() => setPending(null)}
+      />
     </div>
   );
 }

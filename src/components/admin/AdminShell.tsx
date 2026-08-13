@@ -1,12 +1,32 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { AdminSidebar } from "./AdminSidebar";
 import { AdminGate } from "./AdminGate";
 import { cn } from "@/utils/cn";
-import { MenuIcon, CloseIcon, UserIcon } from "@/components/ui/Icons";
+import { MenuIcon, CloseIcon, UserIcon, ChevronLeftIcon } from "@/components/ui/Icons";
+
+/**
+ * Where "back" goes: one level up the URL, not `router.back()`.
+ *
+ * History-based back is unpredictable here — arriving from the storefront, a
+ * bookmark or a hard refresh sends the operator somewhere unrelated, or
+ * nowhere. Walking the path is always the parent section: an order detail
+ * returns to Orders, Orders returns to the Dashboard.
+ */
+function parentPath(pathname: string): string | null {
+  if (pathname === "/admin" || pathname === "/admin/login") return null;
+  const parts = pathname.split("/").filter(Boolean); // ["admin", …]
+  const last = parts.pop();
+  // An action segment sits under a record that has no page of its own —
+  // /admin/products/[handle] only exists as /edit — so dropping just "edit"
+  // would point the button at a 404. Drop the record id with it.
+  if (last === "edit" && parts.length > 1) parts.pop();
+  return `/${parts.join("/")}`;
+}
 
 /** Route → breadcrumb trail. Falls back to the last path segment, title-cased. */
 function breadcrumb(pathname: string): string[] {
@@ -40,6 +60,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   }
 
   const trail = breadcrumb(pathname);
+  const back = parentPath(pathname);
 
   return (
     <div className="min-h-screen bg-[#F7F7F5]">
@@ -83,6 +104,18 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           >
             <MenuIcon className="h-5 w-5" />
           </button>
+
+          {/* Back — one level up. Absent on the dashboard, which has no parent. */}
+          {back && (
+            <Link
+              href={back}
+              aria-label="Back"
+              title="Back"
+              className="-ml-1 grid h-9 w-9 shrink-0 place-items-center rounded-lg text-[#525252] transition-colors hover:bg-[#F5F5F4] hover:text-[#171717]"
+            >
+              <ChevronLeftIcon className="h-5 w-5" />
+            </Link>
+          )}
 
           <nav aria-label="Breadcrumb" className="min-w-0 flex-1">
             <ol className="flex items-center gap-1.5 text-[0.8125rem]">
