@@ -18,11 +18,37 @@ function placeOf(v: LiveVisitorRow): string {
 // visitor going offline shows up within one or two polls.
 const POLL_MS = 5_000;
 
-function StatTile({ label, value }: { label: string; value: string }) {
+function StatTile({
+  label,
+  value,
+  live = false,
+}: {
+  label: string;
+  value: string;
+  live?: boolean;
+}) {
   return (
-    <div className="rounded-media border border-line bg-white p-4">
-      <p className="text-xs text-stone">{label}</p>
-      <p className="mt-1 font-display text-xl sm:text-2xl text-ink">{value}</p>
+    <div className="min-w-0 rounded-xl border border-[#E5E5E5] bg-white px-4 py-3.5 shadow-[0_1px_2px_rgba(16,16,16,0.04)]">
+      <div className="flex items-center gap-1.5">
+        {live && (
+          <span className="relative flex h-1.5 w-1.5 shrink-0">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#16803C] opacity-60" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[#16803C]" />
+          </span>
+        )}
+        <p className="truncate text-[0.6875rem] font-medium uppercase tracking-[0.06em] text-[#737373]">
+          {label}
+        </p>
+      </div>
+      {/* Live now carries the weight; the split beneath it is supporting detail. */}
+      <p
+        className={cn(
+          "mt-1.5 tabular-nums text-[#171717]",
+          live ? "text-[1.75rem] font-semibold leading-none" : "text-[1.25rem] font-semibold leading-none",
+        )}
+      >
+        {value}
+      </p>
     </div>
   );
 }
@@ -76,7 +102,7 @@ export function LiveVisitorsPanel() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <StatTile label="Live now" value={String(data?.live ?? 0)} />
+        <StatTile label="Live now" value={String(data?.live ?? 0)} live />
         <StatTile label="Signed in" value={String(data?.loggedIn ?? 0)} />
         <StatTile label="Guests" value={String(data?.guests ?? 0)} />
       </div>
