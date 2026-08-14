@@ -100,6 +100,37 @@ export function StatusBadge({ status, className }: { status: string; className?:
   );
 }
 
+/**
+ * Return-lifecycle badge.
+ *
+ * Returns have their own stages, none of which the order STATUS_STYLES map
+ * knows — routing them through StatusBadge would grey out every one. It lives
+ * here rather than inside the Returns table so the customer page can show a
+ * return in exactly the same colours the Returns page does.
+ */
+const RETURN_STAGE: Record<string, string> = {
+  requested: "bg-[#D97706]/10 text-[#B45309] ring-[#D97706]/20",
+  approved: "bg-[#2563EB]/10 text-[#2563EB] ring-[#2563EB]/20",
+  rejected: "bg-[#DC2626]/10 text-[#DC2626] ring-[#DC2626]/20",
+  refunded: "bg-[#16803C]/10 text-[#16803C] ring-[#16803C]/20",
+  replaced: "bg-[#16803C]/10 text-[#16803C] ring-[#16803C]/20",
+  completed: "bg-[#16803C]/10 text-[#16803C] ring-[#16803C]/20",
+};
+
+export function ReturnStageBadge({ status, className }: { status: string; className?: string }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center whitespace-nowrap rounded-md px-2 py-0.5 text-[0.6875rem] font-medium capitalize ring-1 ring-inset",
+        RETURN_STAGE[status] ?? "bg-[#F5F5F4] text-[#737373] ring-[#E5E5E5]",
+        className,
+      )}
+    >
+      {status}
+    </span>
+  );
+}
+
 /* ──────────────────────────────── Delta ─────────────────────────────────── */
 
 /**

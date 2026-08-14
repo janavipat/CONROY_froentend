@@ -22,7 +22,7 @@ import {
   ArrowRightIcon,
 } from "@/components/ui/Icons";
 import { cn } from "@/utils/cn";
-import { Card, BrandLoader, CountUp } from "./ui";
+import { Card, BrandLoader, CountUp, ReturnStageBadge } from "./ui";
 
 const STATUSES: AdminReturnStatus[] = [
   "requested",
@@ -32,33 +32,6 @@ const STATUSES: AdminReturnStatus[] = [
   "replaced",
   "completed",
 ];
-
-/**
- * Return stage → colour, in the same language as the order badges: amber while
- * it's waiting on someone, blue while it's moving, red when refused, green when
- * settled.
- */
-const STAGE: Record<AdminReturnStatus, string> = {
-  requested: "bg-[#D97706]/10 text-[#B45309] ring-[#D97706]/20",
-  approved: "bg-[#2563EB]/10 text-[#2563EB] ring-[#2563EB]/20",
-  rejected: "bg-[#DC2626]/10 text-[#DC2626] ring-[#DC2626]/20",
-  refunded: "bg-[#16803C]/10 text-[#16803C] ring-[#16803C]/20",
-  replaced: "bg-[#16803C]/10 text-[#16803C] ring-[#16803C]/20",
-  completed: "bg-[#16803C]/10 text-[#16803C] ring-[#16803C]/20",
-};
-
-function StageBadge({ status }: { status: AdminReturnStatus }) {
-  return (
-    <span
-      className={cn(
-        "inline-flex shrink-0 items-center whitespace-nowrap rounded-md px-2 py-0.5 text-[0.6875rem] font-medium capitalize ring-1 ring-inset",
-        STAGE[status],
-      )}
-    >
-      {status}
-    </span>
-  );
-}
 
 function formatDate(iso: string): string {
   try {
@@ -616,7 +589,7 @@ export function ReturnsTable() {
                             {formatCurrency(returnTotal(r))}
                           </td>
                           <td className="px-3 py-3">
-                            <StageBadge status={r.status} />
+                            <ReturnStageBadge status={r.status} />
                           </td>
                           <td className="px-3 py-3 text-right text-[#A3A3A3]">
                             {savingIds.has(r.id) ? (
@@ -662,7 +635,7 @@ export function ReturnsTable() {
                         <span className="truncate text-[0.8125rem] font-medium text-[#171717]">
                           #{r.orderRef}
                         </span>
-                        <StageBadge status={r.status} />
+                        <ReturnStageBadge status={r.status} />
                       </span>
                       <span className="truncate text-[0.8125rem] text-[#525252]">
                         {r.customerName || r.email}

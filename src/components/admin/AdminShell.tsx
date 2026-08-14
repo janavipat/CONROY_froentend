@@ -28,9 +28,25 @@ function parentPath(pathname: string): string | null {
   return `/${parts.join("/")}`;
 }
 
+/**
+ * A path segment as it should read to a person.
+ *
+ * Segments arrive percent-encoded — a customer's phone number is routed as
+ * `%2B910999812206`, which is what the crumb showed. decodeURIComponent throws
+ * on a malformed escape, so a bad segment falls back to its raw form rather
+ * than taking the whole shell down.
+ */
+function decodeSegment(part: string): string {
+  try {
+    return decodeURIComponent(part);
+  } catch {
+    return part;
+  }
+}
+
 /** Route → breadcrumb trail. Falls back to the last path segment, title-cased. */
 function breadcrumb(pathname: string): string[] {
-  const parts = pathname.replace(/^\/admin\/?/, "").split("/").filter(Boolean);
+  const parts = pathname.replace(/^\/admin\/?/, "").split("/").filter(Boolean).map(decodeSegment);
   if (!parts.length) return ["Dashboard"];
   return parts.map((p) =>
     p.length > 20 ? `#${p.slice(0, 8).toUpperCase()}` : p.replace(/-/g, " ").replace(/^\w/, (c) => c.toUpperCase()),
@@ -53,6 +69,25 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     return () => {
       document.body.style.overflow = prev;
     };
+  }, [drawerOpen]);
+
+  /**
+   * Close the drawer when the window grows past `lg`.
+   *
+   * The drawer is a mobile affordance and its own `lg:hidden` hides it on a
+   * wide screen — but `drawerOpen` stays true, so the body stays scroll-locked
+   * and the drawer springs back the moment the window narrows again. Only the
+   * listener flips it; there is no synchronous set here, because the trigger
+   * that opens it is itself `lg:hidden` and cannot fire above the breakpoint.
+   */
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const onChange = (e: MediaQueryListEvent) => {
+      if (e.matches) setDrawerOpen(false);
+    };
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
   }, [drawerOpen]);
 
   if (pathname === "/admin/login") {
