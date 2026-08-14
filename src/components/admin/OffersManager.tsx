@@ -18,6 +18,7 @@ import { formatCurrency } from "@/utils/format";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/utils/cn";
 import { Loader } from "@/components/ui/Loader";
+import { ConfirmDialog } from "./ui";
 
 const TYPE_LABEL: Record<OfferType, string> = {
   all_products: "All products",
@@ -37,19 +38,31 @@ const EMPTY: OfferPayload = {
   active: false,
 };
 
-function describe(o: Offer): string {
-  const amount = o.discount_type === "percent" ? `${o.discount_value}% off` : `${formatCurrency(o.discount_value)} off`;
+/** "10% off" / "₹200 off" — the amount alone, for its own column. */
+function amountLabel(o: Offer): string {
+  return o.discount_type === "percent"
+    ? `${o.discount_value}% off`
+    : `${formatCurrency(o.discount_value)} off`;
+}
+
+/** What the offer applies to, without repeating the amount beside it. */
+function conditionLabel(o: Offer): string {
   switch (o.type) {
     case "product":
-      return `${amount} on ${o.product_handle}`;
+      return `on ${o.product_handle}`;
     case "order_above":
-      return `${amount} on orders above ${formatCurrency(o.min_order_amount ?? 0)}`;
+      return `on orders above ${formatCurrency(o.min_order_amount ?? 0)}`;
     case "code":
-      return `${amount} with code “${o.code}”`;
+      return `with code “${o.code}”`;
     default:
-      return `${amount} on all products`;
+      return "on all products";
   }
 }
+
+/* Inputs are the Edit Product page's, verbatim. */
+const field =
+  "h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-ink placeholder:text-stone focus:border-ink focus:outline-none";
+const label = "mb-1.5 block text-xs font-medium uppercase tracking-wide text-stone";
 
 export function OffersManager() {
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -59,6 +72,8 @@ export function OffersManager() {
   const [form, setForm] = useState<OfferPayload>(EMPTY);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<Offer | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   async function refresh() {
     try {
@@ -109,6 +124,15 @@ export function OffersManager() {
     });
   }
 
+  /**
+   * Stops the mouse wheel from editing a number field — a focused
+   * <input type="number"> steps on scroll, which is what silently turned a
+   * typed 999 into 997 on the product form.
+   */
+  function blurOnWheel(e: React.WheelEvent<HTMLInputElement>) {
+    e.currentTarget.blur();
+  }
+
   async function save() {
     if (!form.title.trim()) return setError("Give the offer a name.");
     if (form.type === "product" && !form.productHandle) return setError("Pick a product.");
@@ -143,20 +167,26 @@ export function OffersManager() {
   }
 
   async function remove(id: string) {
+    setDeleting(true);
     setOffers((os) => os.filter((o) => o.id !== id));
     try {
       await adminDeleteOffer(id);
+      // The form was editing the offer that just went — clear it rather than
+      // leave it pointed at a record that no longer exists.
+      if (editingId === id) resetForm();
     } catch {
       await refresh();
+    } finally {
+      setDeleting(false);
+      setPendingDelete(null);
     }
   }
 
-  const inputCls =
-    "h-11 w-full rounded-md border border-line bg-white px-3 text-sm text-ink focus:border-ink focus:outline-none";
+  const activeCount = offers.filter((o) => o.active).length;
 
   return (
-    <div>
-      <div>
+    <div className="mx-auto min-w-0 max-w-[1360px]">
+      <div className="min-w-0">
         <h1 className="font-display text-2xl text-ink sm:text-3xl">Offers</h1>
         <p className="mt-1 text-sm text-stone">
           Only one offer can be active at a time — activating one turns the others off.
@@ -164,32 +194,43 @@ export function OffersManager() {
       </div>
 
       {error && (
-        <p className="mt-6 rounded-md border border-accent/30 bg-accent/5 px-4 py-3 text-sm text-accent">
+        <p className="mt-5 rounded-md border border-accent/30 bg-accent/5 px-4 py-3 text-sm text-accent">
           {error}
         </p>
       )}
 
-      {/* Form */}
-      <div className="mt-6 rounded-media border border-line bg-white p-5">
-        <h2 className="font-display text-lg text-ink">{editingId ? "Edit offer" : "Create an offer"}</h2>
+      {/* ── Create / edit ────────────────────────────────────────────────── */}
+      <div className="mt-5 rounded-xl border border-[#E5E5E5] bg-white p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-display text-lg leading-none text-ink">
+            {editingId ? "Edit offer" : "Create an offer"}
+          </h2>
+          {editingId && (
+            <span className="rounded-md bg-[#F5F5F4] px-2.5 py-1 text-[0.6875rem] font-medium text-[#737373]">
+              Editing “{form.title || "untitled"}”
+            </span>
+          )}
+        </div>
 
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <label className="sm:col-span-2">
-            <span className="mb-1.5 block text-xs uppercase tracking-wide text-stone">Offer name</span>
+        {/* Four across on a wide screen, two on a tablet, stacked on a phone —
+            the name field alone used to run 1,118px wide. */}
+        <div className="mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <label className="min-w-0 xl:col-span-2">
+            <span className={label}>Offer name</span>
             <input
               value={form.title}
               onChange={(e) => set("title", e.target.value)}
               placeholder="e.g. Summer Sale"
-              className={inputCls}
+              className={field}
             />
           </label>
 
-          <label>
-            <span className="mb-1.5 block text-xs uppercase tracking-wide text-stone">Offer type</span>
+          <label className="min-w-0">
+            <span className={label}>Offer type</span>
             <select
               value={form.type}
               onChange={(e) => set("type", e.target.value as OfferType)}
-              className={inputCls}
+              className={field}
             >
               {(Object.keys(TYPE_LABEL) as OfferType[]).map((t) => (
                 <option key={t} value={t}>
@@ -199,38 +240,40 @@ export function OffersManager() {
             </select>
           </label>
 
-          <div className="grid grid-cols-2 gap-2">
-            <label>
-              <span className="mb-1.5 block text-xs uppercase tracking-wide text-stone">Discount</span>
+          <div className="grid min-w-0 grid-cols-2 gap-3">
+            <label className="min-w-0">
+              <span className={label}>Discount</span>
               <select
                 value={form.discountType}
                 onChange={(e) => set("discountType", e.target.value as DiscountType)}
-                className={inputCls}
+                className={field}
               >
                 <option value="percent">Percent %</option>
                 <option value="flat">Flat ₹</option>
               </select>
             </label>
-            <label>
-              <span className="mb-1.5 block text-xs uppercase tracking-wide text-stone">Value</span>
+            <label className="min-w-0">
+              <span className={label}>Value</span>
               <input
                 type="number"
                 min={0}
                 value={form.discountValue}
                 onChange={(e) => set("discountValue", Number(e.target.value))}
-                className={inputCls}
+                onWheel={blurOnWheel}
+                className={field}
               />
             </label>
           </div>
 
-          {/* Conditional fields */}
+          {/* Conditional fields — a full row of their own, so the four columns
+              above keep their positions as the type changes. */}
           {form.type === "product" && (
-            <label className="sm:col-span-2">
-              <span className="mb-1.5 block text-xs uppercase tracking-wide text-stone">Product</span>
+            <label className="min-w-0 sm:col-span-2 xl:col-span-4">
+              <span className={label}>Product</span>
               <select
                 value={form.productHandle ?? ""}
                 onChange={(e) => set("productHandle", e.target.value || null)}
-                className={inputCls}
+                className={field}
               >
                 <option value="">Select a product…</option>
                 {products.map((p) => (
@@ -243,122 +286,196 @@ export function OffersManager() {
           )}
 
           {form.type === "order_above" && (
-            <label className="sm:col-span-2">
-              <span className="mb-1.5 block text-xs uppercase tracking-wide text-stone">
-                Minimum order amount (₹)
-              </span>
+            <label className="min-w-0 sm:col-span-2 xl:col-span-4">
+              <span className={label}>Minimum order amount (₹)</span>
               <input
                 type="number"
                 min={0}
                 value={form.minOrderAmount ?? ""}
                 onChange={(e) => set("minOrderAmount", e.target.value ? Number(e.target.value) : null)}
-                className={inputCls}
+                onWheel={blurOnWheel}
+                className={field}
               />
             </label>
           )}
 
           {form.type === "code" && (
-            <label className="sm:col-span-2">
-              <span className="mb-1.5 block text-xs uppercase tracking-wide text-stone">Coupon code</span>
+            <label className="min-w-0 sm:col-span-2 xl:col-span-4">
+              <span className={label}>Coupon code</span>
               <input
                 value={form.code ?? ""}
                 onChange={(e) => set("code", e.target.value.toUpperCase())}
                 placeholder="e.g. WELCOME10"
-                className={cn(inputCls, "uppercase")}
+                className={cn(field, "uppercase")}
               />
             </label>
           )}
+        </div>
 
-          <label className="flex items-center gap-2 text-sm text-ink sm:col-span-2">
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-[#E5E5E5] pt-4">
+          <label className="flex cursor-pointer items-center gap-2 text-[0.8125rem] text-ink">
             <input
               type="checkbox"
               checked={form.active}
               onChange={(e) => set("active", e.target.checked)}
               className="h-4 w-4 accent-ink"
             />
-            Make this the active offer (turns off any other active offer)
+            Make this the active offer
+            <span className="text-[#A3A3A3]">(turns off any other)</span>
           </label>
-        </div>
 
-        <div className="mt-4 flex gap-3">
-          <Button onClick={save} disabled={saving}>
-            {saving ? "Saving…" : editingId ? "Update offer" : "Create offer"}
-          </Button>
-          {editingId && (
-            <button
-              onClick={resetForm}
-              className="rounded-md border border-line px-4 text-sm text-ink transition-colors hover:bg-mist"
-            >
-              Cancel
-            </button>
-          )}
+          <div className="flex items-center gap-2">
+            {editingId && (
+              <Button variant="outline" size="md" onClick={resetForm} disabled={saving}>
+                Cancel
+              </Button>
+            )}
+            <Button size="md" onClick={save} disabled={saving}>
+              {saving ? "Saving…" : editingId ? "Update offer" : "Create offer"}
+            </Button>
+          </div>
         </div>
       </div>
 
-      {/* List */}
-      <div className="mt-6">
+      {/* ── List ─────────────────────────────────────────────────────────── */}
+      <div className="mt-5 overflow-hidden rounded-xl border border-[#E5E5E5] bg-white">
+        <div className="flex items-center justify-between gap-3 border-b border-[#E5E5E5] px-5 py-3">
+          <h2 className="text-[0.9375rem] font-semibold tracking-[-0.01em] text-[#171717]">
+            All offers
+          </h2>
+          {!loading && offers.length > 0 && (
+            <span className="text-[0.75rem] text-[#737373]">
+              {offers.length} total · {activeCount === 0 ? "none active" : "1 active"}
+            </span>
+          )}
+        </div>
+
         {loading ? (
-          <div className="grid place-items-center rounded-media border border-line bg-white py-16">
+          <div className="grid place-items-center py-12">
             <Loader size="sm" label="" />
           </div>
         ) : offers.length === 0 ? (
-          <p className="rounded-media border border-line bg-white py-16 text-center text-stone">
-            No offers yet — create one above.
-          </p>
+          /* Was a 157px band of empty card. */
+          <div className="px-5 py-8 text-center">
+            <p className="text-sm text-ink">No offers yet</p>
+            <p className="mt-1 text-[0.8125rem] text-stone">
+              Create one above and it will appear here.
+            </p>
+          </div>
         ) : (
-          <ul className="space-y-3">
-            {offers.map((o) => (
-              <li
-                key={o.id}
-                className={cn(
-                  "flex flex-wrap items-center justify-between gap-3 rounded-media border bg-white p-4",
-                  o.active ? "border-ink" : "border-line",
-                )}
-              >
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-ink">{o.title}</span>
-                    {o.active && (
-                      <span className="rounded-full bg-green-600 px-2 py-0.5 text-[0.65rem] font-medium text-white">
-                        Active
-                      </span>
-                    )}
-                    <span className="rounded-full bg-mist px-2 py-0.5 text-[0.65rem] text-stone">
-                      {TYPE_LABEL[o.type]}
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-xs text-stone">{describe(o)}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => toggleActive(o)}
+          <div className="overflow-x-auto [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/15 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-1.5">
+            <table className="w-full min-w-[820px] table-fixed border-collapse text-sm">
+              <colgroup>
+                <col />
+                <col className="w-[150px]" />
+                <col className="w-[120px]" />
+                <col className="w-[92px]" />
+                <col className="w-[236px]" />
+              </colgroup>
+              <thead>
+                <tr className="border-b border-[#E5E5E5] text-left text-[0.6875rem] uppercase tracking-[0.06em] text-[#737373]">
+                  <th className="px-5 py-2.5 font-medium">Offer</th>
+                  <th className="px-3 py-2.5 font-medium">Type</th>
+                  <th className="px-3 py-2.5 text-right font-medium">Discount</th>
+                  <th className="px-3 py-2.5 font-medium">Status</th>
+                  <th className="px-5 py-2.5 text-right font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F0F0EE]">
+                {offers.map((o) => (
+                  <tr
+                    key={o.id}
                     className={cn(
-                      "rounded-md px-3 py-1.5 text-xs font-medium transition-colors",
-                      o.active
-                        ? "border border-line text-ink hover:bg-mist"
-                        : "bg-ink text-white hover:opacity-90",
+                      "transition-colors",
+                      // Clear but quiet: a faint tint plus the badge, rather
+                      // than a heavy border around the whole row.
+                      o.active ? "bg-[#16803C]/[0.045]" : "hover:bg-[#FAFAF9]",
                     )}
                   >
-                    {o.active ? "Deactivate" : "Activate"}
-                  </button>
-                  <button
-                    onClick={() => editOffer(o)}
-                    className="rounded-md border border-line px-3 py-1.5 text-xs text-ink transition-colors hover:bg-mist"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    onClick={() => remove(o.id)}
-                    className="rounded-md px-3 py-1.5 text-xs text-stone transition-colors hover:text-accent"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
+                    <td className="px-5 py-2.5">
+                      <span className="block truncate font-medium text-ink" title={o.title}>
+                        {o.title}
+                      </span>
+                      <span className="mt-0.5 block truncate text-[0.75rem] text-[#737373]">
+                        {conditionLabel(o)}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5">
+                      <span className="inline-flex whitespace-nowrap rounded-md bg-[#F5F5F4] px-2 py-0.5 text-[0.6875rem] text-[#737373]">
+                        {TYPE_LABEL[o.type]}
+                      </span>
+                    </td>
+                    <td className="whitespace-nowrap px-3 py-2.5 text-right tabular-nums font-medium text-ink">
+                      {amountLabel(o)}
+                    </td>
+                    <td className="px-3 py-2.5">
+                      {o.active ? (
+                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md bg-[#16803C]/10 px-2 py-0.5 text-[0.6875rem] font-medium text-[#16803C] ring-1 ring-inset ring-[#16803C]/20">
+                          <span className="h-1.5 w-1.5 rounded-full bg-[#16803C]" />
+                          Active
+                        </span>
+                      ) : (
+                        <span className="text-[0.75rem] text-[#A3A3A3]">Inactive</span>
+                      )}
+                    </td>
+                    <td className="px-5 py-2.5">
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => toggleActive(o)}
+                          className={cn(
+                            "h-8 rounded-md px-2.5 text-xs font-medium transition-colors",
+                            o.active
+                              ? "border border-line text-ink hover:bg-[#F5F5F4]"
+                              : "bg-ink text-white hover:opacity-90",
+                          )}
+                        >
+                          {o.active ? "Deactivate" : "Activate"}
+                        </button>
+                        <button
+                          onClick={() => editOffer(o)}
+                          className="h-8 rounded-md border border-line px-2.5 text-xs text-ink transition-colors hover:bg-[#F5F5F4]"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => setPendingDelete(o)}
+                          className="h-8 rounded-md px-2.5 text-xs text-[#DC2626] transition-colors hover:bg-[#DC2626]/5"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
+
+      {/* Deleting an offer used to happen on the first click, with nothing
+          asked and no undo. */}
+      <ConfirmDialog
+        open={pendingDelete !== null}
+        busy={deleting}
+        title="Delete this offer?"
+        description="It stops applying at checkout immediately. This can’t be undone."
+        detail={
+          pendingDelete && (
+            <div className="min-w-0">
+              <span className="block truncate text-[0.8125rem] font-medium text-[#171717]">
+                {pendingDelete.title}
+              </span>
+              <span className="block truncate text-[0.75rem] text-[#737373]">
+                {amountLabel(pendingDelete)} {conditionLabel(pendingDelete)}
+                {pendingDelete.active ? " · currently active" : ""}
+              </span>
+            </div>
+          )
+        }
+        onCancel={() => setPendingDelete(null)}
+        onConfirm={() => pendingDelete && remove(pendingDelete.id)}
+      />
     </div>
   );
 }
