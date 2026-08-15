@@ -73,13 +73,9 @@ export function ProductCard({ product, priority = false }: { product: Product; p
             )}
           </Link>
 
-          {/* Solid label, not bare text. `top-4 left-4` mirrors the wishlist
-              icon's inset on the opposite corner so the two sit level. */}
-          {product.badge && (
-            <span className="absolute left-4 top-4 rounded-(--radius-button) bg-red-600 px-2 py-1 text-[0.5rem] font-medium uppercase leading-none tracking-[0.08em] text-white">
-              {product.badge}
-            </span>
-          )}
+          {/* The badge is no longer laid over the photograph — it sits with
+              the collection label below. Nothing now covers the model, at any
+              width. */}
 
           <LikeButton
             handle={product.handle}
@@ -125,8 +121,17 @@ export function ProductCard({ product, priority = false }: { product: Product; p
             <DiscountBadge percent={product.discountPercent} className="text-[0.8125rem]" />
           </span>
           {/* Denim shows its fit; a T-shirt shows its fabric collection and
-              never borrows a denim fit label. */}
-          <p className="micro-label">{productLabel(product)}</p>
+              never borrows a denim fit label. The badge follows it on the same
+              line, and wraps beneath when a narrow card can't hold both —
+              which is why this is a wrapping row rather than two fixed lines. */}
+          <div className="flex w-full min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1.5">
+            <p className="micro-label">{productLabel(product)}</p>
+            {product.badge && (
+              <span className="rounded-(--radius-button) bg-red-600 px-1.5 py-1 text-[0.5rem] font-medium uppercase leading-none tracking-[0.08em] text-white">
+                {product.badge}
+              </span>
+            )}
+          </div>
           <Rating value={product.rating} count={product.reviewCount} showCount={false} />
         </div>
       </article>
