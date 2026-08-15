@@ -3,7 +3,9 @@ import { Bodoni_Moda, Inter } from "next/font/google";
 import "./globals.css";
 import { SITE } from "@/lib/site";
 import { StoreChrome } from "@/components/layout/StoreChrome";
+import { StagingBanner } from "@/components/layout/StagingBanner";
 import { Providers } from "./providers";
+import { isStaging } from "@/lib/staging";
 
 // Display — Bodoni Moda: the didone the fashion press is set in. Extreme
 // stroke contrast, so it is used at display sizes only; below about 24px the
@@ -72,7 +74,10 @@ export const metadata: Metadata = {
     title: `${SITE.name} — ${SITE.tagline}`,
     description: SITE.description,
   },
-  robots: { index: true, follow: true },
+  // Staging carries the same copy on a different domain; letting it be indexed
+  // would put a second CONROY storefront in the results. Belt and braces with
+  // app/robots.ts, which disallows crawling there outright.
+  robots: isStaging ? { index: false, follow: false } : { index: true, follow: true },
 };
 
 export const viewport: Viewport = {
@@ -90,6 +95,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${bodoni.variable} ${inter.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-background">
+        <StagingBanner />
         <Providers>
           <StoreChrome>{children}</StoreChrome>
         </Providers>

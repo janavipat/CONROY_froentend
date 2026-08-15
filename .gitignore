@@ -32,6 +32,9 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+# The opt-in: templates carry variable names and comments, never values.
+!.env.example
+!.env.staging.example
 
 # vercel
 .vercel
