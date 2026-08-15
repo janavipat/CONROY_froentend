@@ -73,23 +73,9 @@ export function ProductCard({ product, priority = false }: { product: Product; p
             )}
           </Link>
 
-          {/* Solid label, not bare text — set at the foot of the frame.
-
-              It used to sit top-left, which put it across the model's face:
-              the label is a fixed width on a card that is not, so on a phone's
-              two-up grid it reached three-quarters of the way across, exactly
-              where a centred head is. Measuring it at every breakpoint, it
-              still crossed the head at 1024 and only just cleared it at 1440,
-              so moving the breakpoint was never going to be the fix. The foot
-              of the frame is legs and studio floor at every width.
-
-              On lg it lifts clear of the quick-view band, which slides up from
-              the bottom edge on hover and would otherwise cover it. */}
-          {product.badge && (
-            <span className="absolute bottom-4 left-4 rounded-(--radius-button) bg-red-600 px-2 py-1 text-[0.5rem] font-medium uppercase leading-none tracking-[0.08em] text-white lg:bottom-16">
-              {product.badge}
-            </span>
-          )}
+          {/* The badge is no longer laid over the photograph — it sits with
+              the collection label below. Nothing now covers the model, at any
+              width. */}
 
           <LikeButton
             handle={product.handle}
@@ -135,8 +121,17 @@ export function ProductCard({ product, priority = false }: { product: Product; p
             <DiscountBadge percent={product.discountPercent} className="text-[0.8125rem]" />
           </span>
           {/* Denim shows its fit; a T-shirt shows its fabric collection and
-              never borrows a denim fit label. */}
-          <p className="micro-label">{productLabel(product)}</p>
+              never borrows a denim fit label. The badge follows it on the same
+              line, and wraps beneath when a narrow card can't hold both —
+              which is why this is a wrapping row rather than two fixed lines. */}
+          <div className="flex w-full min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1.5">
+            <p className="micro-label">{productLabel(product)}</p>
+            {product.badge && (
+              <span className="rounded-(--radius-button) bg-red-600 px-1.5 py-1 text-[0.5rem] font-medium uppercase leading-none tracking-[0.08em] text-white">
+                {product.badge}
+              </span>
+            )}
+          </div>
           <Rating value={product.rating} count={product.reviewCount} showCount={false} />
         </div>
       </article>
