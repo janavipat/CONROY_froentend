@@ -73,10 +73,20 @@ export function ProductCard({ product, priority = false }: { product: Product; p
             )}
           </Link>
 
-          {/* Solid label, not bare text. `top-4 left-4` mirrors the wishlist
-              icon's inset on the opposite corner so the two sit level. */}
+          {/* Solid label, not bare text — set at the foot of the frame.
+
+              It used to sit top-left, which put it across the model's face:
+              the label is a fixed width on a card that is not, so on a phone's
+              two-up grid it reached three-quarters of the way across, exactly
+              where a centred head is. Measuring it at every breakpoint, it
+              still crossed the head at 1024 and only just cleared it at 1440,
+              so moving the breakpoint was never going to be the fix. The foot
+              of the frame is legs and studio floor at every width.
+
+              On lg it lifts clear of the quick-view band, which slides up from
+              the bottom edge on hover and would otherwise cover it. */}
           {product.badge && (
-            <span className="absolute left-4 top-4 rounded-(--radius-button) bg-red-600 px-2 py-1 text-[0.5rem] font-medium uppercase leading-none tracking-[0.08em] text-white">
+            <span className="absolute bottom-4 left-4 rounded-(--radius-button) bg-red-600 px-2 py-1 text-[0.5rem] font-medium uppercase leading-none tracking-[0.08em] text-white lg:bottom-16">
               {product.badge}
             </span>
           )}
