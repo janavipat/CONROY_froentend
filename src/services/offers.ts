@@ -27,6 +27,14 @@ export interface ApplyOfferResult {
   requiresCode: boolean;
   message: string;
   code: string | null;
+  /**
+   * The campaign tier reached, when the standing CONROY offer is what applied.
+   * Both of these come from the server so the cart never recomputes a discount
+   * of its own — what is shown is what will be charged.
+   */
+  tier: { percent: number; units: number; minUnits: number } | null;
+  /** The next tier still within reach, for the "add one more" line. */
+  nextTier: { unitsNeeded: number; percent: number } | null;
 }
 
 function toApiItems(items: CartItem[]) {

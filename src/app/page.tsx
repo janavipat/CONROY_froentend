@@ -5,6 +5,7 @@ import { FeaturedEdit } from "@/sections/FeaturedEdit";
 import { ShopTheLookEdit } from "@/sections/ShopTheLookEdit";
 import { HeritageStory } from "@/sections/HeritageStory";
 import { CampaignBanner } from "@/sections/CampaignBanner";
+import { OfferBanner } from "@/sections/OfferBanner";
 import { ServiceFeatures } from "@/sections/ServiceFeatures";
 import { fetchSiteSettings, isOn } from "@/services/settings";
 import { browseProducts, fetchBestSellers } from "@/services/browse";
@@ -60,6 +61,9 @@ export default async function HomePage() {
 
   return (
     <>
+      {/* 0 — The offer, as a slim line directly under the header. */}
+      <OfferBanner />
+
       {/* 1 — Hero */}
       <Hero />
 
