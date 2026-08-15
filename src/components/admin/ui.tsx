@@ -131,6 +131,37 @@ export function ReturnStageBadge({ status, className }: { status: string; classN
   );
 }
 
+/**
+ * Chat-status badge.
+ *
+ * Same reasoning as the return badge: the order STATUS_STYLES map has no
+ * entry for a chat's stages, so routing them through StatusBadge would grey
+ * every one out. The colour language is the console's — amber while it waits
+ * on someone, blue once seen, green when answered, neutral when closed — and
+ * tinted rather than a solid fill, so a list of "new" messages doesn't read as
+ * a wall of amber.
+ */
+const CHAT_STAGE: Record<string, string> = {
+  new: "bg-[#D97706]/10 text-[#B45309] ring-[#D97706]/20",
+  read: "bg-[#2563EB]/10 text-[#2563EB] ring-[#2563EB]/20",
+  replied: "bg-[#16803C]/10 text-[#16803C] ring-[#16803C]/20",
+  closed: "bg-[#F5F5F4] text-[#737373] ring-[#E5E5E5]",
+};
+
+export function ChatStatusBadge({ status, className }: { status: string; className?: string }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex shrink-0 items-center whitespace-nowrap rounded-md px-2 py-0.5 text-[0.6875rem] font-medium capitalize ring-1 ring-inset",
+        CHAT_STAGE[status] ?? "bg-[#F5F5F4] text-[#737373] ring-[#E5E5E5]",
+        className,
+      )}
+    >
+      {status}
+    </span>
+  );
+}
+
 /* ──────────────────────────────── Delta ─────────────────────────────────── */
 
 /**
