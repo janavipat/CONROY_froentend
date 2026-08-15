@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
+import { useOfferQuote } from "@/hooks/useOfferQuote";
 import { useToast } from "@/components/ui/Toast";
 import { formatCurrency } from "@/utils/format";
 import { Container } from "@/components/ui/Container";
@@ -19,6 +20,13 @@ import {
 export default function CartPage() {
   const { items, subtotal, removeItem, updateQuantity, count, clear } = useCart();
   const { toast } = useToast();
+
+  // Priced by the server — see useOfferQuote. Until the first quote lands the
+  // summary shows the undiscounted subtotal rather than a guess, so no figure
+  // on screen is ever one the checkout won't honour.
+  const { quote } = useOfferQuote(items);
+  const discount = quote?.discount ?? 0;
+  const total = quote?.total ?? subtotal;
 
   function handleRemove(handle: string, size: string, title: string) {
     removeItem(handle, size);
@@ -132,11 +140,71 @@ export default function CartPage() {
             never hit the cap, so the desktop appearance is unchanged. */}
         <aside className="h-fit rounded-media border border-line bg-paper p-7 lg:sticky lg:top-28 lg:max-h-[calc(100dvh-8rem)] lg:overflow-y-auto">
           <h2 className="font-display text-2xl text-ink">Order Summary</h2>
+
+          {/* The offer, in the house language: a hairline panel on the ink
+              ground, no coupon chrome and no sale colour. Only shown once the
+              server has priced the cart. */}
+          {quote?.tier && (
+            <div className="mt-5 border border-line bg-white px-4 py-3.5">
+              <p className="eyebrow text-stone">Special offer</p>
+
+              {/* The tier actually being applied — "Buy 1 → 30% off" at one
+                  item, "Buy 2 → 50% off" from two. minUnits is the threshold
+                  that earned it, so three items still reads "Buy 2". */}
+              <p className="mt-1.5 font-display text-[1.0625rem] leading-none text-ink">
+                Buy {quote.tier.minUnits} → {quote.tier.percent}% off
+              </p>
+
+              {quote.nextTier ? (
+                <>
+                  <p className="mt-2 text-xs leading-relaxed text-ink-soft">
+                    Add {quote.nextTier.unitsNeeded} more{" "}
+                    {quote.nextTier.unitsNeeded === 1 ? "item" : "items"} to unlock{" "}
+                    <span className="text-ink">{quote.nextTier.percent}% off</span>
+                  </p>
+                  {/* How far along they are, as a hairline rather than a
+                      progress bar with a colour — the upsell without the
+                      supermarket. */}
+                  <div
+                    aria-hidden
+                    className="mt-2.5 h-px w-full bg-line"
+                  >
+                    <div
+                      className="h-px bg-ink transition-[width] duration-500 ease-out"
+                      style={{
+                        width: `${Math.round(
+                          (quote.tier.units /
+                            (quote.tier.units + quote.nextTier.unitsNeeded)) *
+                            100,
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                </>
+              ) : (
+                <p className="mt-2 text-xs leading-relaxed text-ink">
+                  {quote.tier.percent}% off unlocked
+                </p>
+              )}
+            </div>
+          )}
+
           <dl className="mt-6 space-y-3 text-sm">
             <div className="flex justify-between">
               <dt className="text-ink-soft">Subtotal</dt>
               <dd className="text-ink">{formatCurrency(subtotal)}</dd>
             </div>
+            {discount > 0 && (
+              <div className="flex justify-between">
+                <dt className="text-ink-soft">
+                  Offer discount
+                  {quote?.tier && (
+                    <span className="text-stone"> ({quote.tier.percent}%)</span>
+                  )}
+                </dt>
+                <dd className="text-ink">−{formatCurrency(discount)}</dd>
+              </div>
+            )}
             <div className="flex justify-between">
               <dt className="text-ink-soft">Shipping</dt>
               <dd className="text-ink">Free</dd>
@@ -144,8 +212,13 @@ export default function CartPage() {
           </dl>
           <div className="mt-5 flex justify-between border-t border-line pt-5">
             <span className="font-display text-lg text-ink">Total</span>
-            <span className="font-display text-lg text-ink">{formatCurrency(subtotal)}</span>
+            <span className="font-display text-lg text-ink">{formatCurrency(total)}</span>
           </div>
+          {discount > 0 && (
+            <p className="mt-2 text-right text-xs text-stone">
+              You save {formatCurrency(discount)}
+            </p>
+          )}
 
           <Button href="/checkout/payment" size="lg" className="mt-6 w-full">
             Proceed to payment

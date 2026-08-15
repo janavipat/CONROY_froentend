@@ -258,7 +258,10 @@ export default function PaymentPage() {
       const result = await openRazorpayCheckout({
         keyId: rp.keyId,
         orderId: rp.orderId,
-        amount: rp.amount ?? subtotal * 100,
+        // The server's amount is authoritative — Razorpay charges the order it
+        // created, not this field. The fallback is the discounted total rather
+        // than the subtotal so the widget can never show the pre-offer price.
+        amount: rp.amount ?? total * 100,
         currency: rp.currency ?? "INR",
         name: "CONROY",
         description: `Order · ${count} item${count === 1 ? "" : "s"}`,

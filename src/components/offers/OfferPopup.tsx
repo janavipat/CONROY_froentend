@@ -9,6 +9,7 @@ import {
   offerHeadline,
   type ActiveOffer,
 } from "@/services/offers";
+import { useAuth } from "@/lib/auth/auth-context";
 import { CloseIcon, CheckIcon } from "@/components/ui/Icons";
 
 const SEEN_KEY = "conroy.offerSeen";
@@ -16,13 +17,23 @@ const SEEN_KEY = "conroy.offerSeen";
 /**
  * A celebratory promo popup shown once per browser session when an offer is
  * active — mirroring the discount pop-ups on typical shopping sites.
+ *
+ * Signed-in visitors only. A guest already gets GuestOfferPopup, which carries
+ * the house promotion together with the account actions; running both at once
+ * put two modals in front of the same person in the same session. Splitting
+ * them by sign-in state is deterministic — no race over who claims the screen
+ * first — and neither audience loses anything: the admin's coded offer still
+ * reaches signed-in shoppers, and it stays visible to everyone on the offer
+ * strip and product pages regardless.
  */
 export function OfferPopup() {
+  const { user, initializing } = useAuth();
   const [offer, setOffer] = useState<ActiveOffer | null>(null);
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
+    if (initializing || !user) return;
     let active = true;
     let timer: ReturnType<typeof setTimeout>;
     async function run() {
@@ -38,7 +49,7 @@ export function OfferPopup() {
       active = false;
       clearTimeout(timer);
     };
-  }, []);
+  }, [initializing, user]);
 
   function dismiss() {
     if (offer) sessionStorage.setItem(SEEN_KEY, offer.id);
