@@ -110,7 +110,10 @@ export function LiveVisitorsPanel() {
       {error && <p className="text-xs text-accent">{error}</p>}
 
       <div className="grid gap-4">
-        <div className="max-h-[420px] overflow-y-auto rounded-media border border-line bg-white">
+        {/* overflow-auto, not just -y: the two columns carry a place name and
+            two badges, which on a narrow phone would otherwise push the table
+            past the card rather than scroll inside it. */}
+        <div className="max-h-[420px] overflow-auto rounded-media border border-line bg-white">
           {!data || data.visitors.length === 0 ? (
             <p className="p-6 text-center text-sm text-stone">No one online right now.</p>
           ) : (

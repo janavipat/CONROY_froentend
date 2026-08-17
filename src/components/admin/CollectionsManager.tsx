@@ -310,7 +310,7 @@ export function CollectionsManager() {
           ref={editorRef}
           className="min-w-0 scroll-mt-20 overflow-hidden rounded-xl border border-[#E5E5E5] bg-white shadow-[0_1px_2px_rgba(16,16,16,0.04)]"
         >
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E5E5] px-6 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5E5E5] px-4 py-4 sm:px-6">
             <div className="min-w-0">
               <h2 className="font-display text-lg text-ink">
                 {editing ? "Edit collection" : "New collection"}
@@ -328,7 +328,7 @@ export function CollectionsManager() {
             )}
           </div>
 
-          <div className="@container space-y-5 p-6">
+          <div className="@container space-y-5 p-4 sm:p-6">
             {/* Keyed to the card's own width, not the screen's: this column is
                 narrowed by the sidebar and the list beside it, so at 1024px a
                 viewport-based `sm:` split gave two 172px inputs. */}
@@ -495,7 +495,7 @@ export function CollectionsManager() {
 
           {/* Actions. Delete sits apart from the pair on the right so it is
               never the button next to Save. */}
-          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#E5E5E5] bg-[#FAFAF9] px-6 py-4">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#E5E5E5] bg-[#FAFAF9] px-4 py-4 sm:px-6">
             {editing && !isAll ? (
               <button
                 type="button"
@@ -511,11 +511,21 @@ export function CollectionsManager() {
               <span />
             )}
 
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="md" onClick={resetForm} disabled={saving}>
+            {/* The house Button is uppercase at 0.16em with px-9, so this pair
+                is ~393px wide and cannot shrink — wider than a 320px phone.
+                Below `sm` the two stack full-width; from `sm` the desktop row
+                is exactly as it was. */}
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+              <Button
+                variant="outline"
+                size="md"
+                onClick={resetForm}
+                disabled={saving}
+                className="w-full sm:w-auto"
+              >
                 Cancel
               </Button>
-              <Button size="md" onClick={save} disabled={saving}>
+              <Button size="md" onClick={save} disabled={saving} className="w-full sm:w-auto">
                 {saving ? "Saving…" : editing ? "Save changes" : "Create collection"}
               </Button>
             </div>
