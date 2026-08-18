@@ -21,6 +21,8 @@ export async function BrowseLayout({
   title,
   description,
   breadcrumbs,
+  showBack = false,
+  backFallbackHref,
   products,
   emptyMessage = "No products here yet.",
 }: {
@@ -28,6 +30,9 @@ export async function BrowseLayout({
   title: string;
   description?: string;
   breadcrumbs?: { label: string; href?: string }[];
+  /** Opt-in: only listings a shopper drills into carry a back control. */
+  showBack?: boolean;
+  backFallbackHref?: string;
   products: Product[];
   emptyMessage?: string;
 }) {
@@ -44,6 +49,8 @@ export async function BrowseLayout({
         title={title}
         description={description}
         breadcrumbs={breadcrumbs}
+        showBack={showBack}
+        backFallbackHref={backFallbackHref}
       />
 
       <section className="pb-section-sm pt-block">

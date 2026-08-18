@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { searchProducts, getAllProducts } from "@/lib/products";
 import { TRENDING_SEARCHES } from "@/lib/site";
 import { Container } from "@/components/ui/Container";
+import { BackButton } from "@/components/ui/BackButton";
 import { ProductGrid } from "@/components/product/ProductGrid";
 import { SearchIcon } from "@/components/ui/Icons";
 
@@ -17,6 +18,9 @@ export default function SearchPage() {
 
   return (
     <Container className="py-section-sm">
+      <div className="mb-6 flex">
+        <BackButton />
+      </div>
       <h1 className="font-display text-4xl text-ink sm:text-5xl">Search</h1>
 
       <label className="mt-8 flex max-w-2xl items-center gap-3 border-b border-ink pb-3">

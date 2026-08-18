@@ -24,6 +24,8 @@ export default async function WishlistPage() {
       <PageHeader
         eyebrow="Saved by you"
         title="Wishlist"
+        showBack
+        backFallbackHref="/"
         breadcrumbs={[{ label: "Home", href: "/" }, { label: "Wishlist" }]}
       />
       <WishlistGrid products={products} />

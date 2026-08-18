@@ -7,6 +7,7 @@ import { useOfferQuote } from "@/hooks/useOfferQuote";
 import { useToast } from "@/components/ui/Toast";
 import { formatCurrency } from "@/utils/format";
 import { Container } from "@/components/ui/Container";
+import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/Button";
 import {
   BagIcon,
@@ -40,19 +41,27 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <Container className="flex min-h-[60vh] flex-col items-center justify-center gap-5 py-20 text-center">
-        <span className="grid h-20 w-20 place-items-center rounded-full bg-mist">
-          <BagIcon className="h-9 w-9 text-stone" />
-        </span>
-        <h1 className="font-display text-4xl text-ink">Your cart is empty</h1>
-        <p className="text-ink-soft">Discover denim made to last.</p>
-        <Button href="/collections/all">Shop the collection</Button>
+      <Container className="py-10">
+        <div className="flex">
+          <BackButton fallbackHref="/collections/all" />
+        </div>
+        <div className="flex min-h-[60vh] flex-col items-center justify-center gap-5 text-center">
+          <span className="grid h-20 w-20 place-items-center rounded-full bg-mist">
+            <BagIcon className="h-9 w-9 text-stone" />
+          </span>
+          <h1 className="font-display text-4xl text-ink">Your cart is empty</h1>
+          <p className="text-ink-soft">Discover denim made to last.</p>
+          <Button href="/collections/all">Shop the collection</Button>
+        </div>
       </Container>
     );
   }
 
   return (
     <Container className="py-section-sm">
+      <div className="mb-6 flex">
+        <BackButton fallbackHref="/collections/all" />
+      </div>
       <h1 className="font-display text-4xl text-ink sm:text-5xl">Your Cart</h1>
       <p className="mt-2 text-sm text-stone">
         {count} {count === 1 ? "item" : "items"}

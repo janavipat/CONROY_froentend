@@ -24,6 +24,8 @@ export default function ContactPage() {
         eyebrow="We're here to help"
         title="Contact Us"
         description="Please submit all general enquiries in the form below — or reach us directly by phone and email."
+        showBack
+        backFallbackHref="/"
         breadcrumbs={[{ label: "Home", href: "/" }, { label: "Contact" }]}
       />
 

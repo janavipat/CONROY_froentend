@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Container } from "@/components/ui/Container";
 import { Reveal } from "@/components/motion/Reveal";
+import { BackButton } from "@/components/ui/BackButton";
 
 interface Crumb {
   label: string;
@@ -20,15 +21,25 @@ export function PageHeader({
   title,
   description,
   breadcrumbs,
+  showBack = false,
+  backFallbackHref,
 }: {
   eyebrow?: string;
   title: string;
   description?: string;
   breadcrumbs?: Crumb[];
+  /** Opt-in: only pages a shopper drills into carry a back control. */
+  showBack?: boolean;
+  backFallbackHref?: string;
 }) {
   return (
     <header className="border-b border-line bg-paper">
       <Container className="py-8 text-center sm:py-10 lg:py-12">
+        {showBack && (
+          <div className="mb-5 flex justify-start text-left">
+            <BackButton fallbackHref={backFallbackHref} />
+          </div>
+        )}
         {breadcrumbs && breadcrumbs.length > 0 && (
           <nav aria-label="Breadcrumb" className="mb-4 flex justify-center">
             <ol className="flex items-center gap-2.5 text-[0.6875rem] uppercase tracking-[0.14em] text-stone">

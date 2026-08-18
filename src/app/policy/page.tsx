@@ -58,6 +58,8 @@ export default function PolicyPage() {
         eyebrow="The fine print"
         title="Store Policy"
         description="Everything you need to know about shipping, returns, privacy and our terms."
+        showBack
+        backFallbackHref="/"
         breadcrumbs={[{ label: "Home", href: "/" }, { label: "Store Policy" }]}
       />
 

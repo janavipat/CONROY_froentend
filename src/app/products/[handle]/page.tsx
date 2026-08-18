@@ -7,6 +7,7 @@ import { SITE } from "@/lib/site";
 import { formatCurrency } from "@/utils/format";
 import { productDisplayTitle, productLabel } from "@/lib/catalog-taxonomy";
 import { Container } from "@/components/ui/Container";
+import { BackButton } from "@/components/ui/BackButton";
 import { Rating } from "@/components/ui/Rating";
 import { Accordion } from "@/components/ui/Accordion";
 import { DiscountBadge } from "@/components/product/DiscountBadge";
@@ -97,6 +98,10 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
       />
 
       <Container className="py-12 lg:py-16">
+        <div className="mb-6 flex">
+          <BackButton fallbackHref="/collections/all" />
+        </div>
+
         {/* Breadcrumb */}
         <nav aria-label="Breadcrumb" className="mb-12 flex text-xs text-stone">
           <ol className="flex items-center gap-2.5">

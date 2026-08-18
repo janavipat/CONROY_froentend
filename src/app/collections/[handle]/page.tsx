@@ -75,6 +75,8 @@ export default async function CollectionPage(props: PageProps<"/collections/[han
         eyebrow={collection.subtitle}
         title={collection.title}
         description={collection.description}
+        showBack
+        backFallbackHref="/collections"
         breadcrumbs={[
           { label: "Home", href: "/" },
           { label: "Collection", href: "/collections/all" },
