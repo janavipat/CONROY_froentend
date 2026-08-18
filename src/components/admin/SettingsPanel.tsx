@@ -26,7 +26,11 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
       aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={cn(
+        // The switch stays 24px tall; `before` throws a transparent, larger
+        // hit area around it so a thumb has something to land on without the
+        // pill itself growing.
         "relative h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink/30",
+        "before:absolute before:-inset-2.5 before:content-['']",
         checked ? "bg-emerald-500" : "bg-stone/30",
       )}
     >

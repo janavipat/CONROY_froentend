@@ -203,13 +203,19 @@ export function OrdersTable() {
               <thead>
                 <tr className="border-b border-line text-left text-xs uppercase tracking-wide text-stone">
                   <th className="w-10 px-4 py-3">
-                    <input
-                      type="checkbox"
-                      checked={allChecked}
-                      onChange={toggleAll}
-                      className="h-4 w-4 accent-ink"
-                      aria-label="Select all"
-                    />
+                    {/* The box stays 16px; the label around it carries the
+                        touch area. A bare 16px checkbox is a poor target on a
+                        phone, and the negative margin means the padding costs
+                        the row no height. */}
+                    <label className="-m-2.5 inline-flex cursor-pointer p-2.5">
+                      <input
+                        type="checkbox"
+                        checked={allChecked}
+                        onChange={toggleAll}
+                        className="h-4 w-4 accent-ink"
+                        aria-label="Select all"
+                      />
+                    </label>
                   </th>
                   <th className="px-3 py-3 font-medium">Order</th>
                   <th className="px-3 py-3 font-medium">Date</th>
@@ -234,13 +240,15 @@ export function OrdersTable() {
                       )}
                     >
                       <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                        <input
-                          type="checkbox"
-                          checked={selected.has(o.id)}
-                          onChange={() => toggle(o.id)}
-                          className="h-4 w-4 accent-ink"
-                          aria-label={`Select order ${o.id}`}
-                        />
+                        <label className="-m-2.5 inline-flex cursor-pointer p-2.5">
+                          <input
+                            type="checkbox"
+                            checked={selected.has(o.id)}
+                            onChange={() => toggle(o.id)}
+                            className="h-4 w-4 accent-ink"
+                            aria-label={`Select order ${o.id}`}
+                          />
+                        </label>
                       </td>
                       <td className="px-3 py-3">
                         <span

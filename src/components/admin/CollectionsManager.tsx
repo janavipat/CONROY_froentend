@@ -511,7 +511,10 @@ export function CollectionsManager() {
               <span />
             )}
 
-            <div className="flex items-center gap-2">
+            {/* Wraps, and each button can shrink: at 360px the pair measured
+                393px inside a 317px card, and the card clips its overflow — so
+                "Create collection" was cut off and unclickable. */}
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
               <Button variant="outline" size="md" onClick={resetForm} disabled={saving}>
                 Cancel
               </Button>

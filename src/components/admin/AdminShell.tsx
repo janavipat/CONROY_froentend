@@ -190,11 +190,21 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
         <main className="min-w-0 flex-1 p-4 sm:p-6">
           <AdminGate>
+            {/* Fades only — deliberately no `y`.
+
+                A transform on this wrapper makes it the containing block for
+                every `position: fixed` descendant, so overlays inside a page
+                stopped being measured against the viewport and were measured
+                against this element instead. The Settings save bar sat at the
+                foot of a 2248px page rather than pinned to the screen, and the
+                delete confirmation opened at y=1287 on a 640px phone — off
+                screen, with only its backdrop visible. Opacity creates no
+                containing block, so the transition costs nothing here. */}
             <AnimatePresence mode="wait">
               <motion.div
                 key={pathname}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
                 className="min-w-0"
