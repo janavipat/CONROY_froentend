@@ -5,6 +5,7 @@ import { AnnouncementBar } from "./AnnouncementBar";
 import { MaintenanceBanner } from "./MaintenanceBanner";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
+import { ScrollToTop } from "./ScrollToTop";
 import { OfferPopup } from "@/components/offers/OfferPopup";
 import { GuestOfferPopup } from "@/components/offers/GuestOfferPopup";
 import { ChatWidget } from "@/components/chat/ChatWidget";
@@ -25,6 +26,7 @@ export function StoreChrome({ children }: { children: React.ReactNode }) {
 
   return (
     <>
+      <ScrollToTop />
       <VisitorBeacon />
       <LocationConsent />
       <MaintenanceBanner />

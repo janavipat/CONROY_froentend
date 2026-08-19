@@ -116,6 +116,8 @@ export default function TermsPage() {
         eyebrow="The fine print"
         title="Terms & Conditions"
         description="The General Terms and Conditions governing all sales of products and services made through CONROY."
+        showBack
+        backFallbackHref="/"
         breadcrumbs={[{ label: "Home", href: "/" }, { label: "Terms & Conditions" }]}
       />
       <section className="py-section">

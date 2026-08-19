@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth/auth-context";
 import { updateAccountName } from "@/services/auth";
 import { useToast } from "@/components/ui/Toast";
 import { Container } from "@/components/ui/Container";
+import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/Button";
 import { Reveal } from "@/components/motion/Reveal";
 import { Loader } from "@/components/ui/Loader";
@@ -118,6 +119,10 @@ export function ProfileExperience() {
 
   return (
     <Container className="py-12 lg:py-16">
+      <div className="mb-6 flex">
+        <BackButton />
+      </div>
+
       {/* Heading */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>

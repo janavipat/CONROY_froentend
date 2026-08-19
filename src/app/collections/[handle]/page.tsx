@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { COLLECTIONS, getCollectionByHandle } from "@/lib/products";
-import { fetchCollection } from "@/services/catalog";
+import { fetchCollection, fetchCollections } from "@/services/catalog";
 import { SITE } from "@/lib/site";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { BoxIcon } from "@/components/ui/Icons";
-import { ProductGrid } from "@/components/product/ProductGrid";
+import { ProductBrowser } from "@/components/product/ProductBrowser";
 import { PageHeader } from "@/layouts/PageHeader";
 
 export function generateStaticParams() {
@@ -64,29 +64,31 @@ export default async function CollectionPage(props: PageProps<"/collections/[han
 
   const { collection, products } = result;
 
+  // Titles for the collection facet — the products carry handles.
+  const labels = Object.fromEntries(
+    (await fetchCollections()).map((c) => [c.handle, c.title]),
+  );
+
   return (
     <>
       <PageHeader
         eyebrow={collection.subtitle}
         title={collection.title}
         description={collection.description}
+        showBack
+        backFallbackHref="/collections"
         breadcrumbs={[
           { label: "Home", href: "/" },
           { label: "Collection", href: "/collections/all" },
           ...(handle === "all" ? [] : [{ label: collection.title }]),
         ]}
       />
-      <section className="py-section">
+      <section className="pb-section pt-block">
         <Container>
           {products.length === 0 ? (
             <EmptyCollection title={handle === "all" ? "" : collection.title} />
           ) : (
-            <>
-              <p className="mb-12 text-xs tracking-[0.01em] text-stone">
-                {products.length} {products.length === 1 ? "product" : "products"}
-              </p>
-              <ProductGrid products={products} columns={4} priorityCount={4} />
-            </>
+            <ProductBrowser products={products} collectionLabels={labels} />
           )}
         </Container>
       </section>

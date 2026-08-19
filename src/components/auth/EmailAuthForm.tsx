@@ -1,3 +1,11 @@
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
+// Email + password auth — commented out in favor of phone OTP (WhatsApp),
+// see LoginExperience.tsx and auth-context.tsx. This file is unreferenced
+// anywhere right now, and its useAuth() calls (register/login) no longer
+// exist on the active context type, hence the directive above rather than
+// fighting comment-nesting on a file this size. Remove @ts-nocheck and
+// restore register/login on AuthContextValue to bring it back.
 "use client";
 
 import { useEffect, useRef, useState } from "react";

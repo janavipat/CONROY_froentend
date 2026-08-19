@@ -57,6 +57,8 @@ export default async function DenimFitPage(props: PageProps<"/denim/[fit]">) {
       eyebrow="Denim"
       title={view.title}
       description={view.description}
+      showBack
+      backFallbackHref="/denim"
       breadcrumbs={[
         { label: "Home", href: "/" },
         { label: "Denim", href: "/denim" },

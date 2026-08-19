@@ -511,21 +511,14 @@ export function CollectionsManager() {
               <span />
             )}
 
-            {/* The house Button is uppercase at 0.16em with px-9, so this pair
-                is ~393px wide and cannot shrink — wider than a 320px phone.
-                Below `sm` the two stack full-width; from `sm` the desktop row
-                is exactly as it was. */}
-            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-              <Button
-                variant="outline"
-                size="md"
-                onClick={resetForm}
-                disabled={saving}
-                className="w-full sm:w-auto"
-              >
+            {/* Wraps, and each button can shrink: at 360px the pair measured
+                393px inside a 317px card, and the card clips its overflow — so
+                "Create collection" was cut off and unclickable. */}
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <Button variant="outline" size="md" onClick={resetForm} disabled={saving}>
                 Cancel
               </Button>
-              <Button size="md" onClick={save} disabled={saving} className="w-full sm:w-auto">
+              <Button size="md" onClick={save} disabled={saving}>
                 {saving ? "Saving…" : editing ? "Save changes" : "Create collection"}
               </Button>
             </div>

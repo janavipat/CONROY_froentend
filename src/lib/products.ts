@@ -36,8 +36,8 @@ export const PRODUCTS: Product[] = [
       "Net Qty: 1",
     ],
     stock: 99,
-    rating: 5,
-    reviewCount: 1,
+    rating: 4.6,
+    reviewCount: 5,
   },
   {
     id: "blue-straight",
@@ -68,8 +68,8 @@ export const PRODUCTS: Product[] = [
       "Net Qty: 1",
     ],
     stock: 99,
-    rating: 5,
-    reviewCount: 1,
+    rating: 4.5,
+    reviewCount: 4,
   },
   {
     id: "black-relax",
@@ -99,8 +99,8 @@ export const PRODUCTS: Product[] = [
       "Net Qty: 1",
     ],
     stock: 99,
-    rating: 5,
-    reviewCount: 1,
+    rating: 4.4,
+    reviewCount: 5,
   },
   {
     id: "blue-relax",
@@ -132,8 +132,8 @@ export const PRODUCTS: Product[] = [
       "Net Qty: 1",
     ],
     stock: 99,
-    rating: 5,
-    reviewCount: 1,
+    rating: 4.3,
+    reviewCount: 4,
   },
 ];
 

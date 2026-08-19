@@ -1,24 +1,28 @@
 import type { Product } from "@/types";
+import { fetchCollections } from "@/services/catalog";
 import { Container } from "@/components/ui/Container";
-import { ProductGrid } from "@/components/product/ProductGrid";
+import { ProductBrowser } from "@/components/product/ProductBrowser";
 import { PageHeader } from "@/layouts/PageHeader";
 
 /**
  * The shared shell for every browse route — New In, Denim and its fits,
  * T-Shirts, and collections.
  *
- * Structure only: title, optional description, a filter/sort/count bar, then
- * the grid. It reuses PageHeader and ProductGrid exactly as they are so the
- * Phase 3 visual pass restyles one place and every listing follows.
+ * Structure only: title, optional description, then the browser — the
+ * filter/sort/count bar and the grid. It reuses PageHeader and ProductGrid
+ * exactly as they are so a visual pass restyles one place and every listing
+ * follows.
  *
- * The filter and sort controls are intentionally placeholders — Phase 2 is
- * routing and hierarchy; the filter UI belongs to a later phase.
+ * The filter and sort controls were placeholders here until now; they live in
+ * ProductBrowser, which every listing shares.
  */
-export function BrowseLayout({
+export async function BrowseLayout({
   eyebrow,
   title,
   description,
   breadcrumbs,
+  showBack = false,
+  backFallbackHref,
   products,
   emptyMessage = "No products here yet.",
 }: {
@@ -26,9 +30,18 @@ export function BrowseLayout({
   title: string;
   description?: string;
   breadcrumbs?: { label: string; href?: string }[];
+  /** Opt-in: only listings a shopper drills into carry a back control. */
+  showBack?: boolean;
+  backFallbackHref?: string;
   products: Product[];
   emptyMessage?: string;
 }) {
+  // Titles for the collection facet, so it reads "Vintage Collection" rather
+  // than the stored handle. Fetched here because the listings are server
+  // components and this is already cached alongside the catalogue.
+  const collections = await fetchCollections();
+  const labels = Object.fromEntries(collections.map((c) => [c.handle, c.title]));
+
   return (
     <>
       <PageHeader
@@ -36,30 +49,17 @@ export function BrowseLayout({
         title={title}
         description={description}
         breadcrumbs={breadcrumbs}
+        showBack={showBack}
+        backFallbackHref={backFallbackHref}
       />
 
-      <section className="py-section-sm">
+      <section className="pb-section-sm pt-block">
         <Container>
-          {/* Filter · Sort · Count — a hairline rule with widely tracked
-              uppercase labels, the way a listing header reads in print. The
-              two controls are still structural placeholders until the filter
-              phase, so they are set as labels rather than dressed up as
-              buttons that would not do anything. The count is real. */}
-          <div className="mb-block flex items-center justify-between gap-4 border-b border-line pb-4">
-            <div className="flex items-center gap-8">
-              <span className="nav-label text-ink">Filter</span>
-              <span className="nav-label text-ink">Sort</span>
-            </div>
-            <p className="micro-label">
-              {products.length} {products.length === 1 ? "product" : "products"}
-            </p>
-          </div>
-
-          {products.length === 0 ? (
-            <p className="py-16 text-center text-sm text-stone">{emptyMessage}</p>
-          ) : (
-            <ProductGrid products={products} columns={4} priorityCount={4} />
-          )}
+          <ProductBrowser
+            products={products}
+            emptyMessage={emptyMessage}
+            collectionLabels={labels}
+          />
         </Container>
       </section>
     </>

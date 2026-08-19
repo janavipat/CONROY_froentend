@@ -19,6 +19,7 @@ import { formatCurrency } from "@/utils/format";
 import { fetchSiteSettings, isOn } from "@/services/settings";
 import { fetchAddresses } from "@/services/addresses";
 import { Container } from "@/components/ui/Container";
+import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/Button";
 import { CheckIcon, ShieldIcon, TruckIcon } from "@/components/ui/Icons";
 import { cn } from "@/utils/cn";
@@ -326,10 +327,15 @@ export default function PaymentPage() {
   /* ---- Empty cart guard ------------------------------------------------- */
   if (items.length === 0) {
     return (
-      <Container className="flex min-h-[60vh] flex-col items-center justify-center gap-5 py-20 text-center">
-        <h1 className="font-display text-3xl text-ink sm:text-4xl">Your cart is empty</h1>
-        <p className="text-ink-soft">Add something before heading to payment.</p>
-        <Button href="/collections/all">Shop the collection</Button>
+      <Container className="py-10">
+        <div className="flex">
+          <BackButton fallbackHref="/cart" />
+        </div>
+        <div className="flex min-h-[60vh] flex-col items-center justify-center gap-5 text-center">
+          <h1 className="font-display text-3xl text-ink sm:text-4xl">Your cart is empty</h1>
+          <p className="text-ink-soft">Add something before heading to payment.</p>
+          <Button href="/collections/all">Shop the collection</Button>
+        </div>
       </Container>
     );
   }
@@ -337,6 +343,9 @@ export default function PaymentPage() {
   /* ---- Payment ---------------------------------------------------------- */
   return (
     <Container className="py-section-sm">
+      <div className="mb-6 flex">
+        <BackButton fallbackHref="/cart" />
+      </div>
       <nav className="mb-8 flex text-xs text-stone">
         <Link href="/cart" className="hover:text-ink">
           Cart

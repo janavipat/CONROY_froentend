@@ -99,8 +99,14 @@
     border-color: var(--color-line);
   }
 
+  /* No `scroll-behavior: smooth` here. It applies to programmatic scrolls too,
+     including the one the App Router performs on every navigation, so each
+     route change animated up from the previous page's offset instead of
+     starting at the top — and an animation interrupted by content streaming in
+     left the new page parked near its footer. The horizontal carousels keep
+     their easing through the `scroll-smooth` utility on the track itself,
+     which only affects that element. */
   html {
-    scroll-behavior: smooth;
     -webkit-font-smoothing: antialiased;
     text-rendering: optimizeLegibility;
   }
