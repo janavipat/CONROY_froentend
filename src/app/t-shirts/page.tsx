@@ -1,14 +1,25 @@
 import type { Metadata } from "next";
-import { SITE } from "@/lib/site";
+import { listingMetadata } from "@/lib/seo";
 import { browseProducts } from "@/services/browse";
 import { BrowseLayout } from "@/layouts/BrowseLayout";
 
-export const metadata: Metadata = {
-  title: "T-Shirts",
-  description: "CONROY T-shirts.",
-  alternates: { canonical: "/t-shirts" },
-  openGraph: { title: `T-Shirts · ${SITE.name}`, url: `${SITE.url}/t-shirts` },
-};
+/**
+ * Built at request time so the social card can carry a photograph of the
+ * first product actually listed. Declaring `openGraph` without `images`
+ * drops the site-wide OG image, which is why these pages previewed with no
+ * picture at all.
+ */
+export async function generateMetadata(): Promise<Metadata> {
+  const products = await browseProducts({ productType: "T-Shirt" });
+  const hero = products[0]?.images?.[0];
+  return listingMetadata({
+    title: "Men's T-Shirts",
+    description: "Men's cotton and cotton-lycra polo T-shirts from CONROY — regular fit, short sleeve, in black, white, navy, sky blue, bottle green and more. Sizes S–XL.",
+    path: "/t-shirts",
+    image: hero?.src ?? null,
+    imageAlt: hero?.alt ?? "Men's T-Shirts",
+  });
+}
 
 /**
  * Kept structurally separate from denim: T-shirts have their own category and

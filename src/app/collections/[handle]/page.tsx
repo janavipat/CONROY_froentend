@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { COLLECTIONS, getCollectionByHandle } from "@/lib/products";
+import { getCollectionByHandle } from "@/lib/products";
 import { fetchCollection, fetchCollections } from "@/services/catalog";
 import { SITE } from "@/lib/site";
 import { Button } from "@/components/ui/Button";
@@ -8,9 +8,17 @@ import { Container } from "@/components/ui/Container";
 import { BoxIcon } from "@/components/ui/Icons";
 import { ProductBrowser } from "@/components/product/ProductBrowser";
 import { PageHeader } from "@/layouts/PageHeader";
+import { breadcrumbSchema, itemListSchema, jsonLd, truncate } from "@/lib/seo";
 
-export function generateStaticParams() {
-  return COLLECTIONS.map((c) => ({ handle: c.handle }));
+/**
+ * Pre-render the collections that exist, not the bundled sample.
+ *
+ * `COLLECTIONS` is the offline fallback and lists three legacy handles, so the
+ * collections an admin has actually created had no static entry.
+ */
+export async function generateStaticParams() {
+  const collections = await fetchCollections();
+  return collections.map((c) => ({ handle: c.handle }));
 }
 
 export async function generateMetadata(
@@ -23,15 +31,33 @@ export async function generateMetadata(
   if (!collection) return { title: "Collection not found" };
 
   const title = collection.title;
+  const socialTitle = `${title} | ${SITE.name}`;
+  const description = truncate(
+    collection.description || `Shop the ${title} collection from CONROY.`,
+  );
+  // Not every collection carries artwork; fall back to the site card rather
+  // than sharing with no image, which is what declaring openGraph would cause.
+  const socialImage = collection.image || `${SITE.url}/opengraph-image`;
+  const images = collection.image
+    ? [{ url: collection.image, width: 1200, height: 1500, alt: title }]
+    : [{ url: socialImage, width: 1200, height: 630, alt: `${SITE.name} — ${title}` }];
+
   return {
     title,
-    description: collection.description,
+    description,
     alternates: { canonical: `/collections/${collection.handle}` },
     openGraph: {
-      title: `${title} · ${SITE.name}`,
-      description: collection.description,
+      type: "website",
+      title: socialTitle,
+      description,
       url: `${SITE.url}/collections/${collection.handle}`,
-      images: [{ url: collection.image, width: 1200, height: 1500, alt: title }],
+      images,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: socialTitle,
+      description,
+      images: [socialImage],
     },
   };
 }
@@ -69,8 +95,25 @@ export default async function CollectionPage(props: PageProps<"/collections/[han
     (await fetchCollections()).map((c) => [c.handle, c.title]),
   );
 
+  /* Breadcrumb + ItemList, matching what BrowseLayout emits for the other
+     listings. This route renders PageHeader directly rather than going through
+     BrowseLayout, so it needs its own graph — without it, collection pages
+     were the only listings with no structured data. */
+  const schema = jsonLd(
+    breadcrumbSchema([
+      { name: "Home", path: "/" },
+      { name: "Collection", path: "/collections/all" },
+      ...(handle === "all" ? [] : [{ name: collection.title, path: null }]),
+    ]),
+    products.length ? itemListSchema(products, collection.title) : null,
+  );
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      />
       <PageHeader
         eyebrow={collection.subtitle}
         title={collection.title}

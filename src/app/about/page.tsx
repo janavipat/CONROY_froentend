@@ -14,10 +14,11 @@ export const metadata: Metadata = {
     "CONROY stands for old-world elegance — restraint over extravagance, quality over quantity, craftsmanship over trend. Discover our story.",
   alternates: { canonical: "/about" },
   openGraph: {
-    title: `About us · ${SITE.name}`,
+    title: `About us | ${SITE.name}`,
     description:
       "Old-world elegance — quality over quantity, craftsmanship over trend. The CONROY story.",
     url: `${SITE.url}/about`,
+    images: [`${SITE.url}/opengraph-image`],
   },
 };
 

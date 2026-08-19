@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SITE } from "@/lib/site";
+import { DENIM_VIEWS, type DenimView } from "@/lib/catalog-taxonomy";
 import { browseProducts } from "@/services/browse";
 import { BrowseLayout } from "@/layouts/BrowseLayout";
 
@@ -8,22 +9,10 @@ import { BrowseLayout } from "@/layouts/BrowseLayout";
  * Denim sub-navigation. Slim/Straight/Relaxed filter on the `fit` field;
  * Vintage is a merchandising grouping, so it resolves through the existing
  * collection join table instead — the two are deliberately different concepts.
+ *
+ * The table itself lives in catalog-taxonomy so the sitemap can enumerate
+ * these routes without importing this page.
  */
-const DENIM_VIEWS = {
-  slim: { title: "Slim Fit", description: "Cut close through the thigh and leg.", fit: "Slim Fit" },
-  straight: { title: "Straight Fit", description: "A clean line from knee to hem.", fit: "Straight Fit" },
-  relaxed: { title: "Relaxed Fit", description: "Easy through the seat and thigh.", fit: "Relaxed Fit" },
-  vintage: {
-    title: "Vintage",
-    description: "Washed and faded denim from the CONROY Vintage collection.",
-    collection: "vintage-collection",
-  },
-} as const satisfies Record<
-  string,
-  { title: string; description: string; fit?: string; collection?: string }
->;
-
-type DenimView = keyof typeof DENIM_VIEWS;
 
 export function generateStaticParams() {
   return Object.keys(DENIM_VIEWS).map((fit) => ({ fit }));
@@ -32,12 +21,28 @@ export function generateStaticParams() {
 export async function generateMetadata(props: PageProps<"/denim/[fit]">): Promise<Metadata> {
   const { fit } = await props.params;
   const view = DENIM_VIEWS[fit as DenimView];
-  if (!view) return { title: "Not found" };
+  if (!view) return { title: "Not found", robots: { index: false, follow: true } };
+
+  // "Slim Fit Jeans" rather than "Slim Fit Denim": jeans is what people search
+  // for, and the Vintage view is a collection rather than a fit.
+  const title = fit === "vintage" ? "Vintage Denim" : `${view.title} Jeans`;
   return {
-    title: `${view.title} Denim`,
-    description: view.description,
+    title,
+    description: view.seoDescription,
     alternates: { canonical: `/denim/${fit}` },
-    openGraph: { title: `${view.title} · ${SITE.name}`, url: `${SITE.url}/denim/${fit}` },
+    openGraph: {
+      type: "website",
+      title: `${title} | ${SITE.name}`,
+      description: view.seoDescription,
+      url: `${SITE.url}/denim/${fit}`,
+      images: [`${SITE.url}/opengraph-image`],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${title} | ${SITE.name}`,
+      description: view.seoDescription,
+      images: [`${SITE.url}/opengraph-image`],
+    },
   };
 }
 

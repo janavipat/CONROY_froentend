@@ -9,9 +9,10 @@ import { PageHeader } from "@/layouts/PageHeader";
 
 export const metadata: Metadata = {
   title: "Collections",
-  description: "Shop CONROY by category.",
+  description:
+    "Browse CONROY by category — men's denim in every fit, and cotton and cotton-lycra T-shirts. Find the collection that suits how you dress.",
   alternates: { canonical: "/collections" },
-  openGraph: { title: `Collections · ${SITE.name}`, url: `${SITE.url}/collections` },
+  openGraph: { title: `Collections | ${SITE.name}`, url: `${SITE.url}/collections`, images: [`${SITE.url}/opengraph-image`] },
 };
 
 /**

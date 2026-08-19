@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description: "Pieces you've saved.",
   alternates: { canonical: "/wishlist" },
   robots: { index: false, follow: true },
-  openGraph: { title: `Wishlist · ${SITE.name}`, url: `${SITE.url}/wishlist` },
+  openGraph: { title: `Wishlist | ${SITE.name}`, url: `${SITE.url}/wishlist` },
 };
 
 /**

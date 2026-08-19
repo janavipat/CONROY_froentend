@@ -9,9 +9,10 @@ export const metadata: Metadata = {
     "CONROY store policy — shipping, returns, exchanges and privacy. Read about our 7-day returns and delivery timelines.",
   alternates: { canonical: "/policy" },
   openGraph: {
-    title: `Store Policy · ${SITE.name}`,
+    title: `Store Policy | ${SITE.name}`,
     description: "Shipping, returns, exchanges and privacy at CONROY.",
     url: `${SITE.url}/policy`,
+    images: [`${SITE.url}/opengraph-image`],
   },
 };
 

@@ -185,3 +185,49 @@ export function productLabel(product: {
 export function productDisplayTitle(product: { productType?: string; title: string }): string {
   return product.productType === "T-Shirt" ? product.title.toUpperCase() : product.title;
 }
+
+/**
+ * The denim fit views at /denim/[fit].
+ *
+ * Moved here from the route so the sitemap can enumerate them without
+ * importing a page module — one source of truth for which fits exist.
+ *
+ * `description` is the line shown on the page; `seoDescription` is the longer
+ * form used only for the meta description, which wants more than a fragment to
+ * be useful in a search result.
+ */
+export const DENIM_VIEWS = {
+  slim: {
+    title: "Slim Fit",
+    description: "Cut close through the thigh and leg.",
+    seoDescription:
+      "Men's slim fit jeans from CONROY — cut close through the thigh and leg in premium denim. Mid-rise, five-pocket, in indigo, black and washed blue.",
+    fit: "Slim Fit",
+  },
+  straight: {
+    title: "Straight Fit",
+    description: "A clean line from knee to hem.",
+    seoDescription:
+      "Men's straight fit jeans from CONROY — a clean line from knee to hem in premium denim. Mid-rise, five-pocket, in black, indigo and light wash.",
+    fit: "Straight Fit",
+  },
+  relaxed: {
+    title: "Relaxed Fit",
+    description: "Easy through the seat and thigh.",
+    seoDescription:
+      "Men's relaxed fit jeans from CONROY — easy through the seat and thigh, cut from soft, breathable denim in washed black and true indigo.",
+    fit: "Relaxed Fit",
+  },
+  vintage: {
+    title: "Vintage",
+    description: "Washed and faded denim from the CONROY Vintage collection.",
+    seoDescription:
+      "The CONROY Vintage Collection — slim straight jeans in tinted mud-brown and mud-green washes, faded and finished to read as denim already lived in.",
+    collection: "vintage-collection",
+  },
+} as const satisfies Record<
+  string,
+  { title: string; description: string; seoDescription: string; fit?: string; collection?: string }
+>;
+
+export type DenimView = keyof typeof DENIM_VIEWS;

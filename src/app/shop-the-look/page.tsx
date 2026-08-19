@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: "Shop the Look",
   description: "Complete CONROY looks, styled and ready to wear.",
   alternates: { canonical: "/shop-the-look" },
-  openGraph: { title: `Shop the Look · ${SITE.name}`, url: `${SITE.url}/shop-the-look` },
+  openGraph: { title: `Shop the Look | ${SITE.name}`, url: `${SITE.url}/shop-the-look`, images: [`${SITE.url}/opengraph-image`] },
 };
 
 /**

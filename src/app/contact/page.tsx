@@ -11,9 +11,10 @@ export const metadata: Metadata = {
     "Get in touch with CONROY. Submit general enquiries via our contact form or reach us by phone, everyday 9:00am – 5:00pm.",
   alternates: { canonical: "/contact" },
   openGraph: {
-    title: `Contact · ${SITE.name}`,
+    title: `Contact | ${SITE.name}`,
     description: "Questions about your order or our denim? We're here to help.",
     url: `${SITE.url}/contact`,
+    images: [`${SITE.url}/opengraph-image`],
   },
 };
 

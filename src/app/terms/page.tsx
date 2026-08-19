@@ -9,9 +9,10 @@ export const metadata: Metadata = {
     "CONROY General Terms and Conditions governing all sales of products and services made through our website and platforms.",
   alternates: { canonical: "/terms" },
   openGraph: {
-    title: `Terms & Conditions · ${SITE.name}`,
+    title: `Terms & Conditions | ${SITE.name}`,
     description: "The General Terms and Conditions for purchases from CONROY.",
     url: `${SITE.url}/terms`,
+    images: [`${SITE.url}/opengraph-image`],
   },
 };
 

@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { PRODUCTS, getProductByHandle } from "@/lib/products";
 import { fetchAllProducts, fetchProductByHandle } from "@/services/catalog";
 import { SITE } from "@/lib/site";
+import { breadcrumbSchema, jsonLd, productSchema, productSeoTitle, truncate } from "@/lib/seo";
 import { formatCurrency } from "@/utils/format";
 import { productDisplayTitle, productLabel } from "@/lib/catalog-taxonomy";
 import { Container } from "@/components/ui/Container";
@@ -17,38 +17,54 @@ import { ProductGrid } from "@/components/product/ProductGrid";
 import { ProductReviews } from "@/components/product/ProductReviews";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
-export function generateStaticParams() {
-  return PRODUCTS.map((p) => ({ handle: p.handle }));
+/**
+ * Pre-render the catalogue that actually exists, not the bundled sample.
+ *
+ * `PRODUCTS` is the offline fallback and holds only the four original denim
+ * styles, so building from it left every other product without a static entry.
+ */
+export async function generateStaticParams() {
+  const products = await fetchAllProducts();
+  return products.map((p) => ({ handle: p.handle }));
 }
 
 export async function generateMetadata(
   props: PageProps<"/products/[handle]">,
 ): Promise<Metadata> {
   const { handle } = await props.params;
-  const product = getProductByHandle(handle);
-  if (!product) return { title: "Product not found" };
+  // Read the same source the page body does. This used to call the bundled
+  // catalogue, which knows four products — so the other sixteen were served
+  // "Product not found" as their title and, having no canonical of their own,
+  // inherited the layout's and pointed Google at the homepage.
+  const product = await fetchProductByHandle(handle);
+  if (!product) {
+    return { title: "Product not found", robots: { index: false, follow: true } };
+  }
+
+  const url = `${SITE.url}/products/${product.handle}`;
+  const name = productSeoTitle(product.title);
+  // The tagline is a single line and often shorter than a useful snippet, so
+  // the description falls back to the opening of the full copy.
+  const description = truncate(product.description || product.tagline);
+  const socialTitle = `${name} | ${SITE.name}`;
+  const images = product.images.slice(0, 2).map((img) => ({
+    url: img.src,
+    width: 1200,
+    height: 1500,
+    alt: img.alt || name,
+  }));
 
   return {
-    title: product.title,
-    description: product.tagline,
+    // Bare: the root layout's template appends "| CONROY".
+    title: name,
+    description,
     alternates: { canonical: `/products/${product.handle}` },
-    openGraph: {
-      type: "website",
-      title: `${product.title} · ${SITE.name}`,
-      description: product.description,
-      url: `${SITE.url}/products/${product.handle}`,
-      images: product.images.slice(0, 2).map((img) => ({
-        url: img.src,
-        width: 1200,
-        height: 1500,
-        alt: img.alt,
-      })),
-    },
+    openGraph: { type: "website", title: socialTitle, description, url, images },
     twitter: {
       card: "summary_large_image",
-      title: `${product.title} · ${SITE.name}`,
-      description: product.tagline,
-      images: [product.images[0].src],
+      title: socialTitle,
+      description,
+      images: images.length ? [images[0].url] : undefined,
     },
   };
 }
@@ -68,33 +84,28 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
     .filter((p) => p.handle !== product.handle)
     .slice(0, 4);
 
-  // Structured data for rich results.
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    name: product.title,
-    description: product.description,
-    image: product.images.map((i) => i.src),
-    brand: { "@type": "Brand", name: SITE.name },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: product.rating,
-      reviewCount: product.reviewCount,
-    },
-    offers: {
-      "@type": "Offer",
-      priceCurrency: product.currency,
-      price: product.price,
-      availability: "https://schema.org/InStock",
-      url: `${SITE.url}/products/${product.handle}`,
-    },
-  };
+  /* Structured data for rich results.
+
+     Product plus the breadcrumb the page already shows, in one graph.
+     aggregateRating now comes from productSchema, which emits it only when
+     the product genuinely has reviews — it was previously written on every
+     product, so the sixteen with no reviews at the time were claiming a rating
+     of 0 from 0 reviews. Availability reads real stock rather than always
+     asserting InStock. */
+  const schema = jsonLd(
+    productSchema(product, productSeoTitle(product.title)),
+    breadcrumbSchema([
+      { name: "Home", path: "/" },
+      { name: "Collection", path: "/collections/all" },
+      { name: productSeoTitle(product.title), path: null },
+    ]),
+  );
 
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
       />
 
       <Container className="py-12 lg:py-16">

@@ -5,9 +5,10 @@ import { BrowseLayout } from "@/layouts/BrowseLayout";
 
 export const metadata: Metadata = {
   title: "New In",
-  description: "The latest arrivals at CONROY.",
+  description:
+    "The newest CONROY arrivals — premium men's denim and cotton T-shirts, added as each style lands. Free-shipping-eligible orders across India.",
   alternates: { canonical: "/new-in" },
-  openGraph: { title: `New In · ${SITE.name}`, url: `${SITE.url}/new-in` },
+  openGraph: { title: `New In | ${SITE.name}`, url: `${SITE.url}/new-in`, images: [`${SITE.url}/opengraph-image`] },
 };
 
 /**

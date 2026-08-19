@@ -25,11 +25,63 @@ const inter = Inter({
   display: "swap",
 });
 
+/**
+ * Organization and WebSite, from the details already in site config.
+ *
+ * SearchAction tells Google the storefront has its own search, which is what
+ * can earn a sitelinks search box. The search page itself stays out of the
+ * index — the action points at it, it does not need to rank.
+ */
+const SITE_SCHEMA = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": `${SITE.url}/#organization`,
+      name: SITE.name,
+      legalName: SITE.legalName,
+      url: SITE.url,
+      logo: `${SITE.url}/android-chrome-512x512.png`,
+      description: SITE.description,
+      email: SITE.contact.email,
+      telephone: SITE.contact.phone,
+      sameAs: [SITE.social.instagram],
+      contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "customer service",
+        email: SITE.contact.email,
+        telephone: SITE.contact.phone,
+        areaServed: "IN",
+        availableLanguage: ["en"],
+      },
+    },
+    {
+      "@type": "WebSite",
+      "@id": `${SITE.url}/#website`,
+      url: SITE.url,
+      name: SITE.name,
+      description: SITE.description,
+      publisher: { "@id": `${SITE.url}/#organization` },
+      inLanguage: "en-IN",
+      potentialAction: {
+        "@type": "SearchAction",
+        target: {
+          "@type": "EntryPoint",
+          urlTemplate: `${SITE.url}/search?q={search_term_string}`,
+        },
+        "query-input": "required name=search_term_string",
+      },
+    },
+  ],
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: {
-    default: `${SITE.name} — ${SITE.tagline}`,
-    template: `%s · ${SITE.name}`,
+    // Says what CONROY sells. The tagline alone told a searcher nothing about
+    // the category, and the homepage is the one page competing on brand terms.
+    default: `${SITE.name} — Premium Denim & Modern Menswear`,
+    template: `%s | ${SITE.name}`,
   },
   description: SITE.description,
   keywords: [
@@ -62,14 +114,14 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: SITE.name,
-    title: `${SITE.name} — ${SITE.tagline}`,
+    title: `${SITE.name} — Premium Denim & Modern Menswear`,
     description: SITE.description,
     url: SITE.url,
     locale: SITE.locale,
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE.name} — ${SITE.tagline}`,
+    title: `${SITE.name} — Premium Denim & Modern Menswear`,
     description: SITE.description,
   },
   robots: { index: true, follow: true },
@@ -90,6 +142,13 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${bodoni.variable} ${inter.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-background">
+        {/* Site-wide identity, declared once. Page-level routes add their own
+            Product, BreadcrumbList and ItemList nodes; keeping Organization and
+            WebSite here means no route repeats them and none can conflict. */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(SITE_SCHEMA) }}
+        />
         <Providers>
           <StoreChrome>{children}</StoreChrome>
         </Providers>
