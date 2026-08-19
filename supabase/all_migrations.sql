@@ -84,6 +84,17 @@ create table if not exists public.newsletter_subscribers (
 -- maintenance mode, contact number) are stored as a JSON object in Supabase
 -- Storage (bucket "app-config") — no table needed.
 
+-- Chat widget messages. Name/email are optional: the widget is open to
+-- anonymous visitors, so only `message` is guaranteed.
+create table if not exists public.chat_messages (
+  id         uuid primary key default gen_random_uuid(),
+  name       text,
+  email      text,
+  message    text not null,
+  status     text not null default 'new',
+  created_at timestamptz not null default now()
+);
+
 -- ─────────────────────────────── Orders ────────────────────────────────────
 
 create table if not exists public.orders (
@@ -132,6 +143,7 @@ alter table public.product_images        enable row level security;
 alter table public.collections           enable row level security;
 alter table public.collection_products   enable row level security;
 alter table public.contacts              enable row level security;
+alter table public.chat_messages         enable row level security;
 alter table public.newsletter_subscribers enable row level security;
 alter table public.orders                enable row level security;
 alter table public.order_items           enable row level security;
@@ -153,6 +165,9 @@ create policy "catalog_read_collection_products" on public.collection_products f
 -- directly to Supabase if desired). No select/update/delete for anon.
 drop policy if exists "anon_insert_contacts" on public.contacts;
 create policy "anon_insert_contacts" on public.contacts for insert with check (true);
+
+drop policy if exists "anon_insert_chat_messages" on public.chat_messages;
+create policy "anon_insert_chat_messages" on public.chat_messages for insert with check (true);
 
 drop policy if exists "anon_insert_newsletter" on public.newsletter_subscribers;
 create policy "anon_insert_newsletter" on public.newsletter_subscribers for insert with check (true);

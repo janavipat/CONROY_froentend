@@ -6,7 +6,6 @@ import { getSettings, updateSettings } from "../controllers/settings.controller.
 import { createShipmentAction, getShipmentForOrder } from "../controllers/shipping.controller.js";
 import { runShipmentJobs } from "../controllers/jobs.controller.js";
 import { delhiveryWebhook } from "../controllers/webhooks.controller.js";
-import { submitChat, listChat, setChatStatus, deleteChat } from "../controllers/chat.controller.js";
 import { listAddresses, saveAddresses } from "../controllers/address.controller.js";
 import { getProduct, listProducts } from "../controllers/products.controller.js";
 import {
@@ -36,6 +35,12 @@ import {
   getAnalytics,
   getAbandonedCustomers,
 } from "../controllers/analytics.controller.js";
+import {
+  submitChatMessage,
+  listChatMessages,
+  setChatMessageStatus,
+  deleteChatMessage,
+} from "../controllers/chat.controller.js";
 import { toggleLike, listLikes } from "../controllers/wishlist.controller.js";
 import { whatsappHealth, whatsappTest } from "../controllers/whatsappHealth.controller.js";
 import {
@@ -67,12 +72,12 @@ import {
   createProduct,
   deleteProduct,
   getProductCollections,
+  getAccounts,
   getStats,
   listAllOrders,
   getAdminOrder,
   listAllReturns,
   listCustomers,
-  getAccounts,
   listInventory,
   listSubscribers,
   updateInventory,
@@ -114,7 +119,7 @@ router.post("/newsletter", asyncHandler(subscribeNewsletter));
 router.get("/settings", asyncHandler(getSettings));
 
 // Storefront chat widget
-router.post("/chat", asyncHandler(submitChat));
+router.post("/chat", asyncHandler(submitChatMessage));
 
 // Saved delivery addresses (per customer, keyed by phone)
 router.get("/addresses", asyncHandler(listAddresses));
@@ -174,9 +179,6 @@ router.use("/admin", requireAdmin);
 // Lightweight endpoint the frontend uses to validate the entered key.
 router.get("/admin/verify", (_req, res) => res.json({ ok: true }));
 router.put("/admin/settings", asyncHandler(updateSettings));
-router.get("/admin/chat", asyncHandler(listChat));
-router.patch("/admin/chat/:id", asyncHandler(setChatStatus));
-router.delete("/admin/chat/:id", asyncHandler(deleteChat));
 router.post("/admin/upload", upload.single("file"), asyncHandler(uploadImage));
 router.post("/admin/products", asyncHandler(createProduct));
 router.put("/admin/products/:handle", asyncHandler(updateProduct));
@@ -210,6 +212,10 @@ router.get("/admin/subscribers", asyncHandler(listSubscribers));
 router.get("/admin/contacts", asyncHandler(listContacts));
 router.patch("/admin/contacts/:id", asyncHandler(setContactHandled));
 router.delete("/admin/contacts/:id", asyncHandler(deleteContact));
+// Chat widget inbox
+router.get("/admin/chat", asyncHandler(listChatMessages));
+router.patch("/admin/chat/:id", asyncHandler(setChatMessageStatus));
+router.delete("/admin/chat/:id", asyncHandler(deleteChatMessage));
 router.get("/admin/returns", asyncHandler(listAllReturns));
 router.patch("/admin/returns/:id", asyncHandler(updateReturnStatus));
 router.delete("/admin/returns/:id", asyncHandler(deleteReturn));

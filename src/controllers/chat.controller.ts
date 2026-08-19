@@ -1,64 +1,73 @@
-import crypto from "node:crypto";
 import type { Request, Response } from "express";
-import { z } from "zod";
-import { jsonStore } from "../lib/blobStore.js";
+import { supabaseAdmin } from "../lib/supabase.js";
 import { ApiError } from "../middleware/errors.js";
+import { chatMessageSchema, chatStatusSchema } from "../validators/schemas.js";
 
-interface ChatMessage {
-  id: string;
-  name: string | null;
-  email: string | null;
-  message: string;
-  status: "new" | "read" | "replied" | "closed";
-  createdAt: string;
-}
+/**
+ * POST /api/chat — a visitor submits a message from the storefront chat widget.
+ * Name/email are optional (anonymous visitors), so they're stored as null when
+ * not supplied.
+ */
+export async function submitChatMessage(req: Request, res: Response) {
+  const input = chatMessageSchema.parse(req.body);
 
-const store = jsonStore<ChatMessage[]>("chat-messages.json", []);
-
-const chatSchema = z.object({
-  name: z.string().max(120).optional(),
-  email: z.string().max(160).optional(),
-  message: z.string().min(1, "Message is required").max(4000),
-});
-
-/** POST /api/chat — a visitor's message from the storefront chat widget. */
-export async function submitChat(req: Request, res: Response) {
-  const input = chatSchema.parse(req.body);
-  const list = await store.read();
-  list.unshift({
-    id: crypto.randomUUID(),
-    name: input.name?.trim() || null,
-    email: input.email?.trim() || null,
-    message: input.message.trim(),
+  const { error } = await supabaseAdmin.from("chat_messages").insert({
+    name: input.name || null,
+    email: input.email || null,
+    message: input.message,
     status: "new",
-    createdAt: new Date().toISOString(),
   });
-  if (list.length > 5000) list.length = 5000;
-  await store.write(list);
-  res.json({ ok: true, message: "Thank you for contacting us. Our team will get back to you shortly." });
+  if (error) throw new ApiError(500, error.message);
+
+  res.status(201).json({
+    ok: true,
+    message: "Thank you for contacting us. Our team will get back to you shortly.",
+  });
 }
 
-/** GET /api/admin/chat — all chat messages (newest first). */
-export async function listChat(_req: Request, res: Response) {
-  res.json({ ok: true, data: await store.read() });
+/** GET /api/admin/chat — list chat messages for the admin inbox (newest first). */
+export async function listChatMessages(_req: Request, res: Response) {
+  const { data, error } = await supabaseAdmin
+    .from("chat_messages")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(500);
+  if (error) throw new ApiError(500, error.message);
+
+  const messages = (data ?? []).map((m) => ({
+    id: m.id as string,
+    name: (m.name as string) || null,
+    email: (m.email as string) || null,
+    message: m.message as string,
+    status: m.status as string,
+    createdAt: m.created_at as string,
+  }));
+
+  res.json({ ok: true, count: messages.length, data: messages });
 }
 
-const statusSchema = z.object({ status: z.enum(["new", "read", "replied", "closed"]) });
+/** PATCH /api/admin/chat/:id — move a message through triage (new→read→…). */
+export async function setChatMessageStatus(req: Request, res: Response) {
+  const { status } = chatStatusSchema.parse(req.body);
 
-/** PATCH /api/admin/chat/:id — update a message's status. */
-export async function setChatStatus(req: Request, res: Response) {
-  const { status } = statusSchema.parse(req.body);
-  const list = await store.read();
-  const msg = list.find((m) => m.id === req.params.id);
-  if (!msg) throw new ApiError(404, "Message not found.");
-  msg.status = status;
-  await store.write(list);
+  const { data, error } = await supabaseAdmin
+    .from("chat_messages")
+    .update({ status })
+    .eq("id", req.params.id)
+    .select()
+    .maybeSingle();
+  if (error) throw new ApiError(500, error.message);
+  if (!data) throw new ApiError(404, `Chat message not found: ${req.params.id}`);
+
   res.json({ ok: true, message: "Status updated." });
 }
 
-/** DELETE /api/admin/chat/:id — remove a message. */
-export async function deleteChat(req: Request, res: Response) {
-  const list = (await store.read()).filter((m) => m.id !== req.params.id);
-  await store.write(list);
+/** DELETE /api/admin/chat/:id — remove a chat message. */
+export async function deleteChatMessage(req: Request, res: Response) {
+  const { error } = await supabaseAdmin
+    .from("chat_messages")
+    .delete()
+    .eq("id", req.params.id);
+  if (error) throw new ApiError(500, error.message);
   res.json({ ok: true, message: "Message deleted." });
 }
