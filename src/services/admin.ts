@@ -663,3 +663,93 @@ export async function adminUploadImage(file: File): Promise<string> {
   );
   return data.data.url;
 }
+
+/* ── Notifications ─────────────────────────────────────────────────────────
+   Derived server-side from real orders, customers, messages, returns and
+   catalogue changes — see notifications.controller.ts. Nothing is generated
+   client-side, so an empty feed means nothing has happened yet. */
+
+export type AdminNotificationType =
+  | "order.new"
+  | "order.status"
+  | "customer.new"
+  | "customer.online"
+  | "visitor.new"
+  | "contact.new"
+  | "chat.new"
+  | "return.new"
+  | "product.change"
+  | "collection.change";
+
+export interface AdminNotification {
+  id: string;
+  type: AdminNotificationType;
+  title: string;
+  message: string;
+  href: string | null;
+  createdAt: string;
+  read: boolean;
+}
+
+export interface NotificationFeed {
+  notifications: AdminNotification[];
+  unread: number;
+}
+
+const EMPTY_FEED: NotificationFeed = { notifications: [], unread: 0 };
+
+export async function adminGetNotifications(): Promise<NotificationFeed> {
+  try {
+    const { data } = await api.get<ApiList<NotificationFeed>>("/admin/notifications");
+    return data.data ?? EMPTY_FEED;
+  } catch {
+    // A failed poll must not blank the bell — the caller keeps what it has.
+    return EMPTY_FEED;
+  }
+}
+
+/** Marks one notification read, or every notification when `id` is omitted. */
+export async function adminMarkNotificationsRead(id?: string): Promise<NotificationFeed> {
+  const { data } = await api.post<ApiList<NotificationFeed>>(
+    "/admin/notifications/read",
+    id ? { id } : {},
+  );
+  return data.data ?? EMPTY_FEED;
+}
+
+/* ── Live customer presence ────────────────────────────────────────────────
+   Which signed-in shoppers are on the store right now. Presence only — an
+   account with no active session never appears here. */
+
+export interface OnlineCustomers {
+  phones: string[];
+  /** phone -> when this session started, for "online since". */
+  since: Record<string, string>;
+}
+
+const NOBODY_ONLINE: OnlineCustomers = { phones: [], since: {} };
+
+/**
+ * How often presence should be re-checked. The server treats a heartbeat as
+ * live for 40s, so this is frequent enough that a dot clears within one window.
+ */
+export const PRESENCE_POLL_MS = 15_000;
+
+/**
+ * Last ten digits, so matching does not depend on formatting. A customer record
+ * and a heartbeat both carry the number but not always identically —
+ * "+919998009904", "9998009904" and "+91 99980 09904" are one person.
+ */
+export function normalisePhone(phone: string): string {
+  return String(phone ?? "").replace(/\D/g, "").slice(-10);
+}
+
+export async function adminGetOnlineCustomers(): Promise<OnlineCustomers> {
+  try {
+    const { data } = await api.get<ApiList<OnlineCustomers>>("/admin/live/customers");
+    return data.data ?? NOBODY_ONLINE;
+  } catch {
+    // A failed poll leaves the dots as they were rather than blanking them.
+    return NOBODY_ONLINE;
+  }
+}

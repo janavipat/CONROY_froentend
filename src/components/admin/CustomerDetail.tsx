@@ -4,9 +4,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   adminGetCustomerActivity,
+  adminGetOnlineCustomers,
   adminListCustomers,
   adminListOrders,
   adminListReturns,
+  normalisePhone,
+  PRESENCE_POLL_MS,
   type AdminCustomer,
   type AdminOrder,
   type AdminReturn,
@@ -150,6 +153,33 @@ export function CustomerDetail({ phone }: { phone: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  /**
+   * Live presence for this one customer. Polled separately from the record
+   * itself, which does not change while the page is open — and the shopper
+   * falls out of the live set on their own once their heartbeat stops, so
+   * nothing has to mark them offline.
+   */
+  const [online, setOnline] = useState(false);
+
+  useEffect(() => {
+    let alive = true;
+    const target = normalisePhone(phone);
+    const poll = async () => {
+      const live = await adminGetOnlineCustomers();
+      if (alive) setOnline(live.phones.some((p) => normalisePhone(p) === target));
+    };
+    // Deferred out of the effect body to avoid a cascading render on mount.
+    const kickoff = setTimeout(() => void poll(), 0);
+    const id = setInterval(() => {
+      if (!document.hidden && alive) void poll();
+    }, PRESENCE_POLL_MS);
+    return () => {
+      alive = false;
+      clearTimeout(kickoff);
+      clearInterval(id);
+    };
+  }, [phone]);
+
   useEffect(() => {
     let active = true;
     async function run() {
@@ -220,7 +250,15 @@ export function CustomerDetail({ phone }: { phone: string }) {
                 {(name || phone).trim().charAt(0).toUpperCase()}
               </span>
               <div className="min-w-0">
-                <h1 className="font-display text-xl leading-tight text-ink sm:text-2xl">{phone}</h1>
+                <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                  <h1 className="font-display text-xl leading-tight text-ink sm:text-2xl">{phone}</h1>
+                  {online && (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-[#16803C]/10 px-2.5 py-1 text-[0.6875rem] font-medium text-[#16803C]">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#16803C]" />
+                      Online
+                    </span>
+                  )}
+                </div>
                 <p className="mt-0.5 truncate text-[0.8125rem] text-stone">
                   {email || "No email on file"}
                 </p>

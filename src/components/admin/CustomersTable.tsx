@@ -4,7 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { AdminCustomer } from "@/services/admin";
-import { adminListCustomers } from "@/services/admin";
+import {
+  adminGetOnlineCustomers,
+  adminListCustomers,
+  normalisePhone,
+  PRESENCE_POLL_MS,
+} from "@/services/admin";
 import { formatCurrency } from "@/utils/format";
 import { ChevronRightIcon } from "@/components/ui/Icons";
 import { Loader } from "@/components/ui/Loader";
@@ -19,6 +24,16 @@ function formatDate(iso: string): string {
   } catch {
     return "";
   }
+}
+
+/** Small green presence dot, matching the header's "Store online" language. */
+function OnlineDot() {
+  return (
+    <span className="inline-flex shrink-0 items-center" title="Online now">
+      <span className="h-1.5 w-1.5 rounded-full bg-[#16803C]" />
+      <span className="sr-only">Online</span>
+    </span>
+  );
 }
 
 /** Escapes a value for a CSV cell. */
@@ -45,6 +60,36 @@ export function CustomersTable() {
       );
     return () => {
       active = false;
+    };
+  }, []);
+
+  /**
+   * Who is on the store right now.
+   *
+   * Kept separate from the customer list: presence changes every few seconds
+   * while the list itself rarely does, so re-fetching the whole table would be
+   * wasteful. A shopper drops out of this set on their own once their
+   * heartbeat stops, which is what turns the dot off again — nothing has to
+   * mark them offline explicitly.
+   */
+  const [onlinePhones, setOnlinePhones] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    let alive = true;
+    const poll = async () => {
+      const live = await adminGetOnlineCustomers();
+      if (alive) setOnlinePhones(new Set(live.phones.map(normalisePhone)));
+    };
+    // Deferred out of the effect body — a synchronous state write on mount
+    // cascades a second render before the first has painted.
+    const kickoff = setTimeout(() => void poll(), 0);
+    const id = setInterval(() => {
+      if (!document.hidden && alive) void poll();
+    }, PRESENCE_POLL_MS);
+    return () => {
+      alive = false;
+      clearTimeout(kickoff);
+      clearInterval(id);
     };
   }, []);
 
@@ -146,16 +191,19 @@ export function CustomersTable() {
                       className="group cursor-pointer transition-colors hover:bg-[#FAFAF9]"
                     >
                       <td className="px-4 py-2.5">
-                        {/* A real link, so the row is reachable by keyboard and
-                            opens in a new tab on middle-click — the row's own
-                            handler only duplicates what this already does. */}
-                        <Link
-                          href={href}
-                          onClick={(e) => e.stopPropagation()}
-                          className="font-medium tabular-nums text-ink outline-none focus-visible:underline"
-                        >
-                          {c.phone}
-                        </Link>
+                        <span className="flex items-center gap-2">
+                          {onlinePhones.has(normalisePhone(c.phone)) && <OnlineDot />}
+                          {/* A real link, so the row is reachable by keyboard and
+                              opens in a new tab on middle-click — the row's own
+                              handler only duplicates what this already does. */}
+                          <Link
+                            href={href}
+                            onClick={(e) => e.stopPropagation()}
+                            className="truncate font-medium tabular-nums text-ink outline-none focus-visible:underline"
+                          >
+                            {c.phone}
+                          </Link>
+                        </span>
                       </td>
                       <td className="px-3 py-2.5">
                         <span className="block truncate text-ink-soft" title={c.email || undefined}>
