@@ -18,6 +18,7 @@ import { useToast } from "@/components/ui/Toast";
 import { formatCurrency } from "@/utils/format";
 import { fetchSiteSettings, isOn } from "@/services/settings";
 import { fetchAddresses } from "@/services/addresses";
+import { checkServiceability, type Serviceability } from "@/services/shipping";
 import { Container } from "@/components/ui/Container";
 import { BackButton } from "@/components/ui/BackButton";
 import { Button } from "@/components/ui/Button";
@@ -79,6 +80,9 @@ export default function PaymentPage() {
   const [city, setCity] = useState("");
   const [stateName, setStateName] = useState("");
   const [pincode, setPincode] = useState("");
+  // Courier coverage for the pincode above. null until asked.
+  const [serviceability, setServiceability] = useState<Serviceability | null>(null);
+  const [checkingPin, setCheckingPin] = useState(false);
 
   // Prefill the phone from the signed-in account (last 10 digits).
   useEffect(() => {
@@ -154,6 +158,64 @@ export default function PaymentPage() {
     clear();
   }
 
+  /**
+   * Ask the courier about a pincode as soon as one is complete.
+   *
+   * Debounced, because this fires on every keystroke of the last digit and the
+   * shopper may still be correcting it. The stale-response guard matters more
+   * than the delay: someone typing 380013 then 311210 must not be cleared by
+   * the first lookup landing second.
+   */
+  useEffect(() => {
+    const pin = pincode.trim();
+    if (!/^[0-9]{6}$/.test(pin)) {
+      setServiceability(null);
+      setCheckingPin(false);
+      return;
+    }
+    let active = true;
+    setCheckingPin(true);
+    const t = setTimeout(async () => {
+      const result = await checkServiceability(pin);
+      if (!active) return;
+      setServiceability(result);
+      setCheckingPin(false);
+    }, 400);
+    return () => {
+      active = false;
+      clearTimeout(t);
+    };
+  }, [pincode]);
+
+  /**
+   * Ask the courier about a pincode as soon as one is complete.
+   *
+   * Debounced, because this fires on the last keystroke and the shopper may
+   * still be correcting it. The stale-response guard matters more than the
+   * delay: someone typing 380013 then 311210 must not have the second answer
+   * overwritten by the first one landing late.
+   */
+  useEffect(() => {
+    const pin = pincode.trim();
+    if (!/^[0-9]{6}$/.test(pin)) {
+      setServiceability(null);
+      setCheckingPin(false);
+      return;
+    }
+    let active = true;
+    setCheckingPin(true);
+    const t = setTimeout(async () => {
+      const result = await checkServiceability(pin);
+      if (!active) return;
+      setServiceability(result);
+      setCheckingPin(false);
+    }, 400);
+    return () => {
+      active = false;
+      clearTimeout(t);
+    };
+  }, [pincode]);
+
   function validate(): string | null {
     if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return "Please enter a valid email.";
     if (fullName.trim().length < 2) return "Please enter the full name.";
@@ -162,6 +224,13 @@ export default function PaymentPage() {
     if (city.trim().length < 2) return "Please enter the city.";
     if (stateName.trim().length < 2) return "Please enter the state.";
     if (!/^[0-9]{6}$/.test(pincode.trim())) return "Enter a valid 6-digit pincode.";
+    // Only a confirmed "no" blocks the sale. checked:false means the courier
+    // could not be reached, which is our problem to sort out afterwards, not a
+    // reason to refuse someone money in hand.
+    if (serviceability?.checked && !serviceability.serviceable) {
+      return `Sorry, we do not deliver to ${pincode.trim()} yet. Please try another pincode.`;
+    }
+    if (checkingPin) return "Checking delivery to your pincode. One moment.";
     return null;
   }
 
@@ -429,6 +498,29 @@ export default function PaymentPage() {
                 autoComplete="postal-code"
                 className={addrField}
               />
+              {/* Coverage, said before the pay button rather than after the
+                  money. Only a confirmed "no" reads as a refusal; a failed
+                  lookup stays silent, because the shopper can do nothing with
+                  "the courier API is down" and it must not look like rejection. */}
+              {(checkingPin || serviceability?.checked) && (
+                <p
+                  aria-live="polite"
+                  className={cn(
+                    "col-span-full -mt-1 text-xs",
+                    checkingPin
+                      ? "text-stone"
+                      : serviceability?.serviceable
+                        ? "text-[#16803C]"
+                        : "text-accent",
+                  )}
+                >
+                  {checkingPin
+                    ? "Checking delivery…"
+                    : serviceability?.serviceable
+                      ? `Delivers to ${serviceability.city ?? "your area"}${serviceability.codAvailable ? "" : " — prepaid only"}`
+                      : "We do not deliver to this pincode yet. Please try another."}
+                </p>
+              )}
             </div>
           </section>
 
