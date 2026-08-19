@@ -152,6 +152,20 @@ export const StarIcon = (p: IconProps) => (
   </svg>
 );
 
+export const EyeIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+export const BellIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M18 8a6 6 0 1 0-12 0c0 4-1.5 5.5-2 6h16c-.5-.5-2-2-2-6Z" />
+    <path d="M10.5 18a1.8 1.8 0 0 0 3 0" />
+  </svg>
+);
+
 export const InstagramIcon = (p: IconProps) => (
   <svg {...base} {...p}>
     <rect x="3" y="3" width="18" height="18" rx="5" />

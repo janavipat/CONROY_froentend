@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { AdminSidebar } from "./AdminSidebar";
 import { AdminGate } from "./AdminGate";
+import { NotificationBell } from "./NotificationBell";
 import { cn } from "@/utils/cn";
 import { MenuIcon, CloseIcon, UserIcon, ChevronLeftIcon } from "@/components/ui/Icons";
 
@@ -178,6 +179,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </span>
 
             <span className="ml-1 hidden h-6 w-px bg-[#E5E5E5] sm:block" />
+
+            <NotificationBell />
 
             <div className="ml-1 flex items-center gap-2">
               <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-[#171717] text-white">
