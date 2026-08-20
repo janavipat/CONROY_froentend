@@ -36,15 +36,39 @@ const SITE_SCHEMA = {
   "@context": "https://schema.org",
   "@graph": [
     {
-      "@type": "Organization",
+      // Brand rather than a bare Organization: CONROY is the label on the
+      // clothing, and it is the label every Product node names as its brand.
+      // Declaring the same @id under both types lets those Product references
+      // resolve to this entity instead of to a loose string.
+      "@type": ["Organization", "Brand"],
       "@id": `${SITE.url}/#organization`,
       name: SITE.name,
       legalName: SITE.legalName,
       url: SITE.url,
-      logo: `${SITE.url}/android-chrome-512x512.png`,
+      logo: {
+        "@type": "ImageObject",
+        url: `${SITE.url}/android-chrome-512x512.png`,
+        width: 512,
+        height: 512,
+      },
+      image: `${SITE.url}/opengraph-image`,
       description: SITE.description,
+      slogan: SITE.tagline,
       email: SITE.contact.email,
       telephone: SITE.contact.phone,
+      // Ahmedabad, Gujarat — the address on the Terms page, and the
+      // jurisdiction the terms are written under. No street line is published,
+      // so none is claimed here.
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: "Ahmedabad",
+        addressRegion: "Gujarat",
+        addressCountry: "IN",
+      },
+      areaServed: { "@type": "Country", name: "India" },
+      currenciesAccepted: SITE.currency,
+      // Only the profile that actually exists. Adding unverified handles is
+      // how an entity ends up associated with an account someone else owns.
       sameAs: [SITE.social.instagram],
       contactPoint: {
         "@type": "ContactPoint",

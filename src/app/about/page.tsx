@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { PRODUCTS } from "@/lib/products";
 import { SITE } from "@/lib/site";
 import { Container } from "@/components/ui/Container";
@@ -11,7 +12,7 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 export const metadata: Metadata = {
   title: "About us",
   description:
-    "CONROY stands for old-world elegance — restraint over extravagance, quality over quantity, craftsmanship over trend. Discover our story.",
+    "CONROY is an Indian premium denim and menswear label based in Ahmedabad, making men's jeans in slim, straight and relaxed fits alongside cotton T-shirts.",
   alternates: { canonical: "/about" },
   openGraph: {
     title: `About us | ${SITE.name}`,
@@ -83,6 +84,25 @@ export default function AboutPage() {
                   <p>
                     In a world of rapid change, we stand for the enduring. For heritage refined,
                     simplicity elevated, and style that whispers rather than shouts.
+                  </p>
+                </Reveal>
+                {/* The concrete half of the story. Everything above is the
+                    brand's philosophy; a reader — and a search engine — also
+                    needs to be told plainly what CONROY is and what it makes.
+                    Ahmedabad and the Indian jurisdiction are the details
+                    already published on the Terms page. */}
+                <Reveal as="div" index={2}>
+                  <p>
+                    CONROY is an Indian menswear label based in Ahmedabad, Gujarat. We make{" "}
+                    <Link href="/denim" className="text-ink underline-offset-4 hover:underline">
+                      men&apos;s jeans
+                    </Link>{" "}
+                    in slim, straight and relaxed fits — mid-rise, five-pocket, cut from premium
+                    denim in black, indigo, light and vintage-tinted washes — alongside{" "}
+                    <Link href="/t-shirts" className="text-ink underline-offset-4 hover:underline">
+                      cotton and cotton-lycra T-shirts
+                    </Link>{" "}
+                    for everyday wear. Everything is priced in rupees and shipped across India.
                   </p>
                 </Reveal>
               </div>

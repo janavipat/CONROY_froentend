@@ -173,6 +173,23 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
 
             <p className="mt-9 text-body text-ink-soft">{product.description}</p>
 
+            {/* Attribution and the route back up to the category. One brand
+                mention, where a shopper would expect to see it — this is also
+                the only link from a product page to its category, which the
+                breadcrumb's generic "Collection" did not provide. */}
+            <p className="mt-4 text-[0.8125rem] text-stone">
+              A CONROY {product.productType === "T-Shirt" ? "T-shirt" : "denim"} —{" "}
+              <Link
+                href={product.productType === "T-Shirt" ? "/t-shirts" : "/denim"}
+                className="text-ink underline-offset-4 hover:underline"
+              >
+                {product.productType === "T-Shirt"
+                  ? "see all men's T-shirts"
+                  : "see all men's jeans"}
+              </Link>
+              .
+            </p>
+
             <div className="mt-11">
               <AddToCartForm product={product} />
             </div>

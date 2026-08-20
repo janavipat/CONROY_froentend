@@ -140,7 +140,9 @@ export function productSchema(product: Product, displayName: string) {
     url,
     sku: product.handle,
     image: product.images.map((i) => i.src),
-    brand: { "@type": "Brand", name: SITE.name },
+    // Points at the Brand declared in the root layout rather than repeating a
+    // bare name, so every product resolves to the one CONROY entity.
+    brand: { "@id": `${SITE.url}/#organization`, "@type": "Brand", name: SITE.name },
     offers: {
       "@type": "Offer",
       url,

@@ -1,4 +1,5 @@
 import { Hero } from "@/sections/Hero";
+import { BrandIntro } from "@/sections/BrandIntro";
 import { ProductRail } from "@/sections/ProductRail";
 import { EditBanner } from "@/sections/EditBanner";
 import { FeaturedEdit } from "@/sections/FeaturedEdit";
@@ -66,6 +67,11 @@ export default async function HomePage() {
 
       {/* 1 — Hero */}
       <Hero />
+
+      {/* 1a — What the label is, in prose. The hero is a photograph and a
+          tagline; without this the page never states in words what CONROY
+          makes or where it is from. */}
+      <BrandIntro />
 
       {/* 2 — Denim Edit */}
       <EditBanner
