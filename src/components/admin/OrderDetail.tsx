@@ -320,6 +320,41 @@ export function OrderDetail({ id }: { id: string }) {
             </dl>
           </Card>
 
+          {/* Cancellation record.
+              Only rendered for a cancelled order, and every value is read from
+              the order rather than inferred: the reason the shopper picked, when
+              they did it, who did it, and where the refund stands. A COD order
+              reads "None" because nothing was ever collected — the admin should
+              not go looking for a refund to process. */}
+          {cancelled && (
+            <Card className="min-w-0">
+              <CardHeader
+                title="Cancellation"
+                action={<StatusBadge status="cancelled" />}
+              />
+              <dl className="mt-2 divide-y divide-[#F0F0EE]">
+                <Row label="Reason" value={order.cancelReason ?? "Not recorded"} />
+                <Row
+                  label="Cancelled"
+                  value={order.cancelledAt ? formatDateTime(order.cancelledAt) : "Not recorded"}
+                />
+                <Row
+                  label="Cancelled by"
+                  value={order.cancelledBy === "customer" ? "Customer" : (order.cancelledBy ?? "Not recorded")}
+                />
+                <Row label="Fulfilment" value={order.fulfillmentStatus} />
+                <Row
+                  label="Refund"
+                  value={
+                    order.refundStatus === "None"
+                      ? "Not applicable · nothing collected"
+                      : order.refundStatus
+                  }
+                />
+              </dl>
+            </Card>
+          )}
+
           {/* Timeline — derived strictly from fields the order actually has. */}
           <Card className="min-w-0">
             <CardHeader title="Timeline" />
@@ -332,7 +367,37 @@ export function OrderDetail({ id }: { id: string }) {
                   tone: paid ? "bg-[#16803C]" : cancelled ? "bg-[#DC2626]" : "bg-[#D97706]",
                 },
                 ...(cancelled
-                  ? [{ label: "Order cancelled", meta: "No further action", tone: "bg-[#DC2626]" }]
+                  ? [
+                      {
+                        label:
+                          order.cancelledBy === "customer"
+                            ? "Cancelled by customer"
+                            : "Order cancelled",
+                        // The recorded time and reason, rather than the old
+                        // fixed "No further action" — which said nothing and
+                        // was wrong whenever a refund was still outstanding.
+                        meta: [
+                          order.cancelledAt ? formatDateTime(order.cancelledAt) : null,
+                          order.cancelReason,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ") || "No further action",
+                        tone: "bg-[#DC2626]",
+                      },
+                    ]
+                  : []),
+                ...(cancelled && order.refundStatus !== "None"
+                  ? [
+                      {
+                        label: `Refund · ${order.refundStatus}`,
+                        meta:
+                          order.refundStatus === "Completed"
+                            ? "Returned to the customer"
+                            : "Awaiting completion",
+                        tone:
+                          order.refundStatus === "Completed" ? "bg-[#16803C]" : "bg-[#D97706]",
+                      },
+                    ]
                   : []),
               ].map((e, i, arr) => (
                 <li key={e.label} className="flex gap-3">

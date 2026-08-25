@@ -102,8 +102,21 @@ export interface AdminOrder {
   total: number;
   offerCode: string | null;
   currency: string;
+  /** Payment state: pending | paid | cod_pending | cancelled. */
   status: string;
   paymentMethod: string;
+  /**
+   * Delivery state, tracked separately from payment. An order can be paid and
+   * Delivered, or cancelled with nothing ever collected — one field cannot say
+   * both.
+   */
+  fulfillmentStatus: string;
+  /** None | Initiated | Processing | Completed | Failed. "None" for COD. */
+  refundStatus: string;
+  cancelReason: string | null;
+  cancelledAt: string | null;
+  /** "customer" when the shopper cancelled it themselves. */
+  cancelledBy: string | null;
   createdAt: string;
   items: AdminOrderItem[];
 }
