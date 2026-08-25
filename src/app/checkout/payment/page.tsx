@@ -20,6 +20,7 @@ import { fetchSiteSettings, isOn } from "@/services/settings";
 import { fetchAddresses } from "@/services/addresses";
 import { Container } from "@/components/ui/Container";
 import { BackButton } from "@/components/ui/BackButton";
+import { withRedirect } from "@/lib/auth/redirect";
 import { Button } from "@/components/ui/Button";
 import { CheckIcon, ShieldIcon, TruckIcon } from "@/components/ui/Icons";
 import { cn } from "@/utils/cn";
@@ -44,7 +45,7 @@ const addrField =
 
 export default function PaymentPage() {
   const { items, subtotal, count, clear } = useCart();
-  const { user } = useAuth();
+  const { user, initializing } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
 
@@ -90,6 +91,19 @@ export default function PaymentPage() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (user?.phone) setPhone((p) => p || user.phone!.replace(/\D/g, "").slice(-10));
   }, [user?.phone]);
+
+  /*
+   * Checkout needs an account. Sending the shopper to sign in with this page
+   * named as the destination is what lets them come straight back — the cart
+   * lives in its own storage, so nothing is lost on the way.
+   *
+   * Waits for the session probe, or a returning shopper whose session is still
+   * being restored would be bounced out of their own checkout.
+   */
+  useEffect(() => {
+    if (initializing || user) return;
+    router.replace(withRedirect("/account/login", "/checkout/payment"));
+  }, [initializing, user, router]);
 
   // Prefill the delivery form from the customer's default saved address.
   useEffect(() => {

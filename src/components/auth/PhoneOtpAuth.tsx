@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAuth } from "@/lib/auth/auth-context";
 import type { AuthMode } from "@/services/auth";
@@ -11,6 +12,7 @@ import { CountryPicker } from "@/components/auth/CountryPicker";
 import { OtpInput } from "@/components/auth/OtpInput";
 import { CheckIcon } from "@/components/ui/Icons";
 import { cn } from "@/utils/cn";
+import { REDIRECT_PARAM, safeRedirect } from "@/lib/auth/redirect";
 
 // Matches the backend OTP validity (otpStore TTL = 1 minute), so the countdown
 // the shopper sees lines up with when the code actually expires.
@@ -39,9 +41,28 @@ const buttonClass =
  */
 export function PhoneOtpAuth({ mode = "signin" }: { mode?: AuthMode }) {
   const { user, initializing, isConfigured, demoCode, sendOtp, verifyOtp, signOut } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  /*
+   * Where the shopper was headed before being asked to sign in. Signing in
+   * used to end on a dead-end panel offering "Continue shopping", which sent
+   * someone who was mid-checkout back to the catalogue with their cart intact
+   * but their place lost.
+   */
+  const destination = safeRedirect(searchParams.get(REDIRECT_PARAM));
   const { toast } = useToast();
 
   const isSignup = mode === "signup";
+
+  /*
+   * Returning the shopper to where they were headed. Driven by the session
+   * rather than by the verify handler, so it covers both arriving here already
+   * signed in and completing a code — and it fires once the session actually
+   * exists, not merely once a request succeeded.
+   */
+  useEffect(() => {
+    if (user && destination) router.replace(destination);
+  }, [user, destination, router]);
 
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [country, setCountry] = useState<Country>(DEFAULT_COUNTRY);
@@ -154,6 +175,8 @@ export function PhoneOtpAuth({ mode = "signin" }: { mode?: AuthMode }) {
       return;
     }
     toast(isSignup ? "Account created successfully" : "Signed in successfully", "success");
+    // Navigation is handled by the effect above, which waits for the session
+    // itself rather than assuming this call has already produced one.
   }
 
   function changeNumber() {
@@ -175,6 +198,20 @@ export function PhoneOtpAuth({ mode = "signin" }: { mode?: AuthMode }) {
 
   /* ---- Already signed in (session exists) ---------------------------- */
   if (user) {
+    /*
+     * Arriving here with a session already in hand — a shopper sent to sign in
+     * who turns out to be signed in, or one returning after the redirect below
+     * has been queued. Carrying on to where they were going beats showing them
+     * a panel that has nothing to do with what they were doing.
+     */
+    if (destination) {
+      return (
+        <div className="flex h-44 flex-col items-center justify-center gap-3 text-stone">
+          <Spinner className="h-6 w-6 text-ink" />
+          <p className="text-sm">Taking you back…</p>
+        </div>
+      );
+    }
     return (
       <div className="flex flex-col items-center gap-5 text-center">
         <span className="grid h-14 w-14 place-items-center rounded-full bg-ink text-white">

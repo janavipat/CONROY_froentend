@@ -10,9 +10,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/lib/auth/auth-context";
 import { readPendingCartItem } from "@/lib/pending-cart";
+import { REDIRECT_PARAM, safeRedirect } from "@/lib/auth/redirect";
 import type { AuthMode } from "@/services/auth";
 import { useToast } from "@/components/ui/Toast";
 import { DEFAULT_COUNTRY, type Country } from "@/lib/countries";
@@ -40,6 +41,7 @@ export function EmailAuthForm({ mode = "signin" }: { mode?: AuthMode }) {
   const { user, initializing, register, login, signOut } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const isSignup = mode === "signup";
 
@@ -142,6 +144,14 @@ export function EmailAuthForm({ mode = "signin" }: { mode?: AuthMode }) {
       return;
     }
     toast(isSignup ? "Account created successfully" : "Signed in successfully", "success");
+
+    // An explicit destination wins: it is where the shopper was actually
+    // going, whereas the pending item is only a guess at what they wanted.
+    const destination = safeRedirect(searchParams.get(REDIRECT_PARAM));
+    if (destination) {
+      router.replace(destination);
+      return;
+    }
 
     // Came here from a blocked "Add to cart"? Go back to that product so the
     // form can finish the add. Otherwise the screen is unchanged.

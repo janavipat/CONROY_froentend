@@ -1,13 +1,27 @@
+"use client";
+
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { PhoneOtpAuth } from "@/components/auth/PhoneOtpAuth";
 // Email + password auth — commented out in favor of phone OTP (WhatsApp).
 // Swap the import above and the component below to bring it back.
 // import { EmailAuthForm } from "@/components/auth/EmailAuthForm";
 import { cn } from "@/utils/cn";
+import { REDIRECT_PARAM, withRedirect } from "@/lib/auth/redirect";
 
 /** Clean, light, centered auth card in the CONROY house style. */
 export function LoginExperience({ mode = "signin" }: { mode?: "signin" | "signup" }) {
   const isSignup = mode === "signup";
+
+  /*
+   * Switching between Sign In and Create Account must not lose where the
+   * shopper was going. Without this, someone sent here from checkout who
+   * chose to register would sign up successfully and land nowhere useful.
+   */
+  const searchParams = useSearchParams();
+  const destination = searchParams.get(REDIRECT_PARAM) ?? "";
+  const signInHref = withRedirect("/account/login", destination);
+  const registerHref = withRedirect("/account/register", destination);
 
   const tab = (active: boolean) =>
     cn(
@@ -32,7 +46,7 @@ export function LoginExperience({ mode = "signin" }: { mode?: "signin" | "signup
           {/* Tabs */}
           <div className="grid grid-cols-2 border-b border-line">
             {isSignup ? (
-              <Link href="/account/login" className={tab(false)}>
+              <Link href={signInHref} className={tab(false)}>
                 Sign In
               </Link>
             ) : (
@@ -41,7 +55,7 @@ export function LoginExperience({ mode = "signin" }: { mode?: "signin" | "signup
             {isSignup ? (
               <span className={tab(true)}>Create Account</span>
             ) : (
-              <Link href="/account/register" className={tab(false)}>
+              <Link href={registerHref} className={tab(false)}>
                 Create Account
               </Link>
             )}
