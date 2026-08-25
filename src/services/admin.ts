@@ -338,6 +338,23 @@ export async function adminGetOrder(id: string): Promise<AdminOrder> {
   return data.data;
 }
 
+/**
+ * Deletes an order outright. The server stops any Delhivery booking first and
+ * refuses the delete if the courier won't release it, so a rejection here means
+ * the order is still exactly as it was — the message says why.
+ */
+export async function adminDeleteOrder(id: string): Promise<{ shipmentsCancelled: number }> {
+  try {
+    const { data } = await api.delete<{ ok: boolean; shipmentsCancelled?: number }>(
+      `/admin/orders/${id}`,
+    );
+    return { shipmentsCancelled: data.shipmentsCancelled ?? 0 };
+  } catch (err) {
+    const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+    throw new Error(message || "Could not delete this order. Please try again.");
+  }
+}
+
 export async function adminListCustomers(): Promise<AdminCustomer[]> {
   const { data } = await api.get<ApiList<AdminCustomer[]>>("/admin/customers");
   return data.data ?? [];

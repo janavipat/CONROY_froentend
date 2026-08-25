@@ -1,15 +1,15 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminOrder } from "@/services/admin";
-import { adminListOrders } from "@/services/admin";
+import { adminListOrders, adminDeleteOrder } from "@/services/admin";
 import { formatCurrency } from "@/utils/format";
 import { printPackingSlips } from "@/lib/packing-slip";
 import { cn } from "@/utils/cn";
 import { SearchIcon, ChevronRightIcon } from "@/components/ui/Icons";
 import { Loader } from "@/components/ui/Loader";
-import { StatusBadge, CountUp } from "./ui";
+import { StatusBadge, CountUp, ConfirmDialog } from "./ui";
 
 function formatDate(iso: string): string {
   try {
@@ -56,6 +56,22 @@ export function OrdersTable() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const router = useRouter();
 
+  /** The order awaiting confirmation. Nothing is sent until it is confirmed. */
+  const [pending, setPending] = useState<AdminOrder | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      setOrders(await adminListOrders());
+    } catch {
+      setError("Could not load orders. Is the backend running?");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Promise chain rather than `await load()`: setState in an effect body
+  // triggers cascading renders, which react-hooks/set-state-in-effect rejects.
   useEffect(() => {
     let active = true;
     adminListOrders()
@@ -69,6 +85,33 @@ export function OrdersTable() {
       active = false;
     };
   }, []);
+
+  async function confirmDelete() {
+    if (!pending || deleting) return; // guards a double-click on Delete
+    const order = pending;
+    setDeleting(order.id);
+    setError("");
+    try {
+      await adminDeleteOrder(order.id);
+      setPending(null);
+      // Drop it straight away, then refetch so the list and its totals match
+      // the server rather than this component’s guess.
+      setOrders((prev) => prev.filter((o) => o.id !== order.id));
+      setSelected((prev) => {
+        const next = new Set(prev);
+        next.delete(order.id);
+        return next;
+      });
+      await load();
+    } catch (err) {
+      // The dialog closes either way — the reason Delhivery gave belongs on
+      // the page, where it stays readable instead of vanishing with the overlay.
+      setPending(null);
+      setError(err instanceof Error ? err.message : "Could not delete this order.");
+    } finally {
+      setDeleting(null);
+    }
+  }
 
   const stats = useMemo(() => {
     const live = orders.filter((o) => o.status !== "cancelled");
@@ -224,7 +267,7 @@ export function OrdersTable() {
                   <th className="px-3 py-3 font-medium">Payment status</th>
                   <th className="px-3 py-3 font-medium">Method</th>
                   <th className="px-3 py-3 font-medium">Items</th>
-                  <th className="w-8 px-3 py-3" />
+                  <th className="w-28 px-3 py-3" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
@@ -279,7 +322,21 @@ export function OrdersTable() {
                         {itemCount(o)} item{itemCount(o) === 1 ? "" : "s"}
                       </td>
                       <td className="px-3 py-3">
-                        <ChevronRightIcon className="h-4 w-4 text-stone" />
+                        <div className="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPending(o);
+                            }}
+                            disabled={deleting === o.id}
+                            aria-label={`Delete order ${o.id.slice(0, 8).toUpperCase()}`}
+                            className="rounded-md border border-line px-2.5 py-1 text-xs text-accent transition-colors hover:border-accent disabled:opacity-50"
+                          >
+                            {deleting === o.id ? "…" : "Delete"}
+                          </button>
+                          <ChevronRightIcon className="h-4 w-4 text-stone" />
+                        </div>
                       </td>
                     </tr>
                   );
@@ -289,6 +346,31 @@ export function OrdersTable() {
           )}
         </div>
       </div>
+
+      {/* Names the order that is about to go, so the wrong row cannot be
+          deleted from muscle memory, and states the Delhivery consequence. */}
+      <ConfirmDialog
+        open={pending !== null}
+        busy={deleting !== null}
+        title="Delete this order?"
+        description="Any Delhivery shipment is cancelled first — if the courier refuses, the order is left untouched. This can’t be undone."
+        confirmLabel="Delete order"
+        detail={
+          pending && (
+            <span className="min-w-0">
+              <span className="block truncate text-[0.8125rem] font-medium text-[#171717]">
+                #{pending.id.slice(0, 8).toUpperCase()} · {pending.customerName || pending.email}
+              </span>
+              <span className="block truncate text-[0.75rem] text-[#737373]">
+                {formatCurrency(pending.subtotal, pending.currency)} · {itemCount(pending)} item
+                {itemCount(pending) === 1 ? "" : "s"} · {methodLabel(pending.paymentMethod)}
+              </span>
+            </span>
+          )
+        }
+        onConfirm={confirmDelete}
+        onCancel={() => setPending(null)}
+      />
     </div>
   );
 }
