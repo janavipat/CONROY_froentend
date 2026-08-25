@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminOrder } from "@/services/admin";
-import { adminListOrders, adminDeleteOrder } from "@/services/admin";
+import { adminListOrders, adminDeleteOrder, adminCreateShipment } from "@/services/admin";
 import { formatCurrency } from "@/utils/format";
 import { printPackingSlips } from "@/lib/packing-slip";
 import { cn } from "@/utils/cn";
@@ -59,6 +59,8 @@ export function OrdersTable() {
   /** The order awaiting confirmation. Nothing is sent until it is confirmed. */
   const [pending, setPending] = useState<AdminOrder | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [shipping, setShipping] = useState<string | null>(null);
+  const [notice, setNotice] = useState("");
 
   const load = useCallback(async () => {
     try {
@@ -85,6 +87,27 @@ export function OrdersTable() {
       active = false;
     };
   }, []);
+
+  /** Books the courier for an order the automatic job never managed to. */
+  async function ship(order: AdminOrder) {
+    if (shipping) return;
+    setShipping(order.id);
+    setError("");
+    setNotice("");
+    try {
+      const { waybill } = await adminCreateShipment(order.id);
+      setNotice(
+        waybill
+          ? `Order #${order.id.slice(0, 8).toUpperCase()} is with Delhivery — waybill ${waybill}.`
+          : `Order #${order.id.slice(0, 8).toUpperCase()} was sent to Delhivery.`,
+      );
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not create the shipment.");
+    } finally {
+      setShipping(null);
+    }
+  }
 
   async function confirmDelete() {
     if (!pending || deleting) return; // guards a double-click on Delete
@@ -183,6 +206,12 @@ export function OrdersTable() {
         ))}
       </div>
 
+      {notice && (
+        <p className="mt-6 rounded-md border border-line bg-mist/60 px-4 py-3 text-sm text-ink">
+          {notice}
+        </p>
+      )}
+
       {error && (
         <p className="mt-6 rounded-md border border-accent/30 bg-accent/5 px-4 py-3 text-sm text-accent">
           {error}
@@ -267,7 +296,7 @@ export function OrdersTable() {
                   <th className="px-3 py-3 font-medium">Payment status</th>
                   <th className="px-3 py-3 font-medium">Method</th>
                   <th className="px-3 py-3 font-medium">Items</th>
-                  <th className="w-28 px-3 py-3" />
+                  <th className="w-44 px-3 py-3" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-line">
@@ -323,6 +352,25 @@ export function OrdersTable() {
                       </td>
                       <td className="px-3 py-3">
                         <div className="flex items-center justify-end gap-1">
+                          {["Pending", "Confirmed", "Processing", "Packed"].includes(
+                            o.fulfillmentStatus,
+                          ) &&
+                            !cancelled && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void ship(o);
+                                }}
+                                disabled={shipping !== null}
+                                aria-label={`Create Delhivery shipment for order ${o.id
+                                  .slice(0, 8)
+                                  .toUpperCase()}`}
+                                className="rounded-md border border-line px-2.5 py-1 text-xs text-ink-soft transition-colors hover:border-ink hover:text-ink disabled:opacity-50"
+                              >
+                                {shipping === o.id ? "…" : "Ship"}
+                              </button>
+                            )}
                           <button
                             type="button"
                             onClick={(e) => {

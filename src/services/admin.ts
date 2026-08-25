@@ -339,6 +339,28 @@ export async function adminGetOrder(id: string): Promise<AdminOrder> {
 }
 
 /**
+ * Books the Delhivery shipment for one order, through the endpoint the job
+ * worker uses. Manifesting is slow and occasionally very slow, so this call
+ * gets its own generous timeout rather than the client-wide 15s.
+ */
+export async function adminCreateShipment(id: string): Promise<{ waybill?: string; message: string }> {
+  try {
+    const { data } = await api.post<{ ok: boolean; message: string; data?: { waybill?: string } }>(
+      `/admin/orders/${id}/shipment`,
+      {},
+      { timeout: 90_000 },
+    );
+    if (!data.ok) throw new Error(data.message || "Delhivery did not accept this shipment.");
+    return { waybill: data.data?.waybill, message: data.message };
+  } catch (err) {
+    const res = (err as { response?: { data?: { message?: string; error?: string } } })?.response;
+    const message = res?.data?.message || res?.data?.error;
+    if (message) throw new Error(message);
+    throw err instanceof Error ? err : new Error("Could not create the shipment.");
+  }
+}
+
+/**
  * Deletes an order outright. The server stops any Delhivery booking first and
  * refuses the delete if the courier won't release it, so a rejection here means
  * the order is still exactly as it was — the message says why.
