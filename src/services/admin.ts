@@ -123,6 +123,9 @@ export interface AdminOrder {
   shipmentJobAttempts: number;
   shipmentError: string | null;
   shipmentSynced: boolean;
+  /** Set while the order sits in Deleted Orders; null once restored. */
+  deletedAt: string | null;
+  deletedBy: string | null;
   cancelReason: string | null;
   cancelledAt: string | null;
   /** "customer" when the shopper cancelled it themselves. */
@@ -388,8 +391,49 @@ export async function adminCreateShipment(id: string): Promise<{ waybill?: strin
   }
 }
 
+export interface DeletedOrdersResult {
+  orders: AdminOrder[];
+  /** False until supabase/soft-delete-orders.sql has been applied. */
+  available: boolean;
+}
+
+/** The Deleted Orders section. */
+export async function adminListDeletedOrders(): Promise<DeletedOrdersResult> {
+  const { data } = await api.get<{ data: AdminOrder[]; available?: boolean }>(
+    "/admin/orders/deleted",
+  );
+  return { orders: data.data ?? [], available: data.available !== false };
+}
+
+/** Puts a deleted order back into the working lists. */
+export async function adminRestoreOrder(id: string): Promise<void> {
+  try {
+    await api.post(`/admin/orders/${id}/restore`, {});
+  } catch (err) {
+    throw asAdminError(err, "Could not restore this order.");
+  }
+}
+
 /**
- * Deletes an order outright. The server stops any Delhivery booking first and
+ * Removes a deleted order for good. Only valid for an order already in Deleted
+ * Orders — the server refuses it for anything still live.
+ */
+export async function adminPurgeOrder(id: string): Promise<void> {
+  try {
+    await api.delete(`/admin/orders/${id}/permanent`);
+  } catch (err) {
+    throw asAdminError(err, "Could not permanently delete this order.");
+  }
+}
+
+/** Surfaces the server's own explanation rather than a generic failure. */
+function asAdminError(err: unknown, fallback: string): Error {
+  const message = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
+  return new Error(message || fallback);
+}
+
+/**
+ * Moves an order to Deleted Orders. The server stops any Delhivery booking first and
  * refuses the delete if the courier won't release it, so a rejection here means
  * the order is still exactly as it was — the message says why.
  */

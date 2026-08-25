@@ -8,6 +8,9 @@ import {
   adminDeleteOrder,
   adminCreateShipment,
   adminDrainShipmentJobs,
+  adminListDeletedOrders,
+  adminRestoreOrder,
+  adminPurgeOrder,
 } from "@/services/admin";
 import { formatCurrency } from "@/utils/format";
 import { printPackingSlips } from "@/lib/packing-slip";
@@ -50,7 +53,7 @@ function Badge({ status }: { status: string }) {
   return <StatusBadge status={status} />;
 }
 
-type Filter = "all" | "paid" | "cod_pending" | "cancelled";
+type Filter = "all" | "paid" | "cod_pending" | "cancelled" | "deleted";
 
 export function OrdersTable() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
@@ -64,8 +67,24 @@ export function OrdersTable() {
   /** The order awaiting confirmation. Nothing is sent until it is confirmed. */
   const [pending, setPending] = useState<AdminOrder | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
+  /** Deleted Orders is its own list — a soft-deleted order is not in `orders`. */
+  const [deletedOrders, setDeletedOrders] = useState<AdminOrder[]>([]);
+  const [softDeleteReady, setSoftDeleteReady] = useState(true);
+  /** The order awaiting confirmation of PERMANENT removal. */
+  const [purging, setPurging] = useState<AdminOrder | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [shipping, setShipping] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
+
+  const loadDeleted = useCallback(async () => {
+    try {
+      const { orders: rows, available } = await adminListDeletedOrders();
+      setDeletedOrders(rows);
+      setSoftDeleteReady(available);
+    } catch {
+      setError("Could not load deleted orders.");
+    }
+  }, []);
 
   const load = useCallback(async () => {
     try {
@@ -94,6 +113,22 @@ export function OrdersTable() {
       active = false;
     };
   }, [load]);
+
+  // Promise chain rather than awaiting loadDeleted: setState directly in an
+  // effect body cascades renders, which react-hooks/set-state-in-effect rejects.
+  useEffect(() => {
+    let active = true;
+    adminListDeletedOrders()
+      .then(({ orders: rows, available }) => {
+        if (!active) return;
+        setDeletedOrders(rows);
+        setSoftDeleteReady(available);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
 
   // Promise chain rather than `await load()`: setState in an effect body
   // triggers cascading renders, which react-hooks/set-state-in-effect rejects.
@@ -140,6 +175,7 @@ export function OrdersTable() {
     try {
       await adminDeleteOrder(order.id);
       setPending(null);
+      void loadDeleted();
       // Drop it straight away, then refetch so the list and its totals match
       // the server rather than this component’s guess.
       setOrders((prev) => prev.filter((o) => o.id !== order.id));
@@ -159,6 +195,42 @@ export function OrdersTable() {
     }
   }
 
+  async function restore(order: AdminOrder) {
+    if (busyId) return;
+    setBusyId(order.id);
+    setError("");
+    setNotice("");
+    try {
+      await adminRestoreOrder(order.id);
+      setDeletedOrders((prev) => prev.filter((o) => o.id !== order.id));
+      setNotice(`Order #${order.id.slice(0, 8).toUpperCase()} restored.`);
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not restore this order.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function confirmPurge() {
+    if (!purging || busyId) return; // guards a double-click
+    const order = purging;
+    setBusyId(order.id);
+    setError("");
+    setNotice("");
+    try {
+      await adminPurgeOrder(order.id);
+      setPurging(null);
+      setDeletedOrders((prev) => prev.filter((o) => o.id !== order.id));
+      setNotice(`Order #${order.id.slice(0, 8).toUpperCase()} permanently deleted.`);
+    } catch (err) {
+      setPurging(null);
+      setError(err instanceof Error ? err.message : "Could not permanently delete this order.");
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   const stats = useMemo(() => {
     const live = orders.filter((o) => o.status !== "cancelled");
     return {
@@ -169,10 +241,13 @@ export function OrdersTable() {
     };
   }, [orders]);
 
+  const viewingDeleted = filter === "deleted";
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return orders.filter((o) => {
-      if (filter !== "all" && o.status !== filter) return false;
+    const source = filter === "deleted" ? deletedOrders : orders;
+    return source.filter((o) => {
+      if (filter !== "all" && filter !== "deleted" && o.status !== filter) return false;
       if (!q) return true;
       return [o.id, o.customerName, o.email, o.phone]
         .filter(Boolean)
@@ -180,7 +255,7 @@ export function OrdersTable() {
         .toLowerCase()
         .includes(q);
     });
-  }, [orders, query, filter]);
+  }, [orders, deletedOrders, query, filter]);
 
   const allChecked = filtered.length > 0 && filtered.every((o) => selected.has(o.id));
   const toggleAll = () =>
@@ -198,6 +273,7 @@ export function OrdersTable() {
     { key: "paid", label: "Paid" },
     { key: "cod_pending", label: "Payment pending" },
     { key: "cancelled", label: "Cancelled" },
+    { key: "deleted", label: "Deleted orders" },
   ];
 
   return (
@@ -228,6 +304,13 @@ export function OrdersTable() {
           </div>
         ))}
       </div>
+
+      {viewingDeleted && !softDeleteReady && (
+        <p className="mt-6 rounded-md border border-accent/30 bg-accent/5 px-4 py-3 text-sm text-accent">
+          Deleted Orders needs a database change that hasn’t been applied yet — run
+          supabase/soft-delete-orders.sql. Until then, Delete is unavailable.
+        </p>
+      )}
 
       {notice && (
         <p className="mt-6 rounded-md border border-line bg-mist/60 px-4 py-3 text-sm text-ink">
@@ -390,9 +473,36 @@ export function OrdersTable() {
                       </td>
                       <td className="px-3 py-3">
                         <div className="flex items-center justify-end gap-1">
-                          {["Pending", "Confirmed", "Processing", "Packed"].includes(
-                            o.fulfillmentStatus,
-                          ) &&
+                          {viewingDeleted && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void restore(o);
+                                }}
+                                disabled={busyId !== null}
+                                className="rounded-md border border-line px-2.5 py-1 text-xs text-ink transition-colors hover:border-ink disabled:opacity-50"
+                              >
+                                {busyId === o.id ? "…" : "Restore"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPurging(o);
+                                }}
+                                disabled={busyId !== null}
+                                className="rounded-md border border-accent/40 px-2.5 py-1 text-xs text-accent transition-colors hover:border-accent disabled:opacity-50"
+                              >
+                                Delete forever
+                              </button>
+                            </>
+                          )}
+                          {!viewingDeleted &&
+                            ["Pending", "Confirmed", "Processing", "Packed"].includes(
+                              o.fulfillmentStatus,
+                            ) &&
                             !cancelled && (
                               <button
                                 type="button"
@@ -409,18 +519,20 @@ export function OrdersTable() {
                                 {shipping === o.id ? "…" : "Ship"}
                               </button>
                             )}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPending(o);
-                            }}
-                            disabled={deleting === o.id}
-                            aria-label={`Delete order ${o.id.slice(0, 8).toUpperCase()}`}
-                            className="rounded-md border border-line px-2.5 py-1 text-xs text-accent transition-colors hover:border-accent disabled:opacity-50"
-                          >
-                            {deleting === o.id ? "…" : "Delete"}
-                          </button>
+                          {!viewingDeleted && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPending(o);
+                              }}
+                              disabled={deleting === o.id}
+                              aria-label={`Delete order ${o.id.slice(0, 8).toUpperCase()}`}
+                              className="rounded-md border border-line px-2.5 py-1 text-xs text-accent transition-colors hover:border-accent disabled:opacity-50"
+                            >
+                              {deleting === o.id ? "…" : "Delete"}
+                            </button>
+                          )}
                           <ChevronRightIcon className="h-4 w-4 text-stone" />
                         </div>
                       </td>
@@ -439,8 +551,8 @@ export function OrdersTable() {
         open={pending !== null}
         busy={deleting !== null}
         title="Delete this order?"
-        description="Any Delhivery shipment is cancelled first — if the courier refuses, the order is left untouched. This can’t be undone."
-        confirmLabel="Delete order"
+        description="It moves to Deleted Orders, where it can be restored. Any Delhivery shipment is cancelled first — if the courier refuses, the order is left untouched."
+        confirmLabel="Move to Deleted"
         detail={
           pending && (
             <span className="min-w-0">
@@ -456,6 +568,30 @@ export function OrdersTable() {
         }
         onConfirm={confirmDelete}
         onCancel={() => setPending(null)}
+      />
+
+      {/* Separate dialog: this one really is irreversible. */}
+      <ConfirmDialog
+        open={purging !== null}
+        busy={busyId !== null}
+        title="Permanently delete this order?"
+        description="The order and its items, shipment record and cancellation history are removed for good. This cannot be undone."
+        confirmLabel="Delete forever"
+        detail={
+          purging && (
+            <span className="min-w-0">
+              <span className="block truncate text-[0.8125rem] font-medium text-[#171717]">
+                #{purging.id.slice(0, 8).toUpperCase()} · {purging.customerName || purging.email}
+              </span>
+              <span className="block truncate text-[0.75rem] text-[#737373]">
+                {formatCurrency(purging.subtotal, purging.currency)} · {itemCount(purging)} item
+                {itemCount(purging) === 1 ? "" : "s"} · {methodLabel(purging.paymentMethod)}
+              </span>
+            </span>
+          )
+        }
+        onConfirm={confirmPurge}
+        onCancel={() => setPurging(null)}
       />
     </div>
   );
