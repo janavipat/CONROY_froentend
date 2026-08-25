@@ -113,6 +113,16 @@ export interface AdminOrder {
   fulfillmentStatus: string;
   /** None | Initiated | Processing | Completed | Failed. "None" for COD. */
   refundStatus: string;
+  /**
+   * Courier sync state. `shipmentSynced` is false when the order exists here
+   * but never reached Delhivery — the case this panel has to make obvious.
+   */
+  waybill: string | null;
+  shipmentStatus: string | null;
+  shipmentJobState: string | null;
+  shipmentJobAttempts: number;
+  shipmentError: string | null;
+  shipmentSynced: boolean;
   cancelReason: string | null;
   cancelledAt: string | null;
   /** "customer" when the shopper cancelled it themselves. */
@@ -336,6 +346,24 @@ export async function adminListOrders(): Promise<AdminOrder[]> {
 export async function adminGetOrder(id: string): Promise<AdminOrder> {
   const { data } = await api.get<ApiList<AdminOrder>>(`/admin/orders/${id}`);
   return data.data;
+}
+
+/**
+ * Runs any shipment jobs that are due. The cron is capped at once a day and
+ * the attempt fired at checkout is not awaited, so the panel doing this on
+ * load is what keeps a stalled order from waiting hours for its retry.
+ */
+export async function adminDrainShipmentJobs(): Promise<number> {
+  try {
+    const { data } = await api.post<{ ok: boolean; processed?: number }>(
+      "/admin/shipments/drain",
+      {},
+      { timeout: 90_000 },
+    );
+    return data.processed ?? 0;
+  } catch {
+    return 0; // best-effort; the cron remains the backstop
+  }
 }
 
 /**

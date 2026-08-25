@@ -3,7 +3,12 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { AdminOrder } from "@/services/admin";
-import { adminListOrders, adminDeleteOrder, adminCreateShipment } from "@/services/admin";
+import {
+  adminListOrders,
+  adminDeleteOrder,
+  adminCreateShipment,
+  adminDrainShipmentJobs,
+} from "@/services/admin";
 import { formatCurrency } from "@/utils/format";
 import { printPackingSlips } from "@/lib/packing-slip";
 import { cn } from "@/utils/cn";
@@ -71,6 +76,24 @@ export function OrdersTable() {
       setLoading(false);
     }
   }, []);
+
+  /*
+   * Turns the shipment queue over once when the panel opens. The attempt fired
+   * at checkout is not awaited and dies with that function, and the cron only
+   * runs daily — so without this a stalled order waits hours to be retried.
+   * Promise chain, not await: setState in an effect body cascades renders.
+   */
+  useEffect(() => {
+    let active = true;
+    adminDrainShipmentJobs()
+      .then((processed) => {
+        if (active && processed > 0) void load();
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [load]);
 
   // Promise chain rather than `await load()`: setState in an effect body
   // triggers cascading renders, which react-hooks/set-state-in-effect rejects.
@@ -295,6 +318,7 @@ export function OrdersTable() {
                   <th className="px-3 py-3 font-medium">Total</th>
                   <th className="px-3 py-3 font-medium">Payment status</th>
                   <th className="px-3 py-3 font-medium">Method</th>
+                  <th className="px-3 py-3 font-medium">Delhivery</th>
                   <th className="px-3 py-3 font-medium">Items</th>
                   <th className="w-44 px-3 py-3" />
                 </tr>
@@ -346,6 +370,20 @@ export function OrdersTable() {
                       </td>
                       <td className="whitespace-nowrap px-3 py-3 text-ink-soft">
                         {methodLabel(o.paymentMethod)}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-3">
+                        {o.waybill ? (
+                          <span className="font-mono text-xs text-ink-soft">{o.waybill}</span>
+                        ) : cancelled ? (
+                          <span className="text-xs text-stone">—</span>
+                        ) : (
+                          <span
+                            title={o.shipmentError ?? "No Delhivery shipment for this order yet."}
+                            className="rounded-full bg-accent/10 px-2 py-0.5 text-xs font-medium text-accent"
+                          >
+                            Not synced
+                          </span>
+                        )}
                       </td>
                       <td className="whitespace-nowrap px-3 py-3 text-ink-soft">
                         {itemCount(o)} item{itemCount(o) === 1 ? "" : "s"}
