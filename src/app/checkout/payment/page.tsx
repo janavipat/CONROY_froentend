@@ -52,7 +52,12 @@ export default function PaymentPage() {
   const [method, setMethod] = useState<PaymentMethod>("online");
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
-  const [done, setDone] = useState<{ orderId?: string; method: PaymentMethod } | null>(null);
+  const [done, setDone] = useState<{
+    orderId?: string;
+    method: PaymentMethod;
+    /** Whether the shopper gave an address, so the copy can be honest. */
+    email: boolean;
+  } | null>(null);
 
   // Which payment methods the admin has enabled (Settings → Store controls).
   const [methodEnabled, setMethodEnabled] = useState({ online: true, cod: true });
@@ -150,12 +155,17 @@ export default function PaymentPage() {
 
   function finish(orderId: string | undefined, m: PaymentMethod) {
     setProcessing(false);
-    setDone({ orderId, method: m });
+    setDone({ orderId, method: m, email: Boolean(email.trim()) });
     clear();
   }
 
   function validate(): string | null {
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return "Please enter a valid email.";
+    // Optional: delivery needs a phone and an address, not an email. A typed
+    // value still has to be a real address, so a typo is caught rather than
+    // silently saved; an empty field is simply left empty.
+    if (email.trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email.trim())) {
+      return "Please enter a valid email, or leave it blank.";
+    }
     if (fullName.trim().length < 2) return "Please enter the full name.";
     if (!/^[0-9]{10}$/.test(phone.replace(/\D/g, ""))) return "Enter a valid 10-digit phone number.";
     if (line1.trim().length < 4) return "Please enter the address (house / street).";
@@ -208,7 +218,7 @@ export default function PaymentPage() {
       // Cash on Delivery — no gateway, just record the order.
       if (method === "cod") {
         const order = await createOrder({
-          email,
+          email: email.trim(),
           items,
           paymentMethod: "cod",
           phone: orderPhone,
@@ -231,7 +241,7 @@ export default function PaymentPage() {
       // Demo mode (no Razorpay keys configured) — record the order directly.
       if (rp.mock || !rp.keyId || !rp.orderId) {
         const order = await createOrder({
-          email,
+          email: email.trim(),
           items,
           paymentMethod: "online",
           phone: orderPhone,
@@ -277,7 +287,7 @@ export default function PaymentPage() {
 
       // Verify the signature server-side, then the order is placed as paid.
       const verified = await verifyRazorpayPayment({
-        email,
+        email: email.trim(),
         items,
         phone: orderPhone,
         fullName: name,
@@ -310,8 +320,11 @@ export default function PaymentPage() {
         <h1 className="font-display text-3xl text-ink sm:text-4xl">Order confirmed</h1>
         <p className="text-ink-soft">
           {done.method === "cod"
-            ? "Your order is placed — pay in cash on delivery. A confirmation has been sent to your email."
-            : "Payment received and your order is confirmed. A confirmation has been sent to your email."}
+            ? "Your order is placed — pay in cash on delivery."
+            : "Payment received and your order is confirmed."}
+          {/* Only promised when an address was actually given — the line read
+              as a receipt for an email that was never going anywhere. */}
+          {done.email && " A confirmation will be sent to your email."}
           {done.orderId && (
             <>
               {" "}
@@ -369,7 +382,7 @@ export default function PaymentPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email for order confirmation"
+              placeholder="Email for order confirmation (optional)"
               className="mt-3 h-12 w-full rounded-md border border-line bg-white px-3 text-[15px] text-ink placeholder:text-stone focus:border-ink focus:outline-none"
             />
           </section>
