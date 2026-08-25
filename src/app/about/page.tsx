@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import Link from "next/link";
 import { PRODUCTS } from "@/lib/products";
 import { SITE } from "@/lib/site";
@@ -57,7 +57,7 @@ export default function AboutPage() {
         <Container>
           <div className="grid items-center gap-16 lg:grid-cols-2 lg:gap-24">
             <Reveal className="relative aspect-[4/5] overflow-hidden bg-mist">
-              <Image
+              <SafeImage
                 src={PRODUCTS[1].images[0].src}
                 alt="CONROY denim craftsmanship"
                 fill

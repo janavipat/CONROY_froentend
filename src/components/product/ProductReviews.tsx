@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { useEffect, useState } from "react";
 import type { Review, ReviewSummary } from "@/types";
 import { fetchReviews } from "@/services/reviews";
@@ -138,7 +138,7 @@ export function ProductReviews({ handle }: { handle: string }) {
             <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
               {summary.photos.map((src, i) => (
                 <span key={`${src}-${i}`} className="relative h-20 w-20 shrink-0 overflow-hidden rounded-md bg-mist">
-                  <Image src={src} alt="Customer photo" fill sizes="80px" className="object-cover" />
+                  <SafeImage src={src} alt="Customer photo" fill sizes="80px" className="object-cover" />
                 </span>
               ))}
             </div>
@@ -169,7 +169,7 @@ export function ProductReviews({ handle }: { handle: string }) {
                     <div className="mt-3 flex flex-wrap gap-2">
                       {r.images.map((src, i) => (
                         <span key={`${src}-${i}`} className="relative h-16 w-16 overflow-hidden rounded-md bg-mist">
-                          <Image src={src} alt="Review photo" fill sizes="64px" className="object-cover" />
+                          <SafeImage src={src} alt="Review photo" fill sizes="64px" className="object-cover" />
                         </span>
                       ))}
                     </div>

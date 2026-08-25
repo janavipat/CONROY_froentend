@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import Link from "next/link";
 import { Reveal } from "@/components/motion/Reveal";
 import { ArrowRightIcon } from "@/components/ui/Icons";
@@ -16,7 +16,7 @@ export function HeritageStory() {
       <div className="grid lg:grid-cols-[1.1fr_1fr_1.1fr]">
         {/* Left — lifestyle image */}
         <Reveal className="relative aspect-[4/5] lg:aspect-auto lg:min-h-[44rem]">
-          <Image
+          <SafeImage
             src={`${CDN}/4_1_jpg.jpg?v=1771951309`}
             alt="CONROY Bleu Heritage — indigo denim, relaxed fit"
             fill
@@ -67,7 +67,7 @@ export function HeritageStory() {
 
         {/* Right — companion image */}
         <Reveal index={2} className="relative aspect-[4/5] lg:aspect-auto lg:min-h-[44rem]">
-          <Image
+          <SafeImage
             src={`${CDN}/3_3_jpg.jpg?v=1771951023`}
             alt="CONROY Noir Classique — washed black denim"
             fill

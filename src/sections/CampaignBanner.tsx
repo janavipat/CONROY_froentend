@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { useRef } from "react";
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { Container } from "@/components/ui/Container";
@@ -32,7 +32,7 @@ export function CampaignBanner() {
           two transforms never fight. */}
       <motion.div style={{ y }} className="absolute inset-[-14%_0] will-change-transform">
         <div className="ken-burns absolute inset-0">
-          <Image src={IMAGE} alt="" fill priority sizes="100vw" className="object-cover" />
+          <SafeImage src={IMAGE} alt="" fill priority sizes="100vw" className="object-cover" />
         </div>
       </motion.div>
 

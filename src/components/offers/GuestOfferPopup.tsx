@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
@@ -154,7 +154,7 @@ export function GuestOfferPopup() {
                   better trade for showing the shot properly. Beside the offer
                   it is a tall column, and the bands move to top and bottom. */}
               <div className="relative aspect-[3/2] w-full bg-background md:aspect-auto md:min-h-[540px] md:border-r md:border-line">
-                <Image
+                <SafeImage
                   src={OFFER_CAMPAIGN.image}
                   alt={OFFER_CAMPAIGN.imageAlt}
                   fill

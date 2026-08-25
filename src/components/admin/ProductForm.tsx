@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -373,7 +373,7 @@ export function ProductForm({ initial }: { initial?: Product }) {
               )}
             >
               {/* draggable={false} so the browser drags the tile, not the <img>. */}
-              <Image
+              <SafeImage
                 src={img.src}
                 alt={img.alt ?? ""}
                 fill
@@ -925,7 +925,7 @@ export function ProductForm({ initial }: { initial?: Product }) {
             <div className="mt-3 flex gap-3">
               <span className="relative grid h-16 w-14 shrink-0 place-items-center overflow-hidden rounded-md border border-[#E5E5E5] bg-[#FAFAF9] text-[0.625rem] text-[#A3A3A3]">
                 {images[0]?.src ? (
-                  <Image src={images[0].src} alt="" fill sizes="56px" className="object-cover" />
+                  <SafeImage src={images[0].src} alt="" fill sizes="56px" className="object-cover" />
                 ) : (
                   "No image"
                 )}
@@ -1022,7 +1022,7 @@ export function ProductForm({ initial }: { initial?: Product }) {
             <div className="flex items-center gap-3">
               <span className="relative h-12 w-10 shrink-0 overflow-hidden rounded-md bg-[#EFEFED]">
                 {images[0]?.src && (
-                  <Image src={images[0].src} alt="" fill sizes="40px" className="object-cover" />
+                  <SafeImage src={images[0].src} alt="" fill sizes="40px" className="object-cover" />
                 )}
               </span>
               <span className="min-w-0">

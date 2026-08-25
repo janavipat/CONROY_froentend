@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { useRef } from "react";
 import { motion, useReducedMotion, useScroll, useTransform, type Variants } from "framer-motion";
 import { PRODUCTS } from "@/lib/products";
@@ -47,7 +47,7 @@ export function Philosophy() {
             >
               <motion.div style={{ y }} className="absolute inset-[-9%_0] will-change-transform">
                 <div className="ken-burns absolute inset-0">
-                  <Image
+                  <SafeImage
                     src={PRODUCTS[2].images[0].src}
                     alt="CONROY craftsmanship"
                     fill

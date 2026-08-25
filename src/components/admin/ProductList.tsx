@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { Product } from "@/types";
@@ -109,7 +109,7 @@ export function ProductList() {
               >
                 <span className="relative h-14 w-12 overflow-hidden rounded-md bg-mist">
                   {p.images[0] && (
-                    <Image
+                    <SafeImage
                       src={p.images[0].src}
                       alt={p.images[0].alt || p.title}
                       fill
@@ -167,7 +167,7 @@ export function ProductList() {
             <div className="flex items-center gap-3">
               <span className="relative h-12 w-10 shrink-0 overflow-hidden rounded-md bg-[#EFEFED]">
                 {pending.images[0] && (
-                  <Image
+                  <SafeImage
                     src={pending.images[0].src}
                     alt=""
                     fill

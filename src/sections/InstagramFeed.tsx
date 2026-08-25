@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { SITE } from "@/lib/site";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
@@ -35,7 +35,7 @@ export function InstagramFeed() {
                 className="group relative block aspect-square overflow-hidden bg-mist"
                 aria-label="View on Instagram"
               >
-                <Image
+                <SafeImage
                   src={tile.src}
                   alt={tile.alt}
                   fill

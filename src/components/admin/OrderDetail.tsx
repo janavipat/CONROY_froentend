@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import Link from "next/link";
 import {
   adminGetOrder,
@@ -225,7 +225,7 @@ export function OrderDetail({ id }: { id: string }) {
                   <li key={`${it.product_handle}-${i}`} className="flex items-center gap-3 px-4 py-3 sm:gap-4 sm:px-5">
                     <span className="relative grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-lg border border-[#E5E5E5] bg-[#FAFAF9] text-[0.75rem] font-medium text-[#A3A3A3]">
                       {src ? (
-                        <Image
+                        <SafeImage
                           src={src}
                           alt=""
                           fill

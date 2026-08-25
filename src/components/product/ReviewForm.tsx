@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { useState } from "react";
 import { submitReview, uploadReviewImage } from "@/services/reviews";
 import { Button } from "@/components/ui/Button";
@@ -116,7 +116,7 @@ export function ReviewForm({
       <div className="mt-3 flex flex-wrap gap-2">
         {images.map((src, i) => (
           <div key={src} className="group relative h-16 w-16 overflow-hidden rounded-md bg-mist">
-            <Image src={src} alt="Review photo" fill sizes="64px" className="object-cover" />
+            <SafeImage src={src} alt="Review photo" fill sizes="64px" className="object-cover" />
             <button
               type="button"
               onClick={() => setImages((prev) => prev.filter((_, idx) => idx !== i))}

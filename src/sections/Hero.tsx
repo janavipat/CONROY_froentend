@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { Button } from "@/components/ui/Button";
 
 /**
@@ -15,7 +15,7 @@ export function Hero() {
   return (
     <section className="relative" aria-label="CONROY featured collection">
       <div className="relative h-[88vh] min-h-[540px] w-full overflow-hidden">
-        <Image
+        <SafeImage
           src="/brand/hero.jpg"
           alt="CONROY premium denim — Soft Comfort, Bold Looks"
           fill
