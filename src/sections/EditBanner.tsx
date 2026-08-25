@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { cn } from "@/utils/cn";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
@@ -71,7 +71,7 @@ export function EditBanner({
               imageSide === "right" && "lg:order-last",
             )}
           >
-            <Image
+            <SafeImage
               src={image}
               alt={imageAlt}
               fill

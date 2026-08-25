@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import Link from "next/link";
 import { useRef } from "react";
 import { Container } from "@/components/ui/Container";
@@ -99,7 +99,7 @@ export function CollectionShowcase() {
                   className="group relative block overflow-hidden rounded-media bg-mist"
                 >
                   <div className="relative aspect-[3/4.1]">
-                    <Image
+                    <SafeImage
                       src={t.image}
                       alt={t.title}
                       fill

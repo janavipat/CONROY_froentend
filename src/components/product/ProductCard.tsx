@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import Link from "next/link";
 import { useState } from "react";
 import type { Product } from "@/types";
@@ -50,7 +50,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
               </span>
             ) : (
               <>
-                <Image
+                <SafeImage
                   src={primary.src}
                   alt=""
                   fill
@@ -60,7 +60,7 @@ export function ProductCard({ product, priority = false }: { product: Product; p
                   className="object-cover transition-[opacity,transform] duration-(--duration-slow) ease-[var(--ease-luxe)] group-hover:scale-[1.03] group-hover:opacity-0"
                 />
                 {!secondaryFailed && (
-                  <Image
+                  <SafeImage
                     src={secondary.src}
                     alt=""
                     fill

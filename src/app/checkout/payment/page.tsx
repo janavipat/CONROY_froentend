@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -486,7 +486,7 @@ export default function PaymentPage() {
             {items.map((item) => (
               <li key={`${item.productHandle}-${item.size}`} className="flex gap-3">
                 <span className="relative h-16 w-14 shrink-0 overflow-hidden rounded-md bg-mist">
-                  <Image src={item.image} alt={item.title} fill sizes="56px" className="object-cover" />
+                  <SafeImage src={item.image} alt={item.title} fill sizes="56px" className="object-cover" />
                 </span>
                 <span className="flex-1 text-sm">
                   <span className="block text-ink">{item.title}</span>

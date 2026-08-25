@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { searchProducts } from "@/lib/products";
@@ -60,7 +60,7 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
                       className="flex items-center gap-4 py-3"
                     >
                       <span className="relative h-16 w-14 shrink-0 overflow-hidden bg-cream">
-                        <Image
+                        <SafeImage
                           src={p.images[0].src}
                           alt={p.images[0].alt}
                           fill

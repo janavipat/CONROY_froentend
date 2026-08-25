@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import Link from "next/link";
 import type { Product } from "@/types";
 import { formatCurrency } from "@/utils/format";
@@ -23,7 +23,7 @@ export function QuickViewModal({
     <Modal open={open} onClose={onClose} label={`Quick view: ${product.title}`} className="max-h-[90vh] w-full max-w-3xl overflow-y-auto">
       <div className="grid sm:grid-cols-2">
         <div className="relative aspect-[4/5] bg-mist">
-          <Image
+          <SafeImage
             src={product.images[0].src}
             alt={product.images[0].alt}
             fill

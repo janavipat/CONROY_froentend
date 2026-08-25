@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
 import { useOfferQuote } from "@/hooks/useOfferQuote";
@@ -82,7 +82,7 @@ export default function CartPage() {
                   href={`/products/${item.productHandle}`}
                   className="relative h-32 w-24 shrink-0 overflow-hidden rounded-md bg-mist"
                 >
-                  <Image src={item.image} alt={item.title} fill sizes="96px" className="object-cover" />
+                  <SafeImage src={item.image} alt={item.title} fill sizes="96px" className="object-cover" />
                 </Link>
                 <div className="flex flex-1 flex-col">
                   <div className="flex justify-between gap-3">

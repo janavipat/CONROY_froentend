@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import Link from "next/link";
 import { PRODUCT_TYPE_NAV } from "@/lib/site";
 
@@ -59,7 +59,7 @@ export function CollectionsMenu({
           className="group relative block h-52 w-40 shrink-0 overflow-hidden bg-mist"
           aria-label={lead.type.label}
         >
-          <Image
+          <SafeImage
             src={image.src}
             alt={image.alt}
             fill

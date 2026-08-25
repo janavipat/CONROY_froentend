@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import Link from "next/link";
 import type { Product } from "@/types";
 import { cn } from "@/utils/cn";
@@ -65,7 +65,7 @@ export function FeaturedEdit({
           >
             <Link href={`/products/${feature.handle}`} className="group block h-full">
               {feature.images[0]?.src && (
-                <Image
+                <SafeImage
                   src={feature.images[0].src}
                   alt={feature.images[0].alt || feature.title}
                   fill

@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import Link from "next/link";
 import { formatCurrency } from "@/utils/format";
 
@@ -83,7 +83,7 @@ export function NewInMenu({
             >
               <div className="relative aspect-[3/4] overflow-hidden bg-mist">
                 {p.image && (
-                  <Image
+                  <SafeImage
                     src={p.image}
                     alt={p.title}
                     fill

@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import Link from "next/link";
 import { useCart } from "@/lib/cart-context";
 import { formatCurrency } from "@/utils/format";
@@ -37,7 +37,7 @@ export function CartDrawer() {
                   onClick={closeCart}
                   className="relative h-24 w-20 shrink-0 overflow-hidden bg-cream"
                 >
-                  <Image src={item.image} alt={item.title} fill sizes="80px" className="object-cover" />
+                  <SafeImage src={item.image} alt={item.title} fill sizes="80px" className="object-cover" />
                 </Link>
                 <div className="flex flex-1 flex-col">
                   <div className="flex justify-between gap-2">

@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import Link from "next/link";
 import type { Product } from "@/types";
 import { formatCurrency } from "@/utils/format";
@@ -56,7 +56,7 @@ export function ShopTheLookEdit({
               and not from however many pieces the edit happens to list. */}
           <Reveal className="relative aspect-[4/5] overflow-hidden bg-mist sm:aspect-[3/2] lg:aspect-[4/5]">
             <Link href={href} className="group block h-full" aria-label={lookTitle}>
-              <Image
+              <SafeImage
                 src={image}
                 alt={imageAlt}
                 fill
@@ -87,7 +87,7 @@ export function ShopTheLookEdit({
                       className="group flex items-center gap-5 py-4"
                     >
                       <span className="relative h-20 w-16 shrink-0 overflow-hidden bg-mist">
-                        <Image
+                        <SafeImage
                           src={p.images[0].src}
                           alt={p.images[0].alt || p.title}
                           fill

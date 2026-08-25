@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import { useState } from "react";
 import type { ProductImage } from "@/types";
 import { cn } from "@/utils/cn";
@@ -37,14 +37,14 @@ export function ProductGallery({ images }: { images: ProductImage[] }) {
               active === i ? "ring-1 ring-ink" : "opacity-60 hover:opacity-100",
             )}
           >
-            <Image src={img.src} alt={img.alt} fill sizes="80px" className="object-cover" />
+            <SafeImage src={img.src} alt={img.alt} fill sizes="80px" className="object-cover" />
           </button>
         ))}
       </div>
 
       {/* Main image */}
       <div className="relative aspect-[4/5] min-w-0 flex-1 overflow-hidden rounded-media bg-mist">
-        <Image
+        <SafeImage
           key={images[active].src}
           src={images[active].src}
           alt={images[active].alt}

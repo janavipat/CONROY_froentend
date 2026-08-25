@@ -1,6 +1,6 @@
 "use client";
 
-import Image from "next/image";
+import { SafeImage } from "@/components/ui/SafeImage";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import type { Product } from "@/types";
@@ -131,7 +131,7 @@ export function ShopsSlider({ products }: { products: Product[] }) {
               >
                 <Link href={s.href} className="group relative block overflow-hidden bg-ink">
                   <div className="relative aspect-[3/4]">
-                    <Image
+                    <SafeImage
                       src={s.image}
                       alt={s.title}
                       fill
