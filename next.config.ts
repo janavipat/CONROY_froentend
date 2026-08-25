@@ -21,7 +21,21 @@ const nextConfig: NextConfig = {
      * Trimming to 4 + 5 takes the worst case from fifteen variants per image
      * to nine.
      */
-    deviceSizes: [640, 828, 1080, 1920],
+    /*
+     * 1920 is deliberately absent while the optimizer quota is exhausted.
+     *
+     * Variants already cached still serve; new ones return 402. Every width up
+     * to 1080 is cached and loads, but 1920 — which only full-bleed 100vw
+     * images ask for, chiefly the homepage hero — has never been generated and
+     * is refused, leaving those areas blank. Capping at 1080 means a wide
+     * desktop upscales the hero rather than showing nothing.
+     *
+     * This is a stopgap for an account limit, not a design decision. Once the
+     * quota resets or the plan is raised, add 1920 back — it is one entry —
+     * and full-bleed images regain their native width on large screens. Phones
+     * and tablets are unaffected either way: they never request beyond 1080.
+     */
+    deviceSizes: [640, 828, 1080],
     imageSizes: [48, 96, 128, 256, 384],
 
     // Next 16 requires an explicit allowlist. One quality keeps each width to
