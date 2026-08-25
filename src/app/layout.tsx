@@ -4,6 +4,7 @@ import "./globals.css";
 import { SITE } from "@/lib/site";
 import { StoreChrome } from "@/components/layout/StoreChrome";
 import { ServiceWorkerRegistration } from "@/components/pwa/ServiceWorkerRegistration";
+import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { Providers } from "./providers";
 
 // Display — Bodoni Moda: the didone the fashion press is set in. Extreme
@@ -180,6 +181,8 @@ export default function RootLayout({
         {/* Renders nothing; its only job is registering the worker whose fetch
             handler Chrome looks for before offering to install the app. */}
         <ServiceWorkerRegistration />
+        {/* Renders nothing until the browser says the site can be installed. */}
+        <InstallPrompt />
       </body>
     </html>
   );
