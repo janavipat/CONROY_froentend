@@ -57,7 +57,24 @@ export interface Order {
 }
 
 /** Only these early states may still be cancelled by the customer. */
-const CANCELLABLE = new Set<FulfillmentStatus>(["Pending", "Confirmed", "Processing"]);
+/**
+ * Must mirror CANCELLABLE_STATUSES on the server.
+ *
+ * "Manifested" is included because checkout ships immediately — an order is
+ * manifested within seconds of being placed, so without it the Cancel button
+ * disappeared before anyone could reach it and the few requests that did get
+ * through were answered 409. A waybill existing is not the same as the parcel
+ * having been collected; from "Shipped" onward it genuinely cannot be stopped.
+ */
+const CANCELLABLE = new Set<FulfillmentStatus>([
+  "Pending",
+  "Confirmed",
+  "Processing",
+  // Earlier in the lifecycle than Manifested, so it would be incoherent to
+  // allow one and refuse the other.
+  "Packed",
+  "Manifested",
+]);
 
 /** Lifecycle state of an order, tolerating rows written before the column existed. */
 export function fulfillmentOf(order: Order): FulfillmentStatus {
