@@ -7,7 +7,10 @@ import { useAuth } from "@/lib/auth/auth-context";
 import { useToast } from "@/components/ui/Toast";
 import {
   fetchAddresses,
-  saveAddresses,
+  createAddress,
+  updateAddress,
+  setDefaultAddress,
+  deleteAddress,
   formatAddress,
   type Address,
 } from "@/services/addresses";
@@ -70,18 +73,29 @@ export function AddressBook() {
     return null;
   }
 
-  async function persist(next: Address[]) {
-    if (!user?.phone) return;
+  /**
+   * Runs one address action and adopts whatever the server says the book is
+   * afterwards. Replacing the whole list from here would undo a change made on
+   * another device between load and save.
+   */
+  async function run(action: () => Promise<Address[]>, success: string) {
+    if (!user?.phone) return false;
     setSaving(true);
     try {
-      const saved = await saveAddresses(user.phone, next);
-      setList(saved);
-    } catch {
-      toast("Couldn't save. Please try again.", "error");
+      setList(await action());
+      toast(success, "success");
+      return true;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Couldn't save. Please try again.";
+      setError(message);
+      toast(message, "error");
+      return false;
     } finally {
       setSaving(false);
     }
   }
+
+  const reload = async () => (user?.phone ? fetchAddresses(user.phone) : []);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -93,14 +107,19 @@ export function AddressBook() {
     }
     setError("");
 
-    const entry: Address = {
-      id: editingId ?? crypto.randomUUID(),
-      ...form,
-      isDefault: editingId ? (list.find((a) => a.id === editingId)?.isDefault ?? false) : list.length === 0,
-    };
-    const next = editingId ? list.map((a) => (a.id === editingId ? entry : a)) : [...list, entry];
-    await persist(next);
-    toast(editingId ? "Address updated." : "Address saved.", "success");
+    // Editing updates the row in place; only an explicit add creates one, so
+    // finishing checkout twice cannot fill the book with duplicates.
+    const ok = editingId
+      ? await run(async () => {
+          await updateAddress(user!.phone!, editingId, form);
+          return reload();
+        }, "Address updated.")
+      : await run(async () => {
+          await createAddress(user!.phone!, form);
+          return reload();
+        }, "Address saved.");
+    if (!ok) return;
+
     setForm({ ...EMPTY });
     setEditingId(null);
     setShowForm(false);
@@ -122,14 +141,14 @@ export function AddressBook() {
   }
 
   async function remove(id: string) {
-    if (!window.confirm("Delete this address?")) return;
-    await persist(list.filter((a) => a.id !== id));
-    toast("Address deleted.", "success");
+    if (!window.confirm("Delete this address? This can't be undone.")) return;
+    // The server promotes another address when the default goes, so the book
+    // is never left pointing at a record that no longer exists.
+    await run(() => deleteAddress(user!.phone!, id), "Address deleted.");
   }
 
   async function makeDefault(id: string) {
-    await persist(list.map((a) => ({ ...a, isDefault: a.id === id })));
-    toast("Default address updated.", "success");
+    await run(() => setDefaultAddress(user!.phone!, id), "Default address updated.");
   }
 
   if (initializing || !user) {

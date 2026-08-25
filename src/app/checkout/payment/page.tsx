@@ -17,7 +17,8 @@ import { applyOffer, type ApplyOfferResult } from "@/services/offers";
 import { useToast } from "@/components/ui/Toast";
 import { formatCurrency } from "@/utils/format";
 import { fetchSiteSettings, isOn } from "@/services/settings";
-import { fetchAddresses } from "@/services/addresses";
+import { fetchAddresses, createAddress, type Address } from "@/services/addresses";
+import { SavedAddresses } from "@/components/checkout/SavedAddresses";
 import { Container } from "@/components/ui/Container";
 import { BackButton } from "@/components/ui/BackButton";
 import { withRedirect } from "@/lib/auth/redirect";
@@ -77,6 +78,16 @@ export default function PaymentPage() {
   }, []);
   const availableMethods = METHODS.filter((m) => methodEnabled[m.id]);
 
+  /*
+   * The saved-address layer. `addingNew` is what decides between the card and
+   * the form; the form fields below stay the source of truth for the order
+   * either way, so validation and the courier hand-off are untouched.
+   */
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [addingNew, setAddingNew] = useState(false);
+  const [saveAddress, setSaveAddress] = useState(true);
+
   // Delivery address
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
@@ -105,14 +116,24 @@ export default function PaymentPage() {
     router.replace(withRedirect("/account/login", "/checkout/payment"));
   }, [initializing, user, router]);
 
-  // Prefill the delivery form from the customer's default saved address.
+  /*
+   * The customer's address book. Held rather than merely copied into the form,
+   * so a returning shopper is shown the address they already gave us instead of
+   * an empty form they have to fill in again.
+   */
   useEffect(() => {
     if (!user?.phone) return;
     let active = true;
     void fetchAddresses(user.phone).then((saved) => {
       if (!active) return;
+      setAddresses(saved);
       const def = saved.find((a) => a.isDefault) ?? saved[0];
-      if (!def) return;
+      if (!def) {
+        // Nothing saved yet: the form is the only thing to show.
+        setAddingNew(true);
+        return;
+      }
+      setSelectedAddressId(def.id);
       setFullName((v) => v || def.fullName);
       setPhone((v) => v || def.phone);
       setLine1((v) => v || def.line1);
@@ -171,6 +192,13 @@ export default function PaymentPage() {
     setProcessing(false);
     setDone({ orderId, method: m, email: Boolean(email.trim()) });
     clear();
+    /*
+     * After the order, never before: the address book is a convenience, and a
+     * failure filing one away must not be able to affect a purchase that has
+     * already gone through. The order carries its own copy of the address, so
+     * it is complete whatever happens here.
+     */
+    void rememberAddressIfAsked();
   }
 
   function validate(): string | null {
@@ -209,6 +237,57 @@ export default function PaymentPage() {
       pincode: pincode.trim(),
       country: "India",
     };
+  }
+
+  /** Copies a saved address into the delivery form, which the order reads. */
+  function applyAddress(a: Address) {
+    setSelectedAddressId(a.id);
+    setAddingNew(false);
+    setFullName(a.fullName);
+    setPhone(a.phone.replace(/\D/g, "").slice(-10));
+    setLine1(a.line1);
+    setLine2(a.line2 ?? "");
+    setCity(a.city);
+    setStateName(a.state);
+    setPincode(a.pincode);
+  }
+
+  /** Clears the form so a new address is entered rather than edited over. */
+  function startNewAddress() {
+    setSelectedAddressId(null);
+    setAddingNew(true);
+    setSaveAddress(true);
+    setFullName("");
+    setPhone("");
+    setLine1("");
+    setLine2("");
+    setCity("");
+    setStateName("");
+    setPincode("");
+  }
+
+  /**
+   * Adds the freshly typed address to the book, once the order it was entered
+   * for exists. Only when the customer asked for it and only for a genuinely
+   * new address — selecting a saved one must never create a second copy.
+   */
+  async function rememberAddressIfAsked() {
+    if (!user?.phone || !addingNew || !saveAddress) return;
+    try {
+      await createAddress(user.phone, {
+        fullName: fullName.trim(),
+        phone: `+91${phone.replace(/\D/g, "").slice(-10)}`,
+        line1: line1.trim(),
+        line2: line2.trim() || undefined,
+        city: city.trim(),
+        state: stateName.trim(),
+        pincode: pincode.trim(),
+      });
+    } catch (err) {
+      // The order is already placed; failing to file the address away is not
+      // something to fail the purchase over.
+      console.warn("Address not saved to the address book:", err);
+    }
   }
 
   async function handlePay() {
@@ -404,7 +483,24 @@ export default function PaymentPage() {
           {/* Delivery address */}
           <section className="mt-8">
             <h2 className="font-display text-xl text-ink">Delivery address</h2>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+
+            {/* A returning customer sees what they already gave us. */}
+            {!addingNew && addresses.length > 0 && (
+              <SavedAddresses
+                addresses={addresses}
+                selectedId={selectedAddressId}
+                onSelect={applyAddress}
+                onAddNew={startNewAddress}
+                busy={processing}
+              />
+            )}
+
+            <div
+              className={cn(
+                "mt-3 grid gap-3 sm:grid-cols-2",
+                !addingNew && addresses.length > 0 && "hidden",
+              )}
+            >
               <input
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
@@ -457,6 +553,34 @@ export default function PaymentPage() {
                 className={addrField}
               />
             </div>
+
+            {(addingNew || addresses.length === 0) && user?.phone && (
+              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+                <label className="flex cursor-pointer items-center gap-2.5 text-sm text-ink-soft">
+                  <input
+                    type="checkbox"
+                    checked={saveAddress}
+                    onChange={(e) => setSaveAddress(e.target.checked)}
+                    className="h-4 w-4 accent-ink"
+                  />
+                  Save this address for future orders
+                </label>
+
+                {addresses.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const back =
+                        addresses.find((a) => a.isDefault) ?? addresses[0];
+                      if (back) applyAddress(back);
+                    }}
+                    className="text-[0.78rem] uppercase tracking-[0.14em] text-stone underline-offset-4 hover:text-ink hover:underline"
+                  >
+                    Use a saved address
+                  </button>
+                )}
+              </div>
+            )}
           </section>
 
           <section className="mt-8">
