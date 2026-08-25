@@ -249,3 +249,10 @@ export const ICON_MAP = {
   support: HeadsetIcon,
   secure: ShieldIcon,
 } as const;
+
+export const PencilIcon = (p: IconProps) => (
+  <svg {...base} {...p}>
+    <path d="M4 20h4l10-10a2.83 2.83 0 1 0-4-4L4 16v4Z" />
+    <path d="M13.5 6.5l4 4" />
+  </svg>
+);

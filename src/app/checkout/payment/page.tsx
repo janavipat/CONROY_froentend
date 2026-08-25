@@ -17,7 +17,12 @@ import { applyOffer, type ApplyOfferResult } from "@/services/offers";
 import { useToast } from "@/components/ui/Toast";
 import { formatCurrency } from "@/utils/format";
 import { fetchSiteSettings, isOn } from "@/services/settings";
-import { fetchAddresses, createAddress, type Address } from "@/services/addresses";
+import {
+  fetchAddresses,
+  createAddress,
+  updateAddress,
+  type Address,
+} from "@/services/addresses";
 import { SavedAddresses } from "@/components/checkout/SavedAddresses";
 import { Container } from "@/components/ui/Container";
 import { BackButton } from "@/components/ui/BackButton";
@@ -87,6 +92,10 @@ export default function PaymentPage() {
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [addingNew, setAddingNew] = useState(false);
   const [saveAddress, setSaveAddress] = useState(true);
+  /** The saved address being edited in place, if any. */
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
+  const [savingAddress, setSavingAddress] = useState(false);
+  const [addressError, setAddressError] = useState("");
 
   // Delivery address
   const [fullName, setFullName] = useState("");
@@ -239,10 +248,8 @@ export default function PaymentPage() {
     };
   }
 
-  /** Copies a saved address into the delivery form, which the order reads. */
-  function applyAddress(a: Address) {
-    setSelectedAddressId(a.id);
-    setAddingNew(false);
+  /** Fills the delivery form from an address, without changing what is shown. */
+  function applyAddressFields(a: Address) {
     setFullName(a.fullName);
     setPhone(a.phone.replace(/\D/g, "").slice(-10));
     setLine1(a.line1);
@@ -252,9 +259,78 @@ export default function PaymentPage() {
     setPincode(a.pincode);
   }
 
+  /** Selects a saved address for this order and returns to the card list. */
+  function applyAddress(a: Address) {
+    setSelectedAddressId(a.id);
+    setAddingNew(false);
+    setEditingAddressId(null);
+    applyAddressFields(a);
+  }
+
+  /** Opens the delivery form on a saved address, to update that record. */
+  function startEditAddress(a: Address) {
+    setEditingAddressId(a.id);
+    setAddingNew(true);
+    setAddressError("");
+    applyAddressFields(a);
+  }
+
+  /** Abandons an edit or a new entry and returns to the saved cards. */
+  function cancelAddressEdit() {
+    setEditingAddressId(null);
+    setAddressError("");
+    const back = addresses.find((a) => a.id === selectedAddressId) ?? addresses[0];
+    if (back) applyAddress(back);
+    else setAddingNew(true); // nothing saved to fall back to
+  }
+
+  /**
+   * Writes an edit back to the address book. PATCH on the same record, so the
+   * customer ends up with one corrected address rather than two similar ones —
+   * and because orders carry their own copy of the address, nothing already
+   * placed is altered by this.
+   */
+  async function saveAddressEdit() {
+    if (!user?.phone || !editingAddressId) return;
+    const problem = validate();
+    if (problem) {
+      setAddressError(problem);
+      toast(problem, "error");
+      return;
+    }
+    setSavingAddress(true);
+    setAddressError("");
+    try {
+      await updateAddress(user.phone, editingAddressId, {
+        fullName: fullName.trim(),
+        phone: `+91${phone.replace(/\D/g, "").slice(-10)}`,
+        line1: line1.trim(),
+        line2: line2.trim() || undefined,
+        city: city.trim(),
+        state: stateName.trim(),
+        pincode: pincode.trim(),
+      });
+      const fresh = await fetchAddresses(user.phone);
+      setAddresses(fresh);
+      setEditingAddressId(null);
+      const updated = fresh.find((a) => a.id === editingAddressId);
+      if (updated) applyAddress(updated);
+      else setAddingNew(false);
+      toast("Address updated.", "success");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Could not update this address.";
+      setAddressError(message);
+      toast(message, "error");
+    } finally {
+      setSavingAddress(false);
+    }
+  }
+
   /** Clears the form so a new address is entered rather than edited over. */
   function startNewAddress() {
     setSelectedAddressId(null);
+    setEditingAddressId(null);
+    setAddressError("");
     setAddingNew(true);
     setSaveAddress(true);
     setFullName("");
@@ -490,6 +566,7 @@ export default function PaymentPage() {
                 addresses={addresses}
                 selectedId={selectedAddressId}
                 onSelect={applyAddress}
+                onEdit={startEditAddress}
                 onAddNew={startNewAddress}
                 busy={processing}
               />
@@ -554,7 +631,36 @@ export default function PaymentPage() {
               />
             </div>
 
-            {(addingNew || addresses.length === 0) && user?.phone && (
+            {addressError && (
+              <p className="mt-3 border border-accent/30 bg-accent/5 px-4 py-3 text-sm text-accent">
+                {addressError}
+              </p>
+            )}
+
+            {/* Editing a saved record: the actions commit or abandon it. */}
+            {editingAddressId && (
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={saveAddressEdit}
+                  disabled={savingAddress}
+                  className="flex h-12 items-center justify-center bg-ink px-6 text-[0.78rem] font-medium uppercase tracking-[0.14em] text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+                >
+                  {savingAddress ? "Saving…" : "Save changes"}
+                </button>
+                <button
+                  type="button"
+                  onClick={cancelAddressEdit}
+                  disabled={savingAddress}
+                  className="text-[0.78rem] uppercase tracking-[0.14em] text-stone underline-offset-4 transition-colors hover:text-ink hover:underline disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+
+            {/* A brand-new address is offered for saving instead. */}
+            {!editingAddressId && (addingNew || addresses.length === 0) && user?.phone && (
               <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
                 <label className="flex cursor-pointer items-center gap-2.5 text-sm text-ink-soft">
                   <input
@@ -569,12 +675,8 @@ export default function PaymentPage() {
                 {addresses.length > 0 && (
                   <button
                     type="button"
-                    onClick={() => {
-                      const back =
-                        addresses.find((a) => a.isDefault) ?? addresses[0];
-                      if (back) applyAddress(back);
-                    }}
-                    className="text-[0.78rem] uppercase tracking-[0.14em] text-stone underline-offset-4 hover:text-ink hover:underline"
+                    onClick={cancelAddressEdit}
+                    className="text-[0.78rem] uppercase tracking-[0.14em] text-stone underline-offset-4 transition-colors hover:text-ink hover:underline"
                   >
                     Use a saved address
                   </button>
