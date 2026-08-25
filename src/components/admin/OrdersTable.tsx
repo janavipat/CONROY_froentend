@@ -236,7 +236,9 @@ export function OrdersTable() {
     return {
       orders: orders.length,
       items: orders.reduce((s, o) => s + itemCount(o), 0),
-      sales: live.reduce((s, o) => s + o.subtotal, 0),
+      // What the store actually billed. Summing the gross subtotal counted
+      // every discount as revenue the customer never paid.
+      sales: live.reduce((s, o) => s + o.total, 0),
       paid: orders.filter((o) => o.status === "paid").length,
     };
   }, [orders]);
@@ -446,7 +448,7 @@ export function OrdersTable() {
                         <span className="text-ink">{o.customerName || o.email}</span>
                       </td>
                       <td className="whitespace-nowrap px-3 py-3 font-medium text-ink">
-                        {formatCurrency(o.subtotal, o.currency)}
+                        {formatCurrency(o.total, o.currency)}
                       </td>
                       <td className="px-3 py-3">
                         <Badge status={o.status} />
@@ -560,7 +562,7 @@ export function OrdersTable() {
                 #{pending.id.slice(0, 8).toUpperCase()} · {pending.customerName || pending.email}
               </span>
               <span className="block truncate text-[0.75rem] text-[#737373]">
-                {formatCurrency(pending.subtotal, pending.currency)} · {itemCount(pending)} item
+                {formatCurrency(pending.total, pending.currency)} · {itemCount(pending)} item
                 {itemCount(pending) === 1 ? "" : "s"} · {methodLabel(pending.paymentMethod)}
               </span>
             </span>
@@ -584,7 +586,7 @@ export function OrdersTable() {
                 #{purging.id.slice(0, 8).toUpperCase()} · {purging.customerName || purging.email}
               </span>
               <span className="block truncate text-[0.75rem] text-[#737373]">
-                {formatCurrency(purging.subtotal, purging.currency)} · {itemCount(purging)} item
+                {formatCurrency(purging.total, purging.currency)} · {itemCount(purging)} item
                 {itemCount(purging) === 1 ? "" : "s"} · {methodLabel(purging.paymentMethod)}
               </span>
             </span>
