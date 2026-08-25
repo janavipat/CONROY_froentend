@@ -343,12 +343,32 @@ export default function PaymentPage() {
   }
 
   /**
+   * Compares the parts a courier actually delivers to, ignoring the parts a
+   * customer types inconsistently — case, spacing, and how the phone is
+   * written. "1 Example St" typed twice is one address, not two.
+   */
+  function sameAddress(a: Address): boolean {
+    const norm = (v: string) => v.trim().toLowerCase().replace(/\s+/g, " ");
+    const digits = (v: string) => v.replace(/\D/g, "").slice(-10);
+    return (
+      norm(a.line1) === norm(line1) &&
+      norm(a.line2 ?? "") === norm(line2) &&
+      norm(a.city) === norm(city) &&
+      norm(a.state) === norm(stateName) &&
+      norm(a.pincode) === norm(pincode) &&
+      digits(a.phone) === digits(phone)
+    );
+  }
+
+  /**
    * Adds the freshly typed address to the book, once the order it was entered
-   * for exists. Only when the customer asked for it and only for a genuinely
-   * new address — selecting a saved one must never create a second copy.
+   * for exists. Only when the customer asked for it, only for a genuinely new
+   * address, and only when it is not one they already have — otherwise placing
+   * a second order from the same place would fill the book with copies.
    */
   async function rememberAddressIfAsked() {
     if (!user?.phone || !addingNew || !saveAddress) return;
+    if (addresses.some(sameAddress)) return;
     try {
       await createAddress(user.phone, {
         fullName: fullName.trim(),
