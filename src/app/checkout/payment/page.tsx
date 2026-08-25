@@ -326,6 +326,58 @@ export default function PaymentPage() {
     }
   }
 
+  /**
+   * Files the typed address in the address book, on its own.
+   *
+   * Deliberately separate from placing the order: saving used to happen only
+   * after a purchase, so a customer who wanted to keep an address for next time
+   * had no way to say so until it was too late to see that it worked.
+   */
+  async function saveNewAddress() {
+    if (!user?.phone || savingAddress) return;
+
+    const problem = validate();
+    if (problem) {
+      setAddressError(problem);
+      toast(problem, "error");
+      return;
+    }
+
+    // Already in the book: select that one rather than filing a second copy.
+    const existing = addresses.find(sameAddress);
+    if (existing) {
+      applyAddress(existing);
+      toast("This address is already saved.", "info");
+      return;
+    }
+
+    setSavingAddress(true);
+    setAddressError("");
+    try {
+      const saved = await createAddress(user.phone, {
+        fullName: fullName.trim(),
+        phone: `+91${phone.replace(/\D/g, "").slice(-10)}`,
+        line1: line1.trim(),
+        line2: line2.trim() || undefined,
+        city: city.trim(),
+        state: stateName.trim(),
+        pincode: pincode.trim(),
+      });
+      const fresh = await fetchAddresses(user.phone);
+      setAddresses(fresh);
+      // Select what was just saved, so the order uses the address the customer
+      // was looking at when they pressed the button.
+      applyAddress(fresh.find((a) => a.id === saved.id) ?? saved);
+      toast("Address saved.", "success");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Could not save this address.";
+      setAddressError(message);
+      toast(message, "error");
+    } finally {
+      setSavingAddress(false);
+    }
+  }
+
   /** Clears the form so a new address is entered rather than edited over. */
   function startNewAddress() {
     setSelectedAddressId(null);
@@ -702,6 +754,20 @@ export default function PaymentPage() {
                   </button>
                 )}
               </div>
+            )}
+
+            {/* Saving the address is its own action, so a customer can keep it
+                for next time without having to place the order to find out.
+                Full width on mobile, where a narrow control is easy to miss. */}
+            {!editingAddressId && (addingNew || addresses.length === 0) && saveAddress && user?.phone && (
+              <button
+                type="button"
+                onClick={saveNewAddress}
+                disabled={savingAddress}
+                className="mt-4 flex h-12 w-full items-center justify-center border border-ink px-6 text-[0.78rem] font-medium uppercase tracking-[0.14em] text-ink transition-colors hover:bg-ink hover:text-white disabled:opacity-50 sm:w-auto"
+              >
+                {savingAddress ? "Saving…" : "Save address"}
+              </button>
             )}
           </section>
 
