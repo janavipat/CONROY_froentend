@@ -3,6 +3,7 @@ import { Bodoni_Moda, Inter } from "next/font/google";
 import "./globals.css";
 import { SITE } from "@/lib/site";
 import { StoreChrome } from "@/components/layout/StoreChrome";
+import { ServiceWorkerRegistration } from "@/components/pwa/ServiceWorkerRegistration";
 import { Providers } from "./providers";
 
 // Display — Bodoni Moda: the didone the fashion press is set in. Extreme
@@ -176,6 +177,9 @@ export default function RootLayout({
         <Providers>
           <StoreChrome>{children}</StoreChrome>
         </Providers>
+        {/* Renders nothing; its only job is registering the worker whose fetch
+            handler Chrome looks for before offering to install the app. */}
+        <ServiceWorkerRegistration />
       </body>
     </html>
   );

@@ -7,6 +7,15 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: SITE.name,
     description: SITE.description,
     start_url: "/",
+    /*
+     * Both stated rather than inferred. `id` is the app's stable identity —
+     * without it the identity is derived from start_url, so changing that later
+     * would read as a different app and install a second copy alongside the
+     * one already on a customer's home screen. `scope` keeps every in-app
+     * navigation inside the installed window.
+     */
+    id: "/",
+    scope: "/",
     display: "standalone",
     background_color: "#f4f1ea",
     theme_color: "#15243c",
