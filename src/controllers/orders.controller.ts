@@ -5,6 +5,7 @@ import { cancelOrderSchema, CANCELLABLE_STATUSES } from "../validators/schemas.j
 import { createOrderSchema } from "../validators/schemas.js";
 import { resolveCart, persistOrder } from "../lib/pricing.js";
 import { computeDiscount } from "../lib/offers.js";
+import { notifyOrderEvent } from "../lib/orderNotifications.js";
 
 /**
  * POST /api/orders — creates an order; prices are resolved server-side.
@@ -119,6 +120,16 @@ export async function cancelOrder(req: Request, res: Response) {
   }
 
   await restoreInventory((order.items as OrderItemRow[]) ?? []);
+
+  // Confirm the cancellation on WhatsApp, and — for a prepaid order, where
+  // money actually left the customer's account — follow it with the refund
+  // notice. COD collected nothing, so refundStatus is "None" and no refund
+  // message is sent. Neither is awaited: the cancellation is already committed
+  // and the shopper's response must not wait on Meta.
+  void notifyOrderEvent("order_cancelled", updated);
+  if (refundStatus === "Initiated") {
+    void notifyOrderEvent("refund_initiated", updated);
+  }
 
   res.json({ success: true, ok: true, message: "Order cancelled.", order: updated });
 }

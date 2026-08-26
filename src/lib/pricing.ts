@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "./supabase.js";
 import { ApiError } from "../middleware/errors.js";
 import { enqueueCreateShipmentJob, fireShipmentJobNow } from "../services/shipping/jobs.js";
+import { notifyOrderEvent } from "./orderNotifications.js";
 
 /**
  * The saving on a product, as a whole percentage of its original price.
@@ -211,6 +212,19 @@ export async function persistOrder(params: {
   if (params.status === "paid" || params.status === "cod_pending") {
     await enqueueCreateShipmentJob(order.id as string);
     void fireShipmentJobNow(order.id as string);
+
+    // Tell the customer their order is in. Not awaited, for the same reason as
+    // the shipment job: checkout must never wait on a third party. The row is
+    // passed in rather than the id so this doesn't re-read the order — the
+    // discount is only on `order` after the best-effort update above.
+    void notifyOrderEvent("order_confirmed", {
+      id: order.id as string,
+      phone: params.phone ?? null,
+      full_name: params.fullName ?? null,
+      subtotal: cart.subtotal,
+      discount,
+      currency: cart.currency,
+    });
   }
 
   return { ...order, ...shipFields, discount, offer_code: params.offerCode ?? null, items: cart.lineItems };
