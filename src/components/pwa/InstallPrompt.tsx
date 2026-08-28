@@ -2,6 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
+import {
+  QUIET_PATHS,
+  forgetDismissal,
+  isInstalled,
+  recentlyDismissed,
+  rememberDismissal,
+} from "@/lib/pwa/install-state";
 
 /**
  * The offer to install CONROY as an app.
@@ -24,39 +31,6 @@ interface BeforeInstallPromptEvent extends Event {
 
 const DISMISSED_KEY = "conroy.installPrompt.dismissedAt";
 
-/**
- * How long "maybe later" lasts. Long enough that it reads as respected rather
- * than as a banner that keeps coming back, short enough that someone who
- * changes their mind is offered it again.
- */
-const SNOOZE_MS = 30 * 24 * 60 * 60 * 1000;
-
-/** Nowhere near a purchase or the admin: neither wants an interruption. */
-const QUIET_PATHS = ["/admin", "/checkout"];
-
-function recentlyDismissed(): boolean {
-  try {
-    const at = Number(window.localStorage.getItem(DISMISSED_KEY));
-    return Number.isFinite(at) && at > 0 && Date.now() - at < SNOOZE_MS;
-  } catch {
-    // Private browsing or blocked storage: treat as not dismissed rather than
-    // suppressing the offer entirely.
-    return false;
-  }
-}
-
-function alreadyInstalled(): boolean {
-  try {
-    return (
-      window.matchMedia("(display-mode: standalone)").matches ||
-      // iOS marks an installed web app here instead.
-      (window.navigator as Navigator & { standalone?: boolean }).standalone === true
-    );
-  } catch {
-    return false;
-  }
-}
-
 export function InstallPrompt() {
   const [installEvent, setInstallEvent] = useState<BeforeInstallPromptEvent | null>(null);
   const [busy, setBusy] = useState(false);
@@ -67,18 +41,14 @@ export function InstallPrompt() {
       // Held back so the browser's own mini-infobar doesn't appear alongside
       // this one; the native dialog is opened from the button below instead.
       event.preventDefault();
-      if (alreadyInstalled() || recentlyDismissed()) return;
+      if (isInstalled() || recentlyDismissed(DISMISSED_KEY)) return;
       setInstallEvent(event as BeforeInstallPromptEvent);
     };
 
     const onInstalled = () => {
       setInstallEvent(null);
-      try {
-        // Nothing left to offer, and the snooze would otherwise linger.
-        window.localStorage.removeItem(DISMISSED_KEY);
-      } catch {
-        /* ignore */
-      }
+      // Nothing left to offer, and the snooze would otherwise linger.
+      forgetDismissal(DISMISSED_KEY);
     };
 
     window.addEventListener("beforeinstallprompt", onBeforeInstallPrompt);
@@ -91,11 +61,7 @@ export function InstallPrompt() {
 
   const dismiss = useCallback(() => {
     setInstallEvent(null);
-    try {
-      window.localStorage.setItem(DISMISSED_KEY, String(Date.now()));
-    } catch {
-      /* ignore — it simply reappears next visit */
-    }
+    rememberDismissal(DISMISSED_KEY);
   }, []);
 
   const install = useCallback(async () => {

@@ -5,6 +5,7 @@ import { SITE } from "@/lib/site";
 import { StoreChrome } from "@/components/layout/StoreChrome";
 import { ServiceWorkerRegistration } from "@/components/pwa/ServiceWorkerRegistration";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+import { IosInstallGuide } from "@/components/pwa/IosInstallGuide";
 import { Providers } from "./providers";
 
 // Display — Bodoni Moda: the didone the fashion press is set in. Extreme
@@ -137,6 +138,18 @@ export const metadata: Metadata = {
     shortcut: ["/favicon.ico"],
   },
   manifest: "/manifest.webmanifest",
+  /*
+   * iOS reads none of the manifest for launch behaviour. Without `capable`,
+   * tapping the home-screen icon reopens Safari chrome and the app is just a
+   * bookmark; `title` is what appears under the icon, which otherwise falls
+   * back to the full page title.
+   */
+  appleWebApp: {
+    capable: true,
+    title: SITE.name,
+    // Keeps the status bar legible against the light storefront.
+    statusBarStyle: "default",
+  },
   openGraph: {
     type: "website",
     siteName: SITE.name,
@@ -183,6 +196,8 @@ export default function RootLayout({
         <ServiceWorkerRegistration />
         {/* Renders nothing until the browser says the site can be installed. */}
         <InstallPrompt />
+        {/* Safari cannot be prompted, so iPhone and iPad get instructions. */}
+        <IosInstallGuide />
       </body>
     </html>
   );
