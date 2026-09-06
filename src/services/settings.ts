@@ -48,7 +48,10 @@ export function settingValue(s: SettingsMap, key: string, fallback = ""): string
  */
 export async function fetchSiteSettings(): Promise<SettingsMap> {
   try {
-    const res = await fetch(`${BASE}/settings`, { cache: "no-store" });
+    // Store settings change rarely and are read on every page render, so they
+    // are cached for the same short window as the catalogue rather than
+    // queried per visitor.
+    const res = await fetch(`${BASE}/settings`, { next: { revalidate: 60 } });
     if (!res.ok) return {};
     const json = (await res.json()) as { data?: SettingsMap };
     return json.data ?? {};

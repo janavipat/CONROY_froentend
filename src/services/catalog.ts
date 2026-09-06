@@ -52,11 +52,26 @@ function normalizeProduct(raw: Record<string, unknown>): Product {
   };
 }
 
+/**
+ * How long a catalogue response is reused before being fetched again.
+ *
+ * Every pageview used to be its own request to the API and its own query
+ * against Postgres, so database load scaled one-to-one with traffic and a busy
+ * hour hit the same rows thousands of times for an answer that had not changed.
+ * Caching turns that into one fetch per window, shared by every visitor.
+ *
+ * A minute is short enough that an admin editing a price sees it almost at
+ * once — the property the previous no-store fetch was protecting — and long
+ * enough to absorb a spike.
+ */
+const CATALOG_TTL_SECONDS = 60;
+
 async function apiGet<T>(path: string): Promise<T | null> {
   if (!hasRemoteApi()) return null;
   try {
-    // Always fetch fresh so admin edits reflect immediately (catalog is small).
-    const res = await fetch(`${getApiBase()}${path}`, { cache: "no-store" });
+    const res = await fetch(`${getApiBase()}${path}`, {
+      next: { revalidate: CATALOG_TTL_SECONDS },
+    });
     if (!res.ok) return null;
     const json = (await res.json()) as { ok: boolean; data: T };
     return json.ok ? json.data : null;
