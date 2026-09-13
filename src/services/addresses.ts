@@ -40,18 +40,16 @@ function asError(err: unknown, fallback: string): Error {
 /**
  * A customer's saved delivery addresses, default first.
  *
- * Returns an empty list rather than throwing: checkout must still work when the
- * address book is unreachable, falling back to the blank form.
+ * Throws when the request fails. Answering an empty list on failure meant
+ * checkout concluded the customer had no saved address and asked them to type
+ * one they had already given us — callers now decide what a failure should
+ * look like, which is not the same as deciding they own nothing.
  */
 export async function fetchAddresses(phone: string): Promise<Address[]> {
-  try {
-    const { data } = await api.get<{ ok: boolean; data: Address[] }>("/addresses", {
-      params: { phone },
-    });
-    return data.data ?? [];
-  } catch {
-    return [];
-  }
+  const { data } = await api.get<{ ok: boolean; data: Address[] }>("/addresses", {
+    params: { phone },
+  });
+  return data.data ?? [];
 }
 
 /** Adds one address to the book. The customer's first becomes their default. */

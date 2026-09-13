@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/Button";
 import { ChevronLeftIcon, TruckIcon, CheckIcon, CloseIcon } from "@/components/ui/Icons";
 import { cn } from "@/utils/cn";
 import { Loader } from "@/components/ui/Loader";
+import { Skeleton, SkeletonGroup } from "@/components/ui/Skeleton";
 
 const field =
   "h-12 w-full rounded-md border border-line bg-white px-3 text-[15px] text-ink placeholder:text-stone focus:border-ink focus:outline-none";
@@ -33,13 +34,45 @@ const EMPTY = {
   pincode: "",
 };
 
+/** Mirrors the saved-address card, so the list does not jump when it loads. */
+function AddressCardSkeleton() {
+  return (
+    <div className="rounded-media border border-line bg-white p-5">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 space-y-2">
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-3 w-24" />
+        </div>
+        <Skeleton className="h-5 w-16 rounded-full" />
+      </div>
+      <div className="mt-4 space-y-2">
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-4/5" />
+        <Skeleton className="h-3 w-2/5" />
+      </div>
+    </div>
+  );
+}
+
 export function AddressBook() {
   const { user, initializing } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
 
   const [list, setList] = useState<Address[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [attempt, setAttempt] = useState(0);
+  /*
+   * Kept apart from "no saved addresses". A failed request used to look
+   * identical to an empty book, which is the version that costs a customer
+   * their address at checkout.
+   *
+   * The read in flight is identified rather than tracked with a flag, so both
+   * "still waiting" and "that one failed" are read off the answer on hand.
+   */
+  const request = `${user?.phone ?? ""}#${attempt}`;
+  const [answer, setAnswer] = useState<{ request: string; failed: boolean } | null>(null);
+  const loading = answer?.request !== request;
+  const loadError = answer?.request === request && answer.failed;
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ ...EMPTY });
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -51,16 +84,27 @@ export function AddressBook() {
     if (!initializing && !user) router.replace("/account/login");
   }, [initializing, user, router]);
 
+  /** Asks for the book again; the effect below does the reading. */
+  const retryLoad = () => setAttempt((n) => n + 1);
+
   useEffect(() => {
-    if (!user?.phone) return;
+    const phone = user?.phone;
+    if (!phone) return;
     let active = true;
-    fetchAddresses(user.phone)
-      .then((a) => active && (setList(a), setLoading(false)))
-      .catch(() => active && setLoading(false));
+    fetchAddresses(phone)
+      .then((a) => {
+        if (!active) return;
+        setList(a);
+        setAnswer({ request, failed: false });
+      })
+      .catch(() => {
+        if (!active) return;
+        setAnswer({ request, failed: true });
+      });
     return () => {
       active = false;
     };
-  }, [user?.phone]);
+  }, [user?.phone, request]);
 
   function validate(): string | null {
     if (!form.fullName.trim()) return "Please enter the recipient's name.";
@@ -95,7 +139,21 @@ export function AddressBook() {
     }
   }
 
-  const reload = async () => (user?.phone ? fetchAddresses(user.phone) : []);
+  /**
+   * Re-reads the book after a write that has already succeeded.
+   *
+   * A failed re-read is not a failed save — the change is on the server either
+   * way — so it falls back to what the write itself told us rather than
+   * reporting "couldn't save" and inviting the customer to enter it twice.
+   */
+  const reload = async (fallback: Address[]) => {
+    if (!user?.phone) return fallback;
+    try {
+      return await fetchAddresses(user.phone);
+    } catch {
+      return fallback;
+    }
+  };
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -111,12 +169,12 @@ export function AddressBook() {
     // finishing checkout twice cannot fill the book with duplicates.
     const ok = editingId
       ? await run(async () => {
-          await updateAddress(user!.phone!, editingId, form);
-          return reload();
+          const updated = await updateAddress(user!.phone!, editingId, form);
+          return reload(list.map((a) => (a.id === editingId ? updated : a)));
         }, "Address updated.")
       : await run(async () => {
-          await createAddress(user!.phone!, form);
-          return reload();
+          const created = await createAddress(user!.phone!, form);
+          return reload([...list, created]);
         }, "Address saved.");
     if (!ok) return;
 
@@ -270,8 +328,17 @@ export function AddressBook() {
 
       {/* List */}
       {loading ? (
-        <div className="mt-6 grid place-items-center rounded-media border border-line bg-white py-16">
-          <Loader size="sm" label="" />
+        <SkeletonGroup label="Loading your addresses" className="mt-6 grid gap-4 sm:grid-cols-2">
+          {[0, 1].map((i) => (
+            <AddressCardSkeleton key={i} />
+          ))}
+        </SkeletonGroup>
+      ) : loadError ? (
+        <div className="mt-6 flex flex-col items-center gap-3 rounded-media border border-line bg-white py-16 text-center">
+          <p className="text-stone">Unable to load your addresses.</p>
+          <Button onClick={retryLoad} variant="outline" size="sm">
+            Try again
+          </Button>
         </div>
       ) : list.length === 0 && !showForm ? (
         <div className="mt-6 flex flex-col items-center gap-3 rounded-media border border-line bg-white py-16 text-center">

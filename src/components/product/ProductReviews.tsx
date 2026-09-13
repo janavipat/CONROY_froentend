@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { StarIcon } from "@/components/ui/Icons";
 import { cn } from "@/utils/cn";
 import { ReviewForm } from "./ReviewForm";
-import { Loader } from "@/components/ui/Loader";
+import { Skeleton, SkeletonGroup } from "@/components/ui/Skeleton";
 
 function formatDate(iso: string): string {
   try {
@@ -37,6 +37,26 @@ function Stars({ value, className }: { value: number; className?: string }) {
         <StarIcon key={n} className={cn("h-4 w-4", value >= n ? "text-amber-500" : "text-line")} />
       ))}
     </span>
+  );
+}
+
+/**
+ * One review's shape while it loads: rating badge and title, two lines of
+ * body, then the byline — so the list holds its height instead of snapping.
+ */
+function ReviewRowSkeleton() {
+  return (
+    <div className="py-6">
+      <div className="flex items-center gap-3">
+        <Skeleton className="h-6 w-12" />
+        <Skeleton className="h-4 w-40" />
+      </div>
+      <div className="mt-3 space-y-2">
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-4/5" />
+      </div>
+      <Skeleton className="mt-4 h-3 w-48" />
+    </div>
   );
 }
 
@@ -148,9 +168,11 @@ export function ProductReviews({ handle }: { handle: string }) {
         {/* Review list */}
         <div className="mt-8">
           {loading ? (
-            <div className="grid place-items-center py-10">
-              <Loader size="sm" label="" />
-            </div>
+            <SkeletonGroup label="Loading reviews" className="divide-y divide-line">
+              {[0, 1, 2].map((i) => (
+                <ReviewRowSkeleton key={i} />
+              ))}
+            </SkeletonGroup>
           ) : reviews.length === 0 ? (
             <p className="py-8 text-center text-stone">
               No reviews yet. Be the first to review this product.

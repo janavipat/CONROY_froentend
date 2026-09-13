@@ -9,7 +9,7 @@ import { ReturnDialog } from "@/components/account/ReturnDialog";
 import { CancelOrderDialog } from "@/components/account/CancelOrderDialog";
 import { formatCurrency } from "@/utils/format";
 import { Button } from "@/components/ui/Button";
-import { Loader } from "@/components/ui/Loader";
+import { Skeleton, SkeletonGroup } from "@/components/ui/Skeleton";
 import { useToast } from "@/components/ui/Toast";
 import { BagIcon, ReturnIcon, TruckIcon, ShieldIcon, CloseIcon } from "@/components/ui/Icons";
 import { cn } from "@/utils/cn";
@@ -32,29 +32,91 @@ const ACTION_BASE =
 const PRIMARY_ACTION = `${ACTION_BASE} border-ink/25 text-ink hover:border-ink hover:bg-ink/[0.04]`;
 const DANGER_ACTION = `${ACTION_BASE} border-[#F0C9C9] text-[#C23B3B] hover:border-[#DC2626]/40 hover:bg-[#FEF2F2]`;
 
+/**
+ * Mirrors the order card's shape — header strip, two item rows, footer — so the
+ * real content lands in the space already reserved for it.
+ */
+function OrderCardSkeleton() {
+  return (
+    <div className="overflow-hidden rounded-media border border-line bg-white shadow-sm">
+      <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3 sm:px-5">
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-28" />
+          <Skeleton className="h-3 w-20" />
+        </div>
+        <Skeleton className="h-5 w-20 rounded-full" />
+      </div>
+
+      <div className="space-y-4 px-4 py-4 sm:px-5">
+        {[0, 1].map((i) => (
+          <div key={i} className="flex items-center gap-3">
+            <Skeleton className="h-14 w-12 shrink-0" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <Skeleton className="h-3 w-2/3" />
+              <Skeleton className="h-3 w-1/3" />
+            </div>
+            <Skeleton className="h-3 w-14 shrink-0" />
+          </div>
+        ))}
+      </div>
+
+      <div className="flex items-center justify-between border-t border-line px-4 py-3 sm:px-5">
+        <Skeleton className="h-3 w-24" />
+        <Skeleton className="h-3 w-16" />
+      </div>
+    </div>
+  );
+}
+
 export function MyOrders({ phone }: { phone: string }) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [returns, setReturns] = useState<ReturnRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  /*
+   * Separate from "no orders". The fetch used to swallow failures into an empty
+   * array, so a dropped connection rendered "you haven't placed any orders yet"
+   * — telling customers their orders did not exist.
+   */
+  const [loadError, setLoadError] = useState(false);
   const [returnFor, setReturnFor] = useState<Order | null>(null);
   const [cancelFor, setCancelFor] = useState<Order | null>(null);
   const { toast } = useToast();
 
   const load = useCallback(async () => {
-    const [o, r] = await Promise.all([fetchMyOrders(phone), fetchMyReturns(phone)]);
-    setOrders(o);
-    setReturns(r);
-    setLoading(false);
+    try {
+      const [o, r] = await Promise.all([fetchMyOrders(phone), fetchMyReturns(phone)]);
+      setOrders(o);
+      setReturns(r);
+      setLoadError(false);
+    } catch {
+      setLoadError(true);
+    } finally {
+      setLoading(false);
+    }
   }, [phone]);
+
+  /** Retry after a failure — the same request, from a clean loading state. */
+  const retry = useCallback(() => {
+    setLoading(true);
+    setLoadError(false);
+    void load();
+  }, [load]);
 
   useEffect(() => {
     let active = true;
     async function run() {
-      const [o, r] = await Promise.all([fetchMyOrders(phone), fetchMyReturns(phone)]);
-      if (!active) return;
-      setOrders(o);
-      setReturns(r);
-      setLoading(false);
+      try {
+        const [o, r] = await Promise.all([fetchMyOrders(phone), fetchMyReturns(phone)]);
+        if (!active) return;
+        setOrders(o);
+        setReturns(r);
+        setLoadError(false);
+      } catch {
+        if (!active) return;
+        setLoadError(true);
+      } finally {
+        if (active) setLoading(false);
+      }
     }
     void run();
     return () => {
@@ -87,8 +149,17 @@ export function MyOrders({ phone }: { phone: string }) {
       )}
 
       {loading ? (
-        <div className="mt-4 grid place-items-center rounded-media border border-line bg-white py-14">
-          <Loader label="Loading orders" />
+        <SkeletonGroup label="Loading your orders" className="mt-4 space-y-5">
+          {[0, 1].map((i) => (
+            <OrderCardSkeleton key={i} />
+          ))}
+        </SkeletonGroup>
+      ) : loadError ? (
+        <div className="mt-4 flex flex-col items-center gap-3 rounded-media border border-line bg-white py-14 text-center">
+          <p className="text-ink-soft">Unable to load your orders.</p>
+          <Button onClick={retry} variant="outline" size="sm">
+            Try again
+          </Button>
         </div>
       ) : orders.length === 0 ? (
         <div className="mt-4 flex flex-col items-center gap-3 rounded-media border border-line bg-white py-14 text-center">

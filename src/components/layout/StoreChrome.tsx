@@ -6,6 +6,7 @@ import { MaintenanceBanner } from "./MaintenanceBanner";
 import { Header } from "./Header";
 import { Footer } from "./Footer";
 import { ScrollToTop } from "./ScrollToTop";
+import { GlobalRouteProgress } from "./GlobalRouteProgress";
 import { OfferPopup } from "@/components/offers/OfferPopup";
 import { GuestOfferPopup } from "@/components/offers/GuestOfferPopup";
 import { ChatWidget } from "@/components/chat/ChatWidget";
@@ -27,6 +28,9 @@ export function StoreChrome({ children }: { children: React.ReactNode }) {
   return (
     <>
       <ScrollToTop />
+      {/* Route transitions get the hairline bar on every storefront page, not
+          only the handful of routes that happen to have a loading.tsx. */}
+      <GlobalRouteProgress />
       <VisitorBeacon />
       <LocationConsent />
       <MaintenanceBanner />

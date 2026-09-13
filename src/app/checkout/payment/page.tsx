@@ -28,6 +28,7 @@ import { Container } from "@/components/ui/Container";
 import { BackButton } from "@/components/ui/BackButton";
 import { withRedirect } from "@/lib/auth/redirect";
 import { Button } from "@/components/ui/Button";
+import { Loader } from "@/components/ui/Loader";
 import { CheckIcon, ShieldIcon, TruckIcon } from "@/components/ui/Icons";
 import { cn } from "@/utils/cn";
 
@@ -91,6 +92,8 @@ export default function PaymentPage() {
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
   const [addingNew, setAddingNew] = useState(false);
+  /** True when the address book could not be read — not the same as empty. */
+  const [addressesUnavailable, setAddressesUnavailable] = useState(false);
   const [saveAddress, setSaveAddress] = useState(true);
   /** The saved address being edited in place, if any. */
   const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
@@ -133,24 +136,36 @@ export default function PaymentPage() {
   useEffect(() => {
     if (!user?.phone) return;
     let active = true;
-    void fetchAddresses(user.phone).then((saved) => {
-      if (!active) return;
-      setAddresses(saved);
-      const def = saved.find((a) => a.isDefault) ?? saved[0];
-      if (!def) {
-        // Nothing saved yet: the form is the only thing to show.
+    void fetchAddresses(user.phone)
+      .then((saved) => {
+        if (!active) return;
+        setAddresses(saved);
+        const def = saved.find((a) => a.isDefault) ?? saved[0];
+        if (!def) {
+          // Nothing saved yet: the form is the only thing to show.
+          setAddingNew(true);
+          return;
+        }
+        setSelectedAddressId(def.id);
+        setFullName((v) => v || def.fullName);
+        setPhone((v) => v || def.phone);
+        setLine1((v) => v || def.line1);
+        setLine2((v) => v || def.line2);
+        setCity((v) => v || def.city);
+        setStateName((v) => v || def.state);
+        setPincode((v) => v || def.pincode);
+      })
+      .catch(() => {
+        /*
+         * The book could not be read. The form is still the only thing that can
+         * be shown, but this is NOT the same as the customer having no saved
+         * address — treating it as such is what made them retype one we already
+         * held. Flagged so the form can say so and offer to look again.
+         */
+        if (!active) return;
+        setAddressesUnavailable(true);
         setAddingNew(true);
-        return;
-      }
-      setSelectedAddressId(def.id);
-      setFullName((v) => v || def.fullName);
-      setPhone((v) => v || def.phone);
-      setLine1((v) => v || def.line1);
-      setLine2((v) => v || def.line2);
-      setCity((v) => v || def.city);
-      setStateName((v) => v || def.state);
-      setPincode((v) => v || def.pincode);
-    });
+      });
     return () => {
       active = false;
     };
@@ -224,6 +239,23 @@ export default function PaymentPage() {
     if (stateName.trim().length < 2) return "Please enter the state.";
     if (!/^[0-9]{6}$/.test(pincode.trim())) return "Enter a valid 6-digit pincode.";
     return null;
+  }
+
+  /**
+   * Re-reads the address book after a write that already succeeded.
+   *
+   * The write is on the server whether or not this read comes back, so a
+   * failure here falls back to what the write returned instead of surfacing
+   * "could not save" — which would send the customer round again and leave two
+   * copies of the same address behind them.
+   */
+  async function refetchAddresses(fallback: Address[]): Promise<Address[]> {
+    if (!user?.phone) return fallback;
+    try {
+      return await fetchAddresses(user.phone);
+    } catch {
+      return fallback;
+    }
   }
 
   /** A single formatted delivery address string for the order + packing slip. */
@@ -301,7 +333,7 @@ export default function PaymentPage() {
     setSavingAddress(true);
     setAddressError("");
     try {
-      await updateAddress(user.phone, editingAddressId, {
+      const updated = await updateAddress(user.phone, editingAddressId, {
         fullName: fullName.trim(),
         phone: `+91${phone.replace(/\D/g, "").slice(-10)}`,
         line1: line1.trim(),
@@ -310,11 +342,13 @@ export default function PaymentPage() {
         state: stateName.trim(),
         pincode: pincode.trim(),
       });
-      const fresh = await fetchAddresses(user.phone);
+      const fresh = await refetchAddresses(
+        addresses.map((a) => (a.id === editingAddressId ? updated : a)),
+      );
       setAddresses(fresh);
       setEditingAddressId(null);
-      const updated = fresh.find((a) => a.id === editingAddressId);
-      if (updated) applyAddress(updated);
+      const current = fresh.find((a) => a.id === editingAddressId);
+      if (current) applyAddress(current);
       else setAddingNew(false);
       toast("Address updated.", "success");
     } catch (err) {
@@ -363,7 +397,7 @@ export default function PaymentPage() {
         state: stateName.trim(),
         pincode: pincode.trim(),
       });
-      const fresh = await fetchAddresses(user.phone);
+      const fresh = await refetchAddresses([...addresses, saved]);
       setAddresses(fresh);
       // Select what was just saved, so the order uses the address the customer
       // was looking at when they pressed the button.
@@ -703,6 +737,21 @@ export default function PaymentPage() {
               />
             </div>
 
+            {addressesUnavailable && (
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border border-line bg-mist/40 px-4 py-3">
+                <p className="text-sm text-ink-soft">
+                  We couldn&apos;t load your saved addresses. You can enter one below.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  className="text-[0.78rem] uppercase tracking-[0.14em] text-ink underline-offset-4 hover:underline"
+                >
+                  Try again
+                </button>
+              </div>
+            )}
+
             {addressError && (
               <p className="mt-3 border border-accent/30 bg-accent/5 px-4 py-3 text-sm text-accent">
                 {addressError}
@@ -864,7 +913,7 @@ export default function PaymentPage() {
                 disabled={applying || !code.trim()}
                 className="shrink-0 rounded-md border border-ink px-4 text-sm font-medium text-ink transition-colors hover:bg-ink hover:text-white disabled:opacity-40"
               >
-                {applying ? "…" : "Apply"}
+                {applying ? "Applying…" : "Apply"}
               </button>
             </div>
             {couponMsg && (
@@ -909,11 +958,48 @@ export default function PaymentPage() {
           <button
             onClick={() => router.push("/cart")}
             className="mt-3 w-full text-center text-xs text-stone hover:text-ink"
+            disabled={processing}
           >
             ← Back to cart
           </button>
         </aside>
       </div>
+
+      {/*
+        * The handoff to the gateway is the one moment on the site where a
+        * second click, a stray tap on the nav or a hit of Back can cost real
+        * money — an order created twice, or a payment taken against an order
+        * the shopper has walked away from. While it runs, the page is sealed.
+        *
+        * It covers the header too, so the only ways out are the ones the flow
+        * itself provides. Razorpay's own modal renders far above this, so the
+        * shopper can still pay; this simply holds the page still underneath.
+        *
+        * `processing` is already cleared on every exit — gateway dismissed,
+        * verification refused, script unavailable, thrown error — and the
+        * confirmed-order screen returns above this JSX, so success removes it
+        * along with the rest of the form.
+        */}
+      {processing && (
+        <div
+          role="status"
+          aria-live="assertive"
+          aria-busy="true"
+          /*
+           * Above every other layer the storefront can raise — the offer
+           * popups sit at 130, and one of those appearing over a payment in
+           * flight would put a "shop the offer" link on top of it.
+           */
+          className="fixed inset-0 z-[200] grid place-items-center bg-background/85 backdrop-blur-sm"
+        >
+          <div className="flex flex-col items-center gap-5 px-6 text-center">
+            <Loader label={method === "cod" ? "Placing order" : "Processing payment"} />
+            <p className="max-w-xs text-xs text-stone">
+              Please don&apos;t close or refresh this page.
+            </p>
+          </div>
+        </div>
+      )}
     </Container>
   );
 }

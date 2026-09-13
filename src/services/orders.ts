@@ -207,14 +207,17 @@ export async function cancelOrder(input: CancelOrderInput): Promise<CancelOrderR
   }
 }
 
-/** Fetches the signed-in user's order history (by phone). */
+/**
+ * A signed-in customer's order history.
+ *
+ * Throws when the request fails. It used to answer an empty array, which the
+ * account page could only render as "you haven't placed any orders yet" — so a
+ * dropped connection told customers their orders did not exist. An empty list
+ * now means exactly that, and nothing else.
+ */
 export async function fetchMyOrders(phone: string): Promise<Order[]> {
-  try {
-    const { data } = await api.get<{ ok: boolean; data: Order[] }>("/orders", {
-      params: { phone },
-    });
-    return data.data ?? [];
-  } catch {
-    return [];
-  }
+  const { data } = await api.get<{ ok: boolean; data: Order[] }>("/orders", {
+    params: { phone },
+  });
+  return data.data ?? [];
 }

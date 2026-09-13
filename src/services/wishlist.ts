@@ -16,14 +16,16 @@ export async function toggleLike(
   }
 }
 
-/** Fetches the product handles a user has liked. */
+/**
+ * The handles this visitor has liked.
+ *
+ * Throws when the request fails, so an unreachable wishlist is not mistaken for
+ * an empty one. The optimistic toggle is unaffected: it works from local state
+ * and reconciles against its own response.
+ */
 export async function fetchLikes(userKey: string): Promise<string[]> {
-  try {
-    const { data } = await api.get<{ ok: boolean; data: string[] }>("/wishlist", {
-      params: { userKey },
-    });
-    return data.data ?? [];
-  } catch {
-    return [];
-  }
+  const { data } = await api.get<{ ok: boolean; data: string[] }>("/wishlist", {
+    params: { userKey },
+  });
+  return data.data ?? [];
 }
