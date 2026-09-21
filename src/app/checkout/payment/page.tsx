@@ -29,7 +29,14 @@ import { BackButton } from "@/components/ui/BackButton";
 import { withRedirect } from "@/lib/auth/redirect";
 import { Button } from "@/components/ui/Button";
 import { Loader } from "@/components/ui/Loader";
-import { CheckIcon, ShieldIcon, TruckIcon } from "@/components/ui/Icons";
+import {
+  CheckIcon,
+  ChevronDownIcon,
+  ShieldIcon,
+  TagIcon,
+  TruckIcon,
+  UserIcon,
+} from "@/components/ui/Icons";
 import { cn } from "@/utils/cn";
 
 const METHODS: { id: PaymentMethod; title: string; desc: string; icon: typeof ShieldIcon }[] = [
@@ -65,7 +72,24 @@ export default function PaymentPage() {
     method: PaymentMethod;
     /** Whether the shopper gave an address, so the copy can be honest. */
     email: boolean;
+    /** Captured before the cart is cleared, for the confirmation screen. */
+    total: number;
+    deliverTo: string;
   } | null>(null);
+
+  /*
+   * Which part of checkout is on screen. Details (who and where) comes first,
+   * then payment. It is presentation only: every field lives in the state
+   * below whichever step shows it, so moving between steps loses nothing and
+   * the order is built exactly as before.
+   */
+  const [step, setStep] = useState<"details" | "payment">("details");
+  /** The address book has been read (or failed to be) — not the same as empty. */
+  const [addressesLoaded, setAddressesLoaded] = useState(false);
+  /** Mobile only: the order summary starts folded so the form leads. */
+  const [summaryOpen, setSummaryOpen] = useState(false);
+  /** The coupon field stays a single line until the shopper asks for it. */
+  const [couponOpen, setCouponOpen] = useState(false);
 
   // Which payment methods the admin has enabled (Settings → Store controls).
   const [methodEnabled, setMethodEnabled] = useState({ online: true, cod: true });
@@ -109,11 +133,12 @@ export default function PaymentPage() {
   const [stateName, setStateName] = useState("");
   const [pincode, setPincode] = useState("");
 
-  // Prefill the phone from the signed-in account (last 10 digits).
+  // Prefill the phone (last 10 digits) and name from the signed-in account.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if (user?.phone) setPhone((p) => p || user.phone!.replace(/\D/g, "").slice(-10));
-  }, [user?.phone]);
+    if (user?.name) setFullName((n) => n || user.name!);
+  }, [user?.phone, user?.name]);
 
   /*
    * Checkout needs an account. Sending the shopper to sign in with this page
@@ -140,6 +165,7 @@ export default function PaymentPage() {
       .then((saved) => {
         if (!active) return;
         setAddresses(saved);
+        setAddressesLoaded(true);
         const def = saved.find((a) => a.isDefault) ?? saved[0];
         if (!def) {
           // Nothing saved yet: the form is the only thing to show.
@@ -147,13 +173,20 @@ export default function PaymentPage() {
           return;
         }
         setSelectedAddressId(def.id);
-        setFullName((v) => v || def.fullName);
-        setPhone((v) => v || def.phone);
-        setLine1((v) => v || def.line1);
-        setLine2((v) => v || def.line2);
-        setCity((v) => v || def.city);
-        setStateName((v) => v || def.state);
-        setPincode((v) => v || def.pincode);
+        // A returning customer already told us where to deliver: open on
+        // payment, with that address shown and a Change link beside it.
+        setStep("payment");
+        // The whole saved address, not merged into the account prefill: the
+        // name and mobile on the card are who this delivery goes to, which can
+        // differ from the account holder. Nothing can have been typed yet —
+        // the form is not shown until the book has loaded.
+        setFullName(def.fullName);
+        setPhone(def.phone.replace(/\D/g, "").slice(-10));
+        setLine1(def.line1);
+        setLine2(def.line2 ?? "");
+        setCity(def.city);
+        setStateName(def.state);
+        setPincode(def.pincode);
       })
       .catch(() => {
         /*
@@ -163,6 +196,7 @@ export default function PaymentPage() {
          * held. Flagged so the form can say so and offer to look again.
          */
         if (!active) return;
+        setAddressesLoaded(true);
         setAddressesUnavailable(true);
         setAddingNew(true);
       });
@@ -214,7 +248,13 @@ export default function PaymentPage() {
 
   function finish(orderId: string | undefined, m: PaymentMethod) {
     setProcessing(false);
-    setDone({ orderId, method: m, email: Boolean(email.trim()) });
+    setDone({
+      orderId,
+      method: m,
+      email: Boolean(email.trim()),
+      total,
+      deliverTo: [fullName.trim(), city.trim()].filter(Boolean).join(", "),
+    });
     clear();
     /*
      * After the order, never before: the address book is a convenience, and a
@@ -322,13 +362,13 @@ export default function PaymentPage() {
    * and because orders carry their own copy of the address, nothing already
    * placed is altered by this.
    */
-  async function saveAddressEdit() {
-    if (!user?.phone || !editingAddressId) return;
+  async function saveAddressEdit(): Promise<boolean> {
+    if (!user?.phone || !editingAddressId) return false;
     const problem = validate();
     if (problem) {
       setAddressError(problem);
       toast(problem, "error");
-      return;
+      return false;
     }
     setSavingAddress(true);
     setAddressError("");
@@ -351,10 +391,12 @@ export default function PaymentPage() {
       if (current) applyAddress(current);
       else setAddingNew(false);
       toast("Address updated.", "success");
+      return true;
     } catch (err) {
       const message = err instanceof Error ? err.message : "Could not update this address.";
       setAddressError(message);
       toast(message, "error");
+      return false;
     } finally {
       setSavingAddress(false);
     }
@@ -419,8 +461,10 @@ export default function PaymentPage() {
     setAddressError("");
     setAddingNew(true);
     setSaveAddress(true);
-    setFullName("");
-    setPhone("");
+    // Name and mobile start from the account — the common case is delivering
+    // to yourself — and stay editable for a gift or a different number.
+    setFullName(user?.name ?? "");
+    setPhone(user?.phone ? user.phone.replace(/\D/g, "").slice(-10) : "");
     setLine1("");
     setLine2("");
     setCity("");
@@ -470,6 +514,33 @@ export default function PaymentPage() {
       // something to fail the purchase over.
       console.warn("Address not saved to the address book:", err);
     }
+  }
+
+  /** Moves to a step and brings its top into view. */
+  function showStep(next: "details" | "payment") {
+    setStep(next);
+    setError("");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  /**
+   * Details → Payment. Checks the same rules the order is placed under, so the
+   * payment step can only be reached with a deliverable address. An open edit
+   * of a saved address is saved on the way, rather than asking the customer to
+   * find a second button first.
+   */
+  async function continueToPayment() {
+    if (editingAddressId) {
+      if (await saveAddressEdit()) showStep("payment");
+      return;
+    }
+    const problem = validate();
+    if (problem) {
+      setError(problem);
+      toast(problem, "error");
+      return;
+    }
+    showStep("payment");
   }
 
   async function handlePay() {
@@ -588,26 +659,52 @@ export default function PaymentPage() {
   /* ---- Success ---------------------------------------------------------- */
   if (done) {
     return (
-      <Container className="flex min-h-[60vh] max-w-xl flex-col items-center justify-center gap-5 py-20 text-center">
-        <span className="grid h-14 w-14 place-items-center rounded-full bg-ink text-white">
-          <CheckIcon className="h-7 w-7" />
-        </span>
-        <h1 className="font-display text-3xl text-ink sm:text-4xl">Order confirmed</h1>
-        <p className="text-ink-soft">
-          {done.method === "cod"
-            ? "Your order is placed — pay in cash on delivery."
-            : "Payment received and your order is confirmed."}
-          {/* Only promised when an address was actually given — the line read
-              as a receipt for an email that was never going anywhere. */}
-          {done.email && " A confirmation will be sent to your email."}
+      <Container className="max-w-xl py-section-sm">
+        <CheckoutProgress current={3} />
+        <div className="mt-10 flex flex-col items-center gap-5 text-center">
+          <span className="grid h-14 w-14 place-items-center rounded-full bg-ink text-white">
+            <CheckIcon className="h-7 w-7" />
+          </span>
+          <h1 className="font-display text-3xl text-ink sm:text-4xl">Order confirmed</h1>
+          <p className="text-ink-soft">
+            {done.method === "cod"
+              ? "Your order is placed — pay in cash on delivery."
+              : "Payment received and your order is confirmed."}
+            {/* Only promised when an address was actually given — the line read
+                as a receipt for an email that was never going anywhere. */}
+            {done.email && " A confirmation will be sent to your email."}
+          </p>
+        </div>
+
+        <dl className="mt-8 divide-y divide-line rounded-media border border-line bg-white text-sm">
           {done.orderId && (
-            <>
-              {" "}
-              Reference <span className="font-medium text-ink">{done.orderId.slice(0, 8)}</span>.
-            </>
+            <div className="flex justify-between gap-4 px-5 py-3.5">
+              <dt className="text-stone">Order reference</dt>
+              <dd className="font-medium text-ink">{done.orderId.slice(0, 8)}</dd>
+            </div>
           )}
-        </p>
-        <Button href="/collections/all">Continue shopping</Button>
+          <div className="flex justify-between gap-4 px-5 py-3.5">
+            <dt className="text-stone">{done.method === "cod" ? "To pay on delivery" : "Paid"}</dt>
+            <dd className="font-medium text-ink">{formatCurrency(done.total)}</dd>
+          </div>
+          <div className="flex justify-between gap-4 px-5 py-3.5">
+            <dt className="text-stone">Payment</dt>
+            <dd className="text-ink">{done.method === "cod" ? "Cash on Delivery" : "Paid online"}</dd>
+          </div>
+          {done.deliverTo && (
+            <div className="flex justify-between gap-4 px-5 py-3.5">
+              <dt className="shrink-0 text-stone">Delivering to</dt>
+              <dd className="text-right text-ink">{done.deliverTo}</dd>
+            </div>
+          )}
+        </dl>
+
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+          <Button href="/collections/all">Continue shopping</Button>
+          <Button href="/account/profile" variant="outline">
+            View my orders
+          </Button>
+        </div>
       </Container>
     );
   }
@@ -628,341 +725,485 @@ export default function PaymentPage() {
     );
   }
 
-  /* ---- Payment ---------------------------------------------------------- */
-  return (
-    <Container className="py-section-sm">
-      <div className="mb-6 flex">
-        <BackButton fallbackHref="/cart" />
-      </div>
-      <nav className="mb-8 flex text-xs text-stone">
-        <Link href="/cart" className="hover:text-ink">
-          Cart
-        </Link>
-        <span className="mx-2" aria-hidden>
-          /
-        </span>
-        <span className="text-ink">Payment</span>
-      </nav>
+  /* ---- Checkout --------------------------------------------------------- */
 
-      <h1 className="font-display text-3xl text-ink sm:text-4xl">Payment</h1>
+  /** Waiting on the address book, so the form never flashes before the cards. */
+  const loadingDetails = Boolean(user?.phone) && !addressesLoaded;
+  const onDetails = step === "details";
+
+  /** The one primary action, whatever the step. Shared by desktop and mobile. */
+  const primaryLabel = onDetails
+    ? editingAddressId
+      ? savingAddress
+        ? "Saving…"
+        : "Save & continue"
+      : "Continue to payment"
+    : processing
+      ? "Processing…"
+      : method === "cod"
+        ? "Place order"
+        : `Pay ${formatCurrency(total)}`;
+  const primaryDisabled = onDetails
+    ? loadingDetails || savingAddress
+    : processing || availableMethods.length === 0;
+  const onPrimary = onDetails ? continueToPayment : handlePay;
+
+  const deliveryLine = [line1.trim(), line2.trim(), `${city.trim()}, ${stateName.trim()} ${pincode.trim()}`]
+    .filter(Boolean)
+    .join(", ");
+
+  return (
+    // Bottom padding on mobile keeps the last card clear of the sticky action bar.
+    <Container className="pb-32 pt-8 sm:pt-10 lg:pb-section-sm">
+      <div className="flex items-center justify-between gap-4">
+        <BackButton fallbackHref="/cart" />
+        <p className="flex items-center gap-1.5 text-xs text-stone">
+          <ShieldIcon className="h-4 w-4" /> Secure checkout
+        </p>
+      </div>
+
+      <h1 className="mt-6 font-display text-3xl text-ink sm:text-4xl">Checkout</h1>
+      <CheckoutProgress current={onDetails ? 1 : 2} disabled={processing} />
 
       {/* [&>*]:min-w-0 — auto-sized grid tracks cannot go below their content's
           minimum, so the form column widened the page instead of wrapping. */}
-      <div className="mt-8 grid gap-10 lg:grid-cols-[1.4fr_1fr] [&>*]:min-w-0">
-        {/* Left: contact + methods */}
-        <div>
-          <section>
-            <h2 className="font-display text-xl text-ink">Contact</h2>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email for order confirmation (optional)"
-              className="mt-3 h-12 w-full rounded-md border border-line bg-white px-3 text-[15px] text-ink placeholder:text-stone focus:border-ink focus:outline-none"
-            />
-          </section>
-
-          {/* Delivery address */}
-          <section className="mt-8">
-            <h2 className="font-display text-xl text-ink">Delivery address</h2>
-
-            {/* A returning customer sees what they already gave us. */}
-            {!addingNew && addresses.length > 0 && (
-              <SavedAddresses
-                addresses={addresses}
-                selectedId={selectedAddressId}
-                onSelect={applyAddress}
-                onEdit={startEditAddress}
-                onAddNew={startNewAddress}
-                busy={processing}
-              />
-            )}
-
-            <div
-              className={cn(
-                "mt-3 grid gap-3 sm:grid-cols-2",
-                !addingNew && addresses.length > 0 && "hidden",
-              )}
-            >
-              <input
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Full name *"
-                autoComplete="name"
-                className={addrField}
-              />
-              <input
-                value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
-                placeholder="Phone number *"
-                inputMode="numeric"
-                autoComplete="tel"
-                className={addrField}
-              />
-              <input
-                value={line1}
-                onChange={(e) => setLine1(e.target.value)}
-                placeholder="Flat / House no, Building, Street *"
-                autoComplete="address-line1"
-                className={cn(addrField, "sm:col-span-2")}
-              />
-              <input
-                value={line2}
-                onChange={(e) => setLine2(e.target.value)}
-                placeholder="Area / Landmark (optional)"
-                autoComplete="address-line2"
-                className={cn(addrField, "sm:col-span-2")}
-              />
-              <input
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                placeholder="City *"
-                autoComplete="address-level2"
-                className={addrField}
-              />
-              <input
-                value={stateName}
-                onChange={(e) => setStateName(e.target.value)}
-                placeholder="State *"
-                autoComplete="address-level1"
-                className={addrField}
-              />
-              <input
-                value={pincode}
-                onChange={(e) => setPincode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                placeholder="Pincode *"
-                inputMode="numeric"
-                autoComplete="postal-code"
-                className={addrField}
-              />
-            </div>
-
-            {addressesUnavailable && (
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border border-line bg-mist/40 px-4 py-3">
-                <p className="text-sm text-ink-soft">
-                  We couldn&apos;t load your saved addresses. You can enter one below.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => window.location.reload()}
-                  className="text-[0.78rem] uppercase tracking-[0.14em] text-ink underline-offset-4 hover:underline"
-                >
-                  Try again
-                </button>
-              </div>
-            )}
-
-            {addressError && (
-              <p className="mt-3 border border-accent/30 bg-accent/5 px-4 py-3 text-sm text-accent">
-                {addressError}
-              </p>
-            )}
-
-            {/* Editing a saved record: the actions commit or abandon it. */}
-            {editingAddressId && (
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                <button
-                  type="button"
-                  onClick={saveAddressEdit}
-                  disabled={savingAddress}
-                  className="flex h-12 items-center justify-center bg-ink px-6 text-[0.78rem] font-medium uppercase tracking-[0.14em] text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-                >
-                  {savingAddress ? "Saving…" : "Save changes"}
-                </button>
-                <button
-                  type="button"
-                  onClick={cancelAddressEdit}
-                  disabled={savingAddress}
-                  className="text-[0.78rem] uppercase tracking-[0.14em] text-stone underline-offset-4 transition-colors hover:text-ink hover:underline disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-              </div>
-            )}
-
-            {/* A brand-new address is offered for saving instead. */}
-            {!editingAddressId && (addingNew || addresses.length === 0) && user?.phone && (
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-                <label className="flex cursor-pointer items-center gap-2.5 text-sm text-ink-soft">
-                  <input
-                    type="checkbox"
-                    checked={saveAddress}
-                    onChange={(e) => setSaveAddress(e.target.checked)}
-                    className="h-4 w-4 accent-ink"
-                  />
-                  Save this address for future orders
-                </label>
-
-                {addresses.length > 0 && (
-                  <button
-                    type="button"
-                    onClick={cancelAddressEdit}
-                    className="text-[0.78rem] uppercase tracking-[0.14em] text-stone underline-offset-4 transition-colors hover:text-ink hover:underline"
-                  >
-                    Use a saved address
-                  </button>
+      <div className="mt-8 grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:gap-10 [&>*]:min-w-0">
+        <div className="space-y-5">
+          {onDetails ? (
+            <>
+              {/* ---- Contact ---- */}
+              <Panel title="Contact">
+                {user?.phone && (
+                  <p className="flex items-center gap-2.5 text-sm text-ink-soft">
+                    <UserIcon className="h-4 w-4 shrink-0 text-stone" />
+                    Signed in as{" "}
+                    <span className="font-medium tabular-nums text-ink">
+                      {formatPhone(user.phone)}
+                    </span>
+                  </p>
                 )}
-              </div>
-            )}
+                <Field label="Email" optional className="mt-4">
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="For your order confirmation"
+                    autoComplete="email"
+                    className={addrField}
+                  />
+                </Field>
+              </Panel>
 
-            {/* Saving the address is its own action, so a customer can keep it
-                for next time without having to place the order to find out.
-                Full width on mobile, where a narrow control is easy to miss. */}
-            {!editingAddressId && (addingNew || addresses.length === 0) && saveAddress && user?.phone && (
-              <button
-                type="button"
-                onClick={saveNewAddress}
-                disabled={savingAddress}
-                className="mt-4 flex h-12 w-full items-center justify-center border border-ink px-6 text-[0.78rem] font-medium uppercase tracking-[0.14em] text-ink transition-colors hover:bg-ink hover:text-white disabled:opacity-50 sm:w-auto"
+              {/* ---- Delivery address ---- */}
+              <Panel
+                title="Delivery address"
+                action={
+                  addingNew && addresses.length > 0 && !editingAddressId ? (
+                    <TextButton onClick={cancelAddressEdit}>Use a saved address</TextButton>
+                  ) : editingAddressId ? (
+                    <TextButton onClick={cancelAddressEdit} disabled={savingAddress}>
+                      Cancel
+                    </TextButton>
+                  ) : null
+                }
               >
-                {savingAddress ? "Saving…" : "Save address"}
-              </button>
-            )}
-          </section>
-
-          <section className="mt-8">
-            <h2 className="font-display text-xl text-ink">Payment method</h2>
-            {availableMethods.length === 0 && (
-              <p className="mt-3 rounded-md border border-accent/30 bg-accent/5 px-4 py-3 text-sm text-accent">
-                No payment methods are available right now. Please contact support.
-              </p>
-            )}
-            <div className="mt-3 space-y-3">
-              {availableMethods.map((m) => {
-                const active = method === m.id;
-                return (
-                  <button
-                    key={m.id}
-                    type="button"
-                    onClick={() => setMethod(m.id)}
-                    className={cn(
-                      "flex w-full items-center gap-4 rounded-media border p-4 text-left transition-colors",
-                      active ? "border-ink bg-paper" : "border-line hover:border-ink",
+                {loadingDetails ? (
+                  <div role="status" aria-busy="true" className="space-y-3">
+                    <span className="sr-only">Loading your saved addresses</span>
+                    <div className="h-24 animate-pulse rounded-lg bg-mist" />
+                    <div className="h-4 w-40 animate-pulse rounded bg-mist" />
+                  </div>
+                ) : (
+                  <>
+                    {addressesUnavailable && (
+                      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-line bg-mist/40 px-4 py-3">
+                        <p className="text-sm text-ink-soft">
+                          We couldn&apos;t load your saved addresses. You can enter one below.
+                        </p>
+                        <TextButton onClick={() => window.location.reload()}>Try again</TextButton>
+                      </div>
                     )}
-                  >
-                    <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-mist text-ink">
-                      <m.icon className="h-5 w-5" />
-                    </span>
-                    <span className="flex-1">
-                      <span className="block text-[15px] font-medium text-ink">{m.title}</span>
-                      <span className="block text-sm text-stone">{m.desc}</span>
-                    </span>
-                    <span
-                      className={cn(
-                        "grid h-5 w-5 shrink-0 place-items-center rounded-full border",
-                        active ? "border-ink bg-ink text-white" : "border-line",
-                      )}
-                    >
-                      {active && <CheckIcon className="h-3.5 w-3.5" />}
-                    </span>
-                  </button>
-                );
-              })}
-            </div>
-            <p className="mt-3 flex items-center gap-2 text-xs text-stone">
-              <ShieldIcon className="h-4 w-4" /> Payments are encrypted and secure.
+
+                    {/* A returning customer sees what they already gave us. */}
+                    {!addingNew && addresses.length > 0 && (
+                      <div className="-mt-3">
+                        <SavedAddresses
+                          addresses={addresses}
+                          selectedId={selectedAddressId}
+                          onSelect={applyAddress}
+                          onEdit={startEditAddress}
+                          onAddNew={startNewAddress}
+                          busy={processing}
+                        />
+                      </div>
+                    )}
+
+                    {(addingNew || addresses.length === 0) && (
+                      <>
+                        {editingAddressId && (
+                          <p className="mb-4 text-sm text-ink-soft">
+                            Editing a saved address. Changes are saved when you continue.
+                          </p>
+                        )}
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <Field label="Full name">
+                            <input
+                              value={fullName}
+                              onChange={(e) => setFullName(e.target.value)}
+                              placeholder="Who is receiving the order"
+                              autoComplete="name"
+                              className={addrField}
+                            />
+                          </Field>
+                          <Field label="Mobile number">
+                            <div className="flex h-12 items-center rounded-md border border-line bg-white focus-within:border-ink">
+                              <span className="border-r border-line px-3 text-[15px] text-stone">+91</span>
+                              <input
+                                value={phone}
+                                onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))}
+                                placeholder="10-digit number"
+                                inputMode="numeric"
+                                autoComplete="tel-national"
+                                className="h-full min-w-0 flex-1 rounded-r-md bg-transparent px-3 text-[15px] text-ink placeholder:text-stone focus:outline-none"
+                              />
+                            </div>
+                          </Field>
+                          <Field label="House no., building, street" className="sm:col-span-2">
+                            <input
+                              value={line1}
+                              onChange={(e) => setLine1(e.target.value)}
+                              placeholder="Flat 12, Shanti Apartments, MG Road"
+                              autoComplete="address-line1"
+                              className={addrField}
+                            />
+                          </Field>
+                          <Field label="Area / landmark" optional className="sm:col-span-2">
+                            <input
+                              value={line2}
+                              onChange={(e) => setLine2(e.target.value)}
+                              placeholder="Near City Mall"
+                              autoComplete="address-line2"
+                              className={addrField}
+                            />
+                          </Field>
+                          {/* Pincode, city and state share one row from tablet
+                              up; on a phone the pincode sits alone so its
+                              numeric keypad is not squeezed. */}
+                          <div className="grid gap-4 sm:col-span-2 sm:grid-cols-3">
+                            <Field label="Pincode">
+                              <input
+                                value={pincode}
+                                onChange={(e) => setPincode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                                placeholder="6 digits"
+                                inputMode="numeric"
+                                autoComplete="postal-code"
+                                className={addrField}
+                              />
+                            </Field>
+                            <div className="grid grid-cols-2 gap-4 sm:col-span-2">
+                              <Field label="City">
+                                <input
+                                  value={city}
+                                  onChange={(e) => setCity(e.target.value)}
+                                  autoComplete="address-level2"
+                                  className={addrField}
+                                />
+                              </Field>
+                              <Field label="State">
+                                <input
+                                  value={stateName}
+                                  onChange={(e) => setStateName(e.target.value)}
+                                  autoComplete="address-level1"
+                                  className={addrField}
+                                />
+                              </Field>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* A brand-new address can be kept for next time —
+                            saved now with the button, or after the order if
+                            the box is left ticked. */}
+                        {!editingAddressId && user?.phone && (
+                          <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
+                            <label className="flex cursor-pointer items-center gap-2.5 text-sm text-ink-soft">
+                              <input
+                                type="checkbox"
+                                checked={saveAddress}
+                                onChange={(e) => setSaveAddress(e.target.checked)}
+                                className="h-4 w-4 accent-ink"
+                              />
+                              Save this address for future orders
+                            </label>
+                            {saveAddress && (
+                              <button
+                                type="button"
+                                onClick={saveNewAddress}
+                                disabled={savingAddress}
+                                className="flex h-10 items-center justify-center rounded-md border border-ink px-5 text-[0.72rem] font-medium uppercase tracking-[0.14em] text-ink transition-colors hover:bg-ink hover:text-white disabled:opacity-50"
+                              >
+                                {savingAddress ? "Saving…" : "Save address"}
+                              </button>
+                            )}
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {addressError && (
+                      <p className="mt-4 rounded-md border border-accent/30 bg-accent/5 px-4 py-3 text-sm text-accent">
+                        {addressError}
+                      </p>
+                    )}
+                  </>
+                )}
+              </Panel>
+            </>
+          ) : (
+            <>
+              {/* ---- Deliver to (confirmed on the previous step) ---- */}
+              <Panel
+                title="Deliver to"
+                action={
+                  <TextButton onClick={() => showStep("details")} disabled={processing}>
+                    Change
+                  </TextButton>
+                }
+              >
+                <div className="text-sm leading-relaxed">
+                  <p className="font-medium text-ink">{fullName.trim()}</p>
+                  <p className="mt-0.5 text-ink-soft">{deliveryLine}</p>
+                  <p className="mt-0.5 break-words text-stone">
+                    <span className="tabular-nums">+91 {phone}</span>
+                    {email.trim() && <> · {email.trim()}</>}
+                  </p>
+                </div>
+                <div className="mt-4 flex items-center justify-between gap-3 rounded-md bg-mist/50 px-4 py-3 text-sm">
+                  <span className="flex items-center gap-2.5 text-ink-soft">
+                    <TruckIcon className="h-4 w-4 shrink-0" /> Standard delivery
+                  </span>
+                  <span className="font-medium text-ink">Free</span>
+                </div>
+              </Panel>
+
+              {/* ---- Payment method ---- */}
+              <Panel title="Payment method">
+                {availableMethods.length === 0 && (
+                  <p className="rounded-md border border-accent/30 bg-accent/5 px-4 py-3 text-sm text-accent">
+                    No payment methods are available right now. Please contact support.
+                  </p>
+                )}
+                <div className="space-y-3" role="radiogroup" aria-label="Payment method">
+                  {availableMethods.map((m) => {
+                    const active = method === m.id;
+                    return (
+                      <button
+                        key={m.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={active}
+                        onClick={() => setMethod(m.id)}
+                        disabled={processing}
+                        className={cn(
+                          "flex w-full items-center gap-4 rounded-lg border p-4 text-left transition-colors",
+                          active ? "border-ink bg-paper" : "border-line hover:border-ink",
+                        )}
+                      >
+                        <span className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-mist text-ink">
+                          <m.icon className="h-5 w-5" />
+                        </span>
+                        <span className="flex-1">
+                          <span className="block text-[15px] font-medium text-ink">{m.title}</span>
+                          <span className="block text-sm text-stone">{m.desc}</span>
+                        </span>
+                        <span
+                          className={cn(
+                            "grid h-5 w-5 shrink-0 place-items-center rounded-full border",
+                            active ? "border-ink bg-ink text-white" : "border-line",
+                          )}
+                        >
+                          {active && <CheckIcon className="h-3.5 w-3.5" />}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="mt-4 flex items-center gap-2 text-xs text-stone">
+                  <ShieldIcon className="h-4 w-4" /> Payments are encrypted and secure.
+                </p>
+              </Panel>
+            </>
+          )}
+
+          {/* Mobile: the reason the primary action did nothing, above the bar. */}
+          {error && (
+            <p role="alert" className="rounded-md border border-accent/30 bg-accent/5 px-4 py-3 text-sm text-accent lg:hidden">
+              {error}
             </p>
-          </section>
+          )}
         </div>
 
-        {/* Right: order summary */}
-        <aside className="h-fit rounded-media border border-line bg-paper p-6 lg:sticky lg:top-28">
-          <h2 className="font-display text-xl text-ink">
-            Order summary <span className="text-stone">({count})</span>
-          </h2>
-          <ul className="mt-4 space-y-4">
-            {items.map((item) => (
-              <li key={`${item.productHandle}-${item.size}`} className="flex gap-3">
-                <span className="relative h-16 w-14 shrink-0 overflow-hidden rounded-md bg-mist">
-                  <SafeImage src={item.image} alt={item.title} fill sizes="56px" className="object-cover" />
-                </span>
-                <span className="flex-1 text-sm">
-                  <span className="block text-ink">{item.title}</span>
-                  <span className="block text-xs text-stone">
-                    {item.fit} · Size {item.size} · Qty {item.quantity}
-                  </span>
-                </span>
-                <span className="text-sm text-ink">
-                  {formatCurrency(item.price * item.quantity, item.currency)}
-                </span>
-              </li>
-            ))}
-          </ul>
-
-          {/* Coupon / offer code */}
-          <div className="mt-5 border-t border-line pt-5">
-            <label className="mb-1.5 block text-xs font-medium uppercase tracking-wide text-stone">
-              Have a coupon code?
-            </label>
-            <div className="flex gap-2">
-              <input
-                value={code}
-                onChange={(e) => {
-                  setCode(e.target.value.toUpperCase());
-                  setCouponMsg("");
-                }}
-                placeholder="Enter code"
-                /* min-w-0: an <input> carries a default intrinsic width, so
-                   flex-1 alone could not shrink it and the row pushed the page
-                   wider than a small phone. */
-                className="h-11 min-w-0 flex-1 rounded-md border border-line bg-white px-3 text-sm uppercase text-ink placeholder:normal-case placeholder:text-stone focus:border-ink focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={applyCoupon}
-                disabled={applying || !code.trim()}
-                className="shrink-0 rounded-md border border-ink px-4 text-sm font-medium text-ink transition-colors hover:bg-ink hover:text-white disabled:opacity-40"
-              >
-                {applying ? "Applying…" : "Apply"}
-              </button>
-            </div>
-            {couponMsg && (
-              <p className={cn("mt-2 text-xs", discount > 0 ? "text-green-700" : "text-accent")}>
-                {couponMsg}
-              </p>
-            )}
-          </div>
-
-          <dl className="mt-5 space-y-2 border-t border-line pt-5 text-sm">
-            <div className="flex justify-between">
-              <dt className="text-ink-soft">Subtotal</dt>
-              <dd className="text-ink">{formatCurrency(subtotal)}</dd>
-            </div>
-            {discount > 0 && (
-              <div className="flex justify-between">
-                <dt className="text-ink-soft">
-                  Discount{offer?.offer?.title ? ` · ${offer.offer.title}` : ""}
-                </dt>
-                <dd className="text-green-700">− {formatCurrency(discount)}</dd>
-              </div>
-            )}
-            <div className="flex justify-between">
-              <dt className="text-ink-soft">Shipping</dt>
-              <dd className="text-ink">Free</dd>
-            </div>
-          </dl>
-          <div className="mt-4 flex justify-between border-t border-line pt-4">
-            <span className="font-display text-lg text-ink">Total</span>
-            <span className="font-display text-lg text-ink">{formatCurrency(total)}</span>
-          </div>
-
-          {error && <p className="mt-4 text-xs text-accent">{error}</p>}
-
-          <Button onClick={handlePay} size="lg" className="mt-5 w-full" disabled={processing}>
-            {processing
-              ? "Processing…"
-              : method === "cod"
-                ? "Place order"
-                : `Pay ${formatCurrency(total)}`}
-          </Button>
+        {/* ---- Order summary ----
+            First on mobile, folded to one line so the form leads; a sticky
+            sidebar from desktop up, always open. */}
+        <aside className="order-first h-fit rounded-media border border-line bg-white lg:sticky lg:top-28 lg:order-none">
           <button
-            onClick={() => router.push("/cart")}
-            className="mt-3 w-full text-center text-xs text-stone hover:text-ink"
-            disabled={processing}
+            type="button"
+            onClick={() => setSummaryOpen((o) => !o)}
+            aria-expanded={summaryOpen}
+            className="flex w-full items-center justify-between gap-3 p-5 text-left lg:pointer-events-none lg:pb-0 lg:pt-6 sm:px-6"
           >
-            ← Back to cart
+            <span>
+              <span className="block font-display text-xl text-ink">Order summary</span>
+              <span className="mt-0.5 block text-xs text-stone">
+                {count} item{count === 1 ? "" : "s"}
+                {discount > 0 && (
+                  <span className="ml-2 rounded-full bg-green-50 px-2 py-0.5 font-medium text-green-700">
+                    You save {formatCurrency(discount)}
+                  </span>
+                )}
+              </span>
+            </span>
+            <span className="flex items-center gap-2 lg:hidden">
+              <span className="font-medium text-ink">{formatCurrency(total)}</span>
+              <ChevronDownIcon
+                className={cn("h-4 w-4 text-stone transition-transform", summaryOpen && "rotate-180")}
+              />
+            </span>
           </button>
+
+          <div className={cn("px-5 pb-5 sm:px-6 sm:pb-6", summaryOpen ? "block" : "hidden lg:block")}>
+            <ul className="mt-2 space-y-4 border-t border-line pt-5 lg:mt-5">
+              {items.map((item) => (
+                <li key={`${item.productHandle}-${item.size}`} className="flex gap-3">
+                  <span className="relative h-16 w-14 shrink-0 overflow-hidden rounded-md bg-mist">
+                    <SafeImage src={item.image} alt={item.title} fill sizes="56px" className="object-cover" />
+                  </span>
+                  <span className="min-w-0 flex-1 text-sm">
+                    <span className="block text-ink">{item.title}</span>
+                    <span className="block text-xs text-stone">
+                      {item.fit} · Size {item.size} · Qty {item.quantity}
+                    </span>
+                  </span>
+                  <span className="text-sm text-ink">
+                    {formatCurrency(item.price * item.quantity, item.currency)}
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            {/* Coupon — one line until it is wanted. */}
+            <div className="mt-5 border-t border-line pt-4">
+              {couponOpen || code ? (
+                <>
+                  <label htmlFor="coupon-code" className="mb-1.5 block text-xs text-ink-soft">
+                    Coupon code
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      id="coupon-code"
+                      value={code}
+                      onChange={(e) => {
+                        setCode(e.target.value.toUpperCase());
+                        setCouponMsg("");
+                      }}
+                      placeholder="Enter code"
+                      /* min-w-0: an <input> carries a default intrinsic width, so
+                         flex-1 alone could not shrink it and the row pushed the page
+                         wider than a small phone. */
+                      className="h-11 min-w-0 flex-1 rounded-md border border-line bg-white px-3 text-sm uppercase text-ink placeholder:normal-case placeholder:text-stone focus:border-ink focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={applyCoupon}
+                      disabled={applying || !code.trim()}
+                      className="shrink-0 rounded-md border border-ink px-4 text-sm font-medium text-ink transition-colors hover:bg-ink hover:text-white disabled:opacity-40"
+                    >
+                      {applying ? "Applying…" : "Apply"}
+                    </button>
+                  </div>
+                  {couponMsg && (
+                    <p className={cn("mt-2 text-xs", discount > 0 ? "text-green-700" : "text-accent")}>
+                      {couponMsg}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setCouponOpen(true)}
+                  className="flex w-full items-center gap-2.5 text-sm text-ink-soft transition-colors hover:text-ink"
+                >
+                  <TagIcon className="h-4 w-4 shrink-0" />
+                  Have a coupon code?
+                  <span className="ml-auto text-xs font-medium uppercase tracking-[0.14em] text-ink">
+                    Add
+                  </span>
+                </button>
+              )}
+            </div>
+
+            <dl className="mt-4 space-y-2 border-t border-line pt-4 text-sm">
+              <div className="flex justify-between">
+                <dt className="text-ink-soft">Subtotal</dt>
+                <dd className="text-ink">{formatCurrency(subtotal)}</dd>
+              </div>
+              {discount > 0 && (
+                <div className="flex justify-between gap-3">
+                  <dt className="text-ink-soft">
+                    Discount{offer?.offer?.title ? ` · ${offer.offer.title}` : ""}
+                  </dt>
+                  <dd className="shrink-0 text-green-700">− {formatCurrency(discount)}</dd>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <dt className="text-ink-soft">Shipping</dt>
+                <dd className="text-ink">Free</dd>
+              </div>
+            </dl>
+            <div className="mt-4 flex justify-between border-t border-line pt-4">
+              <span className="font-display text-lg text-ink">Total</span>
+              <span className="font-display text-lg text-ink">{formatCurrency(total)}</span>
+            </div>
+
+            {/* Desktop: the primary action lives with the total. */}
+            <div className="hidden lg:block">
+              {error && (
+                <p role="alert" className="mt-4 text-xs text-accent">
+                  {error}
+                </p>
+              )}
+              <Button onClick={onPrimary} size="lg" className="mt-5 w-full" disabled={primaryDisabled}>
+                {primaryLabel}
+              </Button>
+              {!onDetails && (
+                <button
+                  type="button"
+                  onClick={() => showStep("details")}
+                  className="mt-3 w-full text-center text-xs text-stone hover:text-ink"
+                  disabled={processing}
+                >
+                  ← Back to details
+                </button>
+              )}
+            </div>
+          </div>
         </aside>
+      </div>
+
+      {/* ---- Mobile action bar ----
+          The total and the one action that matters, always in reach. Space on
+          the right is left for the chat bubble that floats over this corner. */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 backdrop-blur lg:hidden">
+        <div className="flex items-center gap-3 py-3 pl-4 pr-[5.25rem]">
+          <div className="shrink-0">
+            <p className="text-[0.65rem] uppercase tracking-[0.14em] text-stone">Total</p>
+            <p className="font-display text-lg leading-tight text-ink">{formatCurrency(total)}</p>
+          </div>
+          <Button onClick={onPrimary} className="min-w-0 flex-1 px-4" disabled={primaryDisabled}>
+            {primaryLabel}
+          </Button>
+        </div>
       </div>
 
       {/*
@@ -1002,4 +1243,129 @@ export default function PaymentPage() {
       )}
     </Container>
   );
+}
+
+/* ---- Presentation helpers ------------------------------------------------ */
+
+const PROGRESS = ["Cart", "Details", "Payment", "Done"] as const;
+
+/**
+ * Where the shopper is in the purchase. Cart is always behind them (they came
+ * from it) and stays a link back; the rest mark progress only.
+ */
+function CheckoutProgress({ current, disabled = false }: { current: 1 | 2 | 3; disabled?: boolean }) {
+  return (
+    <ol className="mt-5 flex items-center gap-2 text-[0.7rem] uppercase tracking-[0.14em]" aria-label="Checkout progress">
+      {PROGRESS.map((label, i) => {
+        const state = i < current ? "done" : i === current ? "current" : "todo";
+        const marker = (
+          <span className="flex items-center gap-2">
+            <span
+              className={cn(
+                "grid h-6 w-6 shrink-0 place-items-center rounded-full border text-[0.65rem] tabular-nums",
+                state === "done" && "border-ink bg-ink text-white",
+                state === "current" && "border-ink text-ink",
+                state === "todo" && "border-line text-stone",
+              )}
+            >
+              {state === "done" ? <CheckIcon className="h-3.5 w-3.5" /> : i + 1}
+            </span>
+            <span className={cn(state === "todo" ? "text-stone" : "text-ink", state === "current" && "font-medium")}>
+              {label}
+            </span>
+          </span>
+        );
+        return (
+          <li
+            key={label}
+            aria-current={state === "current" ? "step" : undefined}
+            className="flex min-w-0 items-center gap-2"
+          >
+            {i === 0 && !disabled && current < 3 ? (
+              <Link href="/cart" className="hover:opacity-70">
+                {marker}
+              </Link>
+            ) : (
+              marker
+            )}
+            {i < PROGRESS.length - 1 && (
+              <span aria-hidden className={cn("h-px w-4 sm:w-10", i < current ? "bg-ink" : "bg-line")} />
+            )}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
+/** One checkout section: a white card with a title and an optional action. */
+function Panel({
+  title,
+  action,
+  children,
+}: {
+  title: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-media border border-line bg-white p-5 sm:p-6">
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h2 className="font-display text-xl text-ink">{title}</h2>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+/** A visible label over its input, so a field still says what it is once filled. */
+function Field({
+  label,
+  optional = false,
+  className,
+  children,
+}: {
+  label: string;
+  optional?: boolean;
+  className?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className={cn("block", className)}>
+      <span className="mb-1.5 block text-xs text-ink-soft">
+        {label}
+        {optional && <span className="text-stone"> (optional)</span>}
+      </span>
+      {children}
+    </label>
+  );
+}
+
+/** A quiet text action — Change, Cancel, Try again. */
+function TextButton({
+  onClick,
+  disabled = false,
+  children,
+}: {
+  onClick: () => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className="shrink-0 text-[0.72rem] font-medium uppercase tracking-[0.14em] text-ink underline-offset-4 hover:underline disabled:opacity-40"
+    >
+      {children}
+    </button>
+  );
+}
+
+/** "+919876543210" → "+91 98765 43210". */
+function formatPhone(raw: string): string {
+  const d = raw.replace(/\D/g, "").slice(-10);
+  return d.length === 10 ? `+91 ${d.slice(0, 5)} ${d.slice(5)}` : raw;
 }
