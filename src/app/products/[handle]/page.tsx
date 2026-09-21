@@ -179,12 +179,14 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
                 breadcrumb's generic "Collection" did not provide. */}
             <p className="mt-4 text-[0.8125rem] text-stone">
               A CONROY {product.productType === "T-Shirt" ? "T-shirt" : "denim"} —{" "}
+              {/* T-shirts no longer have a category page, so they point at
+                  the full collection rather than at a 404. */}
               <Link
-                href={product.productType === "T-Shirt" ? "/t-shirts" : "/denim"}
+                href={product.productType === "T-Shirt" ? "/collections/all" : "/denim"}
                 className="text-ink underline-offset-4 hover:underline"
               >
                 {product.productType === "T-Shirt"
-                  ? "see all men's T-shirts"
+                  ? "see the full collection"
                   : "see all men's jeans"}
               </Link>
               .

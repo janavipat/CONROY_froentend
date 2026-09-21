@@ -29,8 +29,7 @@ const FALLBACK_JEANS = { src: "/brand/banner1.png", alt: "CONROY denim" };
  * The picture is the first image of a real product of that type, so it is
  * always current catalogue photography and never has to be maintained by hand.
  * Only types that actually have a photograph get one — a type with no products
- * yet (T-Shirts, today) stays in the list as a link rather than becoming an
- * empty grey box.
+ * yet stays in the list as a link rather than becoming an empty grey box.
  */
 export function CollectionsMenu({
   images,

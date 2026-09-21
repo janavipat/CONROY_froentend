@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCollectionByHandle } from "@/lib/products";
 import { fetchCollection, fetchCollections } from "@/services/catalog";
-import { SITE } from "@/lib/site";
+import { RETIRED_COLLECTION_HANDLES, SITE } from "@/lib/site";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { BoxIcon } from "@/components/ui/Icons";
@@ -18,13 +18,16 @@ import { breadcrumbSchema, itemListSchema, jsonLd, truncate } from "@/lib/seo";
  */
 export async function generateStaticParams() {
   const collections = await fetchCollections();
-  return collections.map((c) => ({ handle: c.handle }));
+  return collections
+    .filter((c) => !RETIRED_COLLECTION_HANDLES.includes(c.handle))
+    .map((c) => ({ handle: c.handle }));
 }
 
 export async function generateMetadata(
   props: PageProps<"/collections/[handle]">,
 ): Promise<Metadata> {
   const { handle } = await props.params;
+  if (RETIRED_COLLECTION_HANDLES.includes(handle)) return { title: "Collection not found" };
   // Read through the API first — collections created in admin (e.g. Slim Fit)
   // exist only in the database, not in the bundled fallback catalogue.
   const collection = (await fetchCollection(handle))?.collection ?? getCollectionByHandle(handle);
@@ -85,6 +88,8 @@ function EmptyCollection({ title }: { title: string }) {
 
 export default async function CollectionPage(props: PageProps<"/collections/[handle]">) {
   const { handle } = await props.params;
+  // Withdrawn from the storefront; the collection itself is kept in admin.
+  if (RETIRED_COLLECTION_HANDLES.includes(handle)) notFound();
   const result = await fetchCollection(handle);
   if (!result) notFound();
 

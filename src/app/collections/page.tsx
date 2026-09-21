@@ -27,8 +27,14 @@ export const metadata: Metadata = {
  */
 const CATEGORY_ROUTES: Record<string, string> = {
   denim: "/denim",
-  "t-shirts": "/t-shirts",
 };
+
+/*
+ * Categories withdrawn from the storefront. The T-shirt section has been taken
+ * off the site, so it gets no category entry here — its products are still in
+ * the catalogue and in admin, untouched.
+ */
+const RETIRED_CATEGORIES = new Set(["t-shirts", "cotton t-shirt", "cotton lycra t-shirt"]);
 
 interface CategoryCard {
   title: string;
@@ -46,6 +52,7 @@ function categoriesFrom(products: Product[]): CategoryCard[] {
     const title = (p.category ?? "").trim();
     if (!title) continue;
     const key = title.toLowerCase();
+    if (RETIRED_CATEGORIES.has(key)) continue;
     const group = groups.get(key) ?? { title, types: new Set<string>(), count: 0 };
     if (p.productType?.trim()) group.types.add(p.productType.trim());
     group.count += 1;

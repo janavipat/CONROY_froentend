@@ -15,7 +15,7 @@ import { browseProducts, fetchBestSellers } from "@/services/browse";
  * Homepage composition — a fashion-brand storytelling order rather than a
  * catalogue dump:
  *
- *   Hero → Denim Edit → Featured → T-Shirt Edit → Best Sellers
+ *   Hero → Denim Edit → Featured → Best Sellers
  *        → Shop the Look → Brand Story → Newsletter (in the footer)
  *
  * New In is deliberately absent: it is admin-curated, so as a permanent
@@ -28,37 +28,22 @@ import { browseProducts, fetchBestSellers } from "@/services/browse";
  * disappears instead of reserving space. Section visibility remains
  * admin-controlled through site settings.
  */
-/**
- * Alternates two lists, so a mixed band leads with one of each instead of all
- * the denim followed by all the t-shirts. Whichever list runs out first simply
- * stops contributing, so a catalogue with only one category still fills.
- */
-function interleave<T>(a: T[], b: T[]): T[] {
-  const out: T[] = [];
-  for (let i = 0; i < Math.max(a.length, b.length); i += 1) {
-    if (a[i]) out.push(a[i]);
-    if (b[i]) out.push(b[i]);
-  }
-  return out;
-}
-
 export default async function HomePage() {
   const settings = await fetchSiteSettings();
   const show = (key: string) => isOn(settings, key);
 
-  const [bestSellers, denim, tshirts] = await Promise.all([
+  const [bestSellers, denim] = await Promise.all([
     fetchBestSellers(),
     browseProducts({ category: "Denim" }),
-    browseProducts({ category: "T-Shirts" }),
   ]);
 
   // The Denim Edit's photograph comes from the catalogue itself, so it is
   // always real CONROY product photography and never a placeholder.
   const denimImage = denim.find((p) => p.images[0]?.src)?.images[0];
 
-  // Featured and Shop the Look both show the range rather than one category,
-  // alternating so the mix is visible in the first few tiles.
-  const mixed = interleave(denim, tshirts);
+  // Featured and Shop the Look draw from the denim range. T-shirts used to be
+  // interleaved here; that section has been withdrawn from the storefront.
+  const mixed = denim;
 
   return (
     <>
@@ -84,8 +69,7 @@ export default async function HomePage() {
         imageAlt={denimImage?.alt ?? "CONROY denim"}
       />
 
-      {/* 3 — Featured. Photography-led, built from live products across both
-          categories rather than denim alone. */}
+      {/* 3 — Featured. Photography-led, built from live denim products. */}
       <FeaturedEdit
         eyebrow="The collection"
         title="Featured"
@@ -94,21 +78,7 @@ export default async function HomePage() {
         ctaLabel="Shop all denim"
       />
 
-      {/* 4 — T-Shirt Edit. Hidden entirely until T-shirts exist. */}
-      {tshirts.length > 0 && (
-        <EditBanner
-          eyebrow="The edit"
-          title="T-Shirts"
-          description="Everyday essentials in honest cotton."
-          href="/t-shirts"
-          ctaLabel="Shop all t-shirts"
-          image={tshirts.find((p) => p.images[0]?.src)?.images[0]?.src}
-          imageAlt="CONROY t-shirts"
-          imageSide="right"
-        />
-      )}
-
-      {/* 5 — Best Sellers. Admin-curated; renders nothing until something is
+      {/* 4 — Best Sellers. Admin-curated; renders nothing until something is
           marked, and narrows to however many products there are. */}
       <ProductRail
         eyebrow="Loved most"

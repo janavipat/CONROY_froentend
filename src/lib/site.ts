@@ -58,25 +58,23 @@ export interface NavItem extends NavLink {
  * shopper opens a Collections menu expecting to find.
  *
  * `productType` matches the catalogue field of the same name, which is how the
- * menu finds a photograph for each entry. T-Shirts is listed before any
- * T-shirt exists: the entry is the placeholder, not an empty image box.
+ * menu finds a photograph for each entry.
  */
 export const PRODUCT_TYPE_NAV: (NavLink & { productType: string })[] = [
   { label: "Jeans", href: "/denim", productType: "Jeans" },
-  { label: "T-Shirts", href: "/t-shirts", productType: "T-Shirt" },
 ];
 
 /**
- * The T-shirt collections, by handle.
+ * Collections withdrawn from the storefront.
  *
- * These are merchandising collections in the catalogue — the fabric a shirt is
- * cut from — so they live at /collections/[handle] like any other. Listed here
- * rather than fetched so the menu keeps a fixed shape; a collection that has
- * not been created yet is a broken link, not a missing menu.
+ * The T-shirt section has been taken off the site. Its two fabric collections
+ * still exist in the catalogue and in admin — nothing is deleted — but the
+ * storefront no longer lists, links, prerenders or serves them: a direct visit
+ * answers with the site's standard 404.
  */
-export const TSHIRT_COLLECTION_NAV: NavLink[] = [
-  { label: "Cotton T-Shirt", href: "/collections/cotton-tshirt" },
-  { label: "Cotton Lycra T-Shirt", href: "/collections/cotton-lycra-tshirt" },
+export const RETIRED_COLLECTION_HANDLES: readonly string[] = [
+  "cotton-tshirt",
+  "cotton-lycra-tshirt",
 ];
 
 export const PRIMARY_NAV: NavItem[] = [
@@ -95,21 +93,10 @@ export const PRIMARY_NAV: NavItem[] = [
     ],
   },
   {
-    label: "T-Shirts",
-    href: "/t-shirts",
-    children: [
-      { label: "All T-Shirts", href: "/t-shirts" },
-      // Fabric, the way denim's children are cut. The old "T-Shirt
-      // Collections" entry pointed at /collections, which now lists
-      // categories rather than collections, so it led nowhere useful.
-      ...TSHIRT_COLLECTION_NAV,
-    ],
-  },
-  {
     label: "Collections",
     href: "/collections",
     mega: "productTypes",
-    // The same two entries the desktop panel shows, so the mobile drawer can
+    // The same entries the desktop panel shows, so the mobile drawer can
     // expand them without a second list to keep in step.
     children: PRODUCT_TYPE_NAV.map(({ label, href }) => ({ label, href })),
   },
@@ -123,7 +110,6 @@ export const FOOTER_NAV: { title: string; links: NavLink[] }[] = [
     links: [
       { label: "New In", href: "/new-in" },
       { label: "Denim", href: "/denim" },
-      { label: "T-Shirts", href: "/t-shirts" },
       { label: "Collections", href: "/collections" },
     ],
   },

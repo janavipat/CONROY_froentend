@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { SITE } from "@/lib/site";
+import { RETIRED_COLLECTION_HANDLES, SITE } from "@/lib/site";
 import { DENIM_VIEWS } from "@/lib/catalog-taxonomy";
 import { fetchAllProducts, fetchCollections } from "@/services/catalog";
 
@@ -29,7 +29,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry("/", 1, "weekly"),
     entry("/new-in", 0.9, "daily"),
     entry("/denim", 0.9, "daily"),
-    entry("/t-shirts", 0.9, "daily"),
     entry("/collections", 0.8, "weekly"),
     entry("/collections/all", 0.9, "daily"),
     entry("/shop-the-look", 0.6, "weekly"),
@@ -51,8 +50,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ]);
 
   const collectionRoutes: MetadataRoute.Sitemap = collections
-    // "all" is already listed above at a higher priority.
-    .filter((c) => c.handle !== "all")
+    // "all" is already listed above at a higher priority; withdrawn
+    // collections 404 and must not be advertised.
+    .filter((c) => c.handle !== "all" && !RETIRED_COLLECTION_HANDLES.includes(c.handle))
     .map((c) => entry(`/collections/${c.handle}`, 0.7, "weekly"));
 
   const productRoutes: MetadataRoute.Sitemap = products.map((p) =>

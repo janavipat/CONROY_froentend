@@ -34,12 +34,11 @@ export function BrandIntro() {
             and cotton-lycra T-shirts. Each piece is cut for comfort that holds its shape, in
             colours and washes meant to be worn for years rather than a season.
           </p>
-          {/* The four routes a shopper is most likely to want next, and the
-              four Google should see the homepage endorsing. */}
+          {/* The routes a shopper is most likely to want next, and the ones
+              Google should see the homepage endorsing. */}
           <nav aria-label="Shop by category" className="mt-9 flex flex-wrap justify-center gap-x-7 gap-y-3">
             {[
               { label: "Men's jeans", href: "/denim" },
-              { label: "Men's T-shirts", href: "/t-shirts" },
               { label: "New arrivals", href: "/new-in" },
               { label: "All collections", href: "/collections" },
             ].map((l) => (

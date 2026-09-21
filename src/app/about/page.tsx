@@ -99,9 +99,7 @@ export default function AboutPage() {
                     </Link>{" "}
                     in slim, straight and relaxed fits — mid-rise, five-pocket, cut from premium
                     denim in black, indigo, light and vintage-tinted washes — alongside{" "}
-                    <Link href="/t-shirts" className="text-ink underline-offset-4 hover:underline">
-                      cotton and cotton-lycra T-shirts
-                    </Link>{" "}
+                    cotton and cotton-lycra T-shirts{" "}
                     for everyday wear. Everything is priced in rupees and shipped across India.
                   </p>
                 </Reveal>
