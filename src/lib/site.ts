@@ -116,11 +116,10 @@ export const FOOTER_NAV: { title: string; links: NavLink[] }[] = [
   {
     title: "Help",
     links: [
-      // Shipping, Returns and Size Guide live inside the policy page today;
-      // they get their own routes when that content is split out.
+      // Shipping and Returns live inside the policy page today; they get
+      // their own routes when that content is split out.
       { label: "Shipping", href: "/policy" },
       { label: "Returns", href: "/policy" },
-      { label: "Size Guide", href: "/policy" },
       { label: "Contact", href: "/contact" },
     ],
   },

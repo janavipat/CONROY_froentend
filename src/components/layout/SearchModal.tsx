@@ -3,7 +3,8 @@
 import { SafeImage } from "@/components/ui/SafeImage";
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { searchProducts } from "@/lib/products";
+import { filterProducts } from "@/lib/search";
+import { useSearchCatalogue } from "@/hooks/useSearchCatalogue";
 import { TRENDING_SEARCHES } from "@/lib/site";
 import { formatCurrency } from "@/utils/format";
 import { productDisplayTitle, productLabel } from "@/lib/catalog-taxonomy";
@@ -13,7 +14,9 @@ import { SearchIcon } from "@/components/ui/Icons";
 
 export function SearchModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [query, setQuery] = useState("");
-  const results = useMemo(() => searchProducts(query), [query]);
+  // The live catalogue, fetched when the overlay first opens.
+  const { products, loading, failed } = useSearchCatalogue(open);
+  const results = useMemo(() => filterProducts(products, query.trim()), [products, query]);
 
   return (
     <Modal open={open} onClose={onClose} position="top" label="Search" className="w-full">
@@ -46,7 +49,15 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
           </div>
         ) : (
           <div className="mt-6">
-            {results.length === 0 ? (
+            {loading ? (
+              <p className="py-8 text-center text-stone" role="status">
+                Searching…
+              </p>
+            ) : failed ? (
+              <p className="py-8 text-center text-stone" role="status">
+                Search isn&apos;t available right now. Please try again in a moment.
+              </p>
+            ) : results.length === 0 ? (
               <p className="py-8 text-center text-stone">
                 No matches for “{query}”. Try a different search.
               </p>
@@ -60,13 +71,15 @@ export function SearchModal({ open, onClose }: { open: boolean; onClose: () => v
                       className="flex items-center gap-4 py-3"
                     >
                       <span className="relative h-16 w-14 shrink-0 overflow-hidden bg-cream">
-                        <SafeImage
-                          src={p.images[0].src}
-                          alt={p.images[0].alt}
-                          fill
-                          sizes="56px"
-                          className="object-cover"
-                        />
+                        {p.images[0] && (
+                          <SafeImage
+                            src={p.images[0].src}
+                            alt={p.images[0].alt}
+                            fill
+                            sizes="56px"
+                            className="object-cover"
+                          />
+                        )}
                       </span>
                       <span className="flex-1">
                         <span className="block text-sm text-ink">{productDisplayTitle(p)}</span>
