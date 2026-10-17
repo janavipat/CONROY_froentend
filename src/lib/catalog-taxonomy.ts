@@ -249,3 +249,23 @@ export const DENIM_VIEWS = {
 >;
 
 export type DenimView = keyof typeof DENIM_VIEWS;
+
+/**
+ * Trouser sub-navigation, the counterpart of DENIM_VIEWS. Each view filters
+ * trousers (product type) by category, so trousers never mix into the denim
+ * pages and denim never appears here.
+ */
+export const TROUSER_VIEWS = {
+  linen: {
+    title: "Linen",
+    description: "Linen trousers, cut clean for warm days.",
+    seoDescription:
+      "Men's linen trousers from CONROY — premium trousers with a clean, versatile look.",
+    category: "Linen Trousers",
+  },
+} as const satisfies Record<
+  string,
+  { title: string; description: string; seoDescription: string; category: string }
+>;
+
+export type TrouserView = keyof typeof TROUSER_VIEWS;

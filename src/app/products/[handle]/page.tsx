@@ -145,7 +145,9 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
             <p className="eyebrow text-stone">
               {product.productType === "T-Shirt"
                 ? productLabel(product)
-                : `${product.color} Denim`}
+                : product.productType === "Trousers"
+                  ? `${product.color} ${product.category || "Trousers"}`
+                  : `${product.color} Denim`}
             </p>
             <h1 className="display-section mt-5 text-ink">
               {productDisplayTitle(product)}
@@ -178,16 +180,30 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
                 the only link from a product page to its category, which the
                 breadcrumb's generic "Collection" did not provide. */}
             <p className="mt-4 text-[0.8125rem] text-stone">
-              A CONROY {product.productType === "T-Shirt" ? "T-shirt" : "denim"} —{" "}
+              A CONROY{" "}
+              {product.productType === "T-Shirt"
+                ? "T-shirt"
+                : product.productType === "Trousers"
+                  ? "trouser"
+                  : "denim"}{" "}
+              —{" "}
               {/* T-shirts no longer have a category page, so they point at
                   the full collection rather than at a 404. */}
               <Link
-                href={product.productType === "T-Shirt" ? "/collections/all" : "/denim"}
+                href={
+                  product.productType === "T-Shirt"
+                    ? "/collections/all"
+                    : product.productType === "Trousers"
+                      ? "/trousers"
+                      : "/denim"
+                }
                 className="text-ink underline-offset-4 hover:underline"
               >
                 {product.productType === "T-Shirt"
                   ? "see the full collection"
-                  : "see all men's jeans"}
+                  : product.productType === "Trousers"
+                    ? "see all men's trousers"
+                    : "see all men's jeans"}
               </Link>
               .
             </p>

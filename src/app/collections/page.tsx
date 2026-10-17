@@ -27,6 +27,8 @@ export const metadata: Metadata = {
  */
 const CATEGORY_ROUTES: Record<string, string> = {
   denim: "/denim",
+  trousers: "/trousers",
+  "linen trousers": "/trousers/linen",
 };
 
 /*
