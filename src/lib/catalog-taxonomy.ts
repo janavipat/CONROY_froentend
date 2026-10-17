@@ -3,8 +3,8 @@
  *
  * The four concepts are deliberately separate:
  *
- *   Product Type   what the garment is      Jeans, T-Shirt
- *   Category       the department           Denim, T-Shirts
+ *   Product Type   what the garment is      Jeans, T-Shirt, Trousers
+ *   Category       the department           Denim, T-Shirts, Trousers
  *   Fit            how it is cut            Slim Fit, Straight Fit, …
  *   Collection     merchandising grouping   Vintage, Essentials  (join table)
  *
@@ -13,14 +13,22 @@
  * migration.
  */
 
-export const PRODUCT_TYPES = ["Jeans", "T-Shirt"] as const;
+export const PRODUCT_TYPES = ["Jeans", "T-Shirt", "Trousers"] as const;
 
-export const CATEGORIES = ["Denim", "T-Shirts", "Cotton T-Shirt", "Cotton Lycra T-Shirt"] as const;
+export const CATEGORIES = [
+  "Denim",
+  "T-Shirts",
+  "Cotton T-Shirt",
+  "Cotton Lycra T-Shirt",
+  "Trousers",
+  "Linen Trousers",
+] as const;
 
 /** Which category a product type belongs to, used to preselect sensibly. */
 export const CATEGORY_FOR_TYPE: Record<string, string> = {
   Jeans: "Denim",
   "T-Shirt": "T-Shirts",
+  Trousers: "Trousers",
 };
 
 /**
@@ -34,6 +42,9 @@ export const CATEGORY_FOR_TYPE: Record<string, string> = {
 export const CATEGORIES_BY_TYPE: Record<string, string[]> = {
   Jeans: ["Denim", "T-Shirts"],
   "T-Shirt": ["T-Shirts", "Cotton T-Shirt", "Cotton Lycra T-Shirt"],
+  // "Trousers" is the department; the fabric categories sit under it, as the
+  // T-shirt ones do.
+  Trousers: ["Trousers", "Linen Trousers"],
 };
 
 /**
@@ -44,6 +55,8 @@ export const CATEGORIES_BY_TYPE: Record<string, string[]> = {
 export const SIZES_BY_TYPE: Record<string, string[]> = {
   Jeans: ["28", "30", "32", "34", "36", "38", "40"],
   "T-Shirt": ["S", "M", "L", "XL", "XXL"],
+  // Trousers are sold on waist inches, like denim.
+  Trousers: ["28", "30", "32", "34", "36", "38", "40"],
 };
 
 /** Fits available per category. Denim's three are the official CONROY set. */
@@ -54,6 +67,8 @@ export const FITS_BY_CATEGORY: Record<string, string[]> = {
   // fitsFor() falls back to denim's fits and offers "Straight Fit" for a tee.
   "Cotton T-Shirt": ["Regular Fit", "Slim Fit", "Oversized Fit"],
   "Cotton Lycra T-Shirt": ["Regular Fit", "Slim Fit", "Oversized Fit"],
+  Trousers: ["Slim Fit", "Straight Fit", "Relaxed Fit"],
+  "Linen Trousers": ["Slim Fit", "Straight Fit", "Relaxed Fit"],
 };
 
 /** Filterable colour buckets. `color` stays the merchandising display name. */
@@ -115,6 +130,9 @@ export function suggestStandardColor(displayColor: string): string {
  */
 export const COLLECTION_HANDLES_BY_TYPE: Record<string, string[]> = {
   "T-Shirt": ["cotton-tshirt", "cotton-lycra-tshirt"],
+  // No trouser collections exist yet. Claiming an empty list keeps the denim
+  // collections from being offered on a trouser product.
+  Trousers: [],
 };
 
 /** Categories for a product type, falling back to the full list if unknown. */
