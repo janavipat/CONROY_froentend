@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SITE } from "@/lib/site";
 import { TROUSER_VIEWS, type TrouserView } from "@/lib/catalog-taxonomy";
-import { browseProducts } from "@/services/browse";
+import { browseProducts, newestFirst } from "@/services/browse";
 import { BrowseLayout } from "@/layouts/BrowseLayout";
 
 /**
@@ -46,7 +46,10 @@ export default async function TrouserViewPage(props: PageProps<"/trousers/[view]
   const view = TROUSER_VIEWS[slug as TrouserView];
   if (!view) notFound();
 
-  const products = await browseProducts({ productType: "Trousers", category: view.category });
+  // Newest first, so the latest trouser leads the page.
+  const products = newestFirst(
+    await browseProducts({ productType: "Trousers", category: view.category }),
+  );
 
   return (
     <BrowseLayout

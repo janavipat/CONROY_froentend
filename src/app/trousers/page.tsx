@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { listingMetadata } from "@/lib/seo";
 import { TROUSER_VIEWS } from "@/lib/catalog-taxonomy";
-import { browseProducts } from "@/services/browse";
+import { browseProducts, newestFirst } from "@/services/browse";
 import { BrowseLayout } from "@/layouts/BrowseLayout";
 
 /**
@@ -21,7 +21,8 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function TrousersPage() {
-  const products = await browseProducts({ productType: "Trousers" });
+  // Newest first, so the latest trouser leads the page.
+  const products = newestFirst(await browseProducts({ productType: "Trousers" }));
   return (
     <BrowseLayout
       eyebrow="The category"

@@ -63,6 +63,14 @@ export async function browseProducts(q: BrowseQuery): Promise<Product[]> {
   return products;
 }
 
+/**
+ * Newest first, by creation date. Used where the latest additions should lead
+ * (the trouser pages); everywhere else keeps the catalogue order.
+ */
+export function newestFirst(products: Product[]): Product[] {
+  return [...products].sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+}
+
 function sortByOrder(products: Product[], key: (p: Product) => number | undefined): Product[] {
   return [...products].sort((a, b) => (key(a) ?? Infinity) - (key(b) ?? Infinity));
 }
