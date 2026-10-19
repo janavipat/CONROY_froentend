@@ -92,6 +92,11 @@ const nextConfig: NextConfig = {
    */
   // Hide the floating Next.js dev indicator ("N" badge) shown on every page.
   devIndicators: false,
+
+  // Linen was briefly a sub-page of Trousers; it is now its own category.
+  async redirects() {
+    return [{ source: "/trousers/linen", destination: "/linen", permanent: true }];
+  },
 };
 
 export default nextConfig;

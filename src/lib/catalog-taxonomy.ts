@@ -3,8 +3,8 @@
  *
  * The four concepts are deliberately separate:
  *
- *   Product Type   what the garment is      Jeans, T-Shirt, Trousers
- *   Category       the department           Denim, T-Shirts, Trousers
+ *   Product Type   what the garment is      Jeans, T-Shirt, Trousers, Linen
+ *   Category       the department           Denim, T-Shirts, Trousers, Linen
  *   Fit            how it is cut            Slim Fit, Straight Fit, …
  *   Collection     merchandising grouping   Vintage, Essentials  (join table)
  *
@@ -13,7 +13,7 @@
  * migration.
  */
 
-export const PRODUCT_TYPES = ["Jeans", "T-Shirt", "Trousers"] as const;
+export const PRODUCT_TYPES = ["Jeans", "T-Shirt", "Trousers", "Linen"] as const;
 
 export const CATEGORIES = [
   "Denim",
@@ -21,7 +21,7 @@ export const CATEGORIES = [
   "Cotton T-Shirt",
   "Cotton Lycra T-Shirt",
   "Trousers",
-  "Linen Trousers",
+  "Linen",
 ] as const;
 
 /** Which category a product type belongs to, used to preselect sensibly. */
@@ -29,6 +29,7 @@ export const CATEGORY_FOR_TYPE: Record<string, string> = {
   Jeans: "Denim",
   "T-Shirt": "T-Shirts",
   Trousers: "Trousers",
+  Linen: "Linen",
 };
 
 /**
@@ -42,9 +43,9 @@ export const CATEGORY_FOR_TYPE: Record<string, string> = {
 export const CATEGORIES_BY_TYPE: Record<string, string[]> = {
   Jeans: ["Denim", "T-Shirts"],
   "T-Shirt": ["T-Shirts", "Cotton T-Shirt", "Cotton Lycra T-Shirt"],
-  // "Trousers" is the department; the fabric categories sit under it, as the
-  // T-shirt ones do.
-  Trousers: ["Trousers", "Linen Trousers"],
+  Trousers: ["Trousers"],
+  // Linen is its own department, not a kind of trouser.
+  Linen: ["Linen"],
 };
 
 /**
@@ -55,8 +56,9 @@ export const CATEGORIES_BY_TYPE: Record<string, string[]> = {
 export const SIZES_BY_TYPE: Record<string, string[]> = {
   Jeans: ["28", "30", "32", "34", "36", "38", "40"],
   "T-Shirt": ["S", "M", "L", "XL", "XXL"],
-  // Trousers are sold on waist inches, like denim.
+  // Trousers and linen are sold on waist inches, like denim.
   Trousers: ["28", "30", "32", "34", "36", "38", "40"],
+  Linen: ["28", "30", "32", "34", "36", "38", "40"],
 };
 
 /** Fits available per category. Denim's three are the official CONROY set. */
@@ -68,7 +70,7 @@ export const FITS_BY_CATEGORY: Record<string, string[]> = {
   "Cotton T-Shirt": ["Regular Fit", "Slim Fit", "Oversized Fit"],
   "Cotton Lycra T-Shirt": ["Regular Fit", "Slim Fit", "Oversized Fit"],
   Trousers: ["Slim Fit", "Straight Fit", "Relaxed Fit"],
-  "Linen Trousers": ["Slim Fit", "Straight Fit", "Relaxed Fit"],
+  Linen: ["Slim Fit", "Straight Fit", "Relaxed Fit"],
 };
 
 /** Filterable colour buckets. `color` stays the merchandising display name. */
@@ -130,9 +132,10 @@ export function suggestStandardColor(displayColor: string): string {
  */
 export const COLLECTION_HANDLES_BY_TYPE: Record<string, string[]> = {
   "T-Shirt": ["cotton-tshirt", "cotton-lycra-tshirt"],
-  // No trouser collections exist yet. Claiming an empty list keeps the denim
-  // collections from being offered on a trouser product.
+  // No trouser or linen collections exist yet. Claiming an empty list keeps
+  // the denim collections from being offered on these products.
   Trousers: [],
+  Linen: [],
 };
 
 /** Categories for a product type, falling back to the full list if unknown. */
@@ -250,22 +253,3 @@ export const DENIM_VIEWS = {
 
 export type DenimView = keyof typeof DENIM_VIEWS;
 
-/**
- * Trouser sub-navigation, the counterpart of DENIM_VIEWS. Each view filters
- * trousers (product type) by category, so trousers never mix into the denim
- * pages and denim never appears here.
- */
-export const TROUSER_VIEWS = {
-  linen: {
-    title: "Linen",
-    description: "Linen trousers, cut clean for warm days.",
-    seoDescription:
-      "Men's linen trousers from CONROY — premium trousers with a clean, versatile look.",
-    category: "Linen Trousers",
-  },
-} as const satisfies Record<
-  string,
-  { title: string; description: string; seoDescription: string; category: string }
->;
-
-export type TrouserView = keyof typeof TROUSER_VIEWS;

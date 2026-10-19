@@ -147,7 +147,9 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
                 ? productLabel(product)
                 : product.productType === "Trousers"
                   ? `${product.color} ${product.category || "Trousers"}`
-                  : `${product.color} Denim`}
+                  : product.productType === "Linen"
+                    ? `${product.color} Linen`
+                    : `${product.color} Denim`}
             </p>
             <h1 className="display-section mt-5 text-ink">
               {productDisplayTitle(product)}
@@ -185,7 +187,9 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
                 ? "T-shirt"
                 : product.productType === "Trousers"
                   ? "trouser"
-                  : "denim"}{" "}
+                  : product.productType === "Linen"
+                    ? "linen"
+                    : "denim"}{" "}
               —{" "}
               {/* T-shirts no longer have a category page, so they point at
                   the full collection rather than at a 404. */}
@@ -195,7 +199,9 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
                     ? "/collections/all"
                     : product.productType === "Trousers"
                       ? "/trousers"
-                      : "/denim"
+                      : product.productType === "Linen"
+                        ? "/linen"
+                        : "/denim"
                 }
                 className="text-ink underline-offset-4 hover:underline"
               >
@@ -203,7 +209,9 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
                   ? "see the full collection"
                   : product.productType === "Trousers"
                     ? "see all men's trousers"
-                    : "see all men's jeans"}
+                    : product.productType === "Linen"
+                      ? "see all men's linen"
+                      : "see all men's jeans"}
               </Link>
               .
             </p>

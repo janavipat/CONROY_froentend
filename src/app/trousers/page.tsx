@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { listingMetadata } from "@/lib/seo";
-import { TROUSER_VIEWS } from "@/lib/catalog-taxonomy";
 import { browseProducts, newestFirst } from "@/services/browse";
 import { BrowseLayout } from "@/layouts/BrowseLayout";
 
@@ -29,10 +28,6 @@ export default async function TrousersPage() {
       title="All Trousers"
       description="Premium trousers with a clean, versatile look."
       breadcrumbs={[{ label: "Home", href: "/" }, { label: "Trousers" }]}
-      subLinks={Object.entries(TROUSER_VIEWS).map(([slug, v]) => ({
-        label: v.title,
-        href: `/trousers/${slug}`,
-      }))}
       products={products}
       emptyMessage="No trousers available right now."
     />

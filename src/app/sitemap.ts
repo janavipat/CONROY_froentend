@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { RETIRED_COLLECTION_HANDLES, SITE } from "@/lib/site";
-import { DENIM_VIEWS, TROUSER_VIEWS } from "@/lib/catalog-taxonomy";
+import { DENIM_VIEWS } from "@/lib/catalog-taxonomy";
 import { fetchAllProducts, fetchCollections } from "@/services/catalog";
 
 /**
@@ -30,6 +30,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry("/new-in", 0.9, "daily"),
     entry("/denim", 0.9, "daily"),
     entry("/trousers", 0.9, "daily"),
+    entry("/linen", 0.9, "daily"),
     entry("/collections", 0.8, "weekly"),
     entry("/collections/all", 0.9, "daily"),
     entry("/shop-the-look", 0.6, "weekly"),
@@ -41,10 +42,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const denimRoutes: MetadataRoute.Sitemap = Object.keys(DENIM_VIEWS).map((fit) =>
     entry(`/denim/${fit}`, 0.8, "weekly"),
-  );
-
-  const trouserRoutes: MetadataRoute.Sitemap = Object.keys(TROUSER_VIEWS).map((view) =>
-    entry(`/trousers/${view}`, 0.8, "weekly"),
   );
 
   // Read the catalogue once; either call falling back to the bundled data
@@ -64,5 +61,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     entry(`/products/${p.handle}`, 0.8, "weekly"),
   );
 
-  return [...staticRoutes, ...denimRoutes, ...trouserRoutes, ...collectionRoutes, ...productRoutes];
+  return [...staticRoutes, ...denimRoutes, ...collectionRoutes, ...productRoutes];
 }

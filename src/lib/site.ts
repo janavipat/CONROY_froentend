@@ -63,6 +63,7 @@ export interface NavItem extends NavLink {
 export const PRODUCT_TYPE_NAV: (NavLink & { productType: string })[] = [
   { label: "Jeans", href: "/denim", productType: "Jeans" },
   { label: "Trousers", href: "/trousers", productType: "Trousers" },
+  { label: "Linen", href: "/linen", productType: "Linen" },
 ];
 
 /**
@@ -93,14 +94,8 @@ export const PRIMARY_NAV: NavItem[] = [
       { label: "Vintage", href: "/denim/vintage" },
     ],
   },
-  {
-    label: "Trousers",
-    href: "/trousers",
-    children: [
-      { label: "All Trousers", href: "/trousers" },
-      { label: "Linen", href: "/trousers/linen" },
-    ],
-  },
+  { label: "Trousers", href: "/trousers" },
+  { label: "Linen", href: "/linen" },
   {
     label: "Collections",
     href: "/collections",
@@ -120,6 +115,7 @@ export const FOOTER_NAV: { title: string; links: NavLink[] }[] = [
       { label: "New In", href: "/new-in" },
       { label: "Denim", href: "/denim" },
       { label: "Trousers", href: "/trousers" },
+      { label: "Linen", href: "/linen" },
       { label: "Collections", href: "/collections" },
     ],
   },
