@@ -35,8 +35,20 @@ export const SITE = {
  * the navigation can't change shape depending on what an admin happens to have
  * created.
  */
+/**
+ * One column of the Shop mega-menu: a category heading, its photograph and
+ * the links beneath it. `productType` says which catalogue products may
+ * supply the photograph.
+ */
+export interface NavGroup extends NavLink {
+  productType: string;
+  links: NavLink[];
+}
+
 export interface NavItem extends NavLink {
   children?: NavLink[];
+  /** Grouped columns, for the Shop mega-menu (and its mobile drawer). */
+  groups?: NavGroup[];
   /**
    * Swaps the plain link list for a product panel.
    *
@@ -45,8 +57,9 @@ export interface NavItem extends NavLink {
    *                 empty) homepage rail
    *   productTypes  what CONROY makes, one entry per product type, with a
    *                 photograph beside it
+   *   shop          every category, in photographed columns
    */
-  mega?: "newIn" | "productTypes";
+  mega?: "newIn" | "productTypes" | "shop";
 }
 
 /**
@@ -80,6 +93,43 @@ export const RETIRED_COLLECTION_HANDLES: readonly string[] = [
   "cotton-lycra-tshirt",
 ];
 
+/**
+ * The Shop mega-menu: one photographed column per category. Every link is an
+ * existing listing page that shows exactly what its label says.
+ */
+export const SHOP_MENU: NavGroup[] = [
+  {
+    label: "Denim",
+    href: "/denim",
+    productType: "Jeans",
+    links: [
+      { label: "All Denim", href: "/denim" },
+      { label: "Slim Fit", href: "/denim/slim" },
+      { label: "Straight Fit", href: "/denim/straight" },
+      { label: "Relaxed Fit", href: "/denim/relaxed" },
+      { label: "Vintage", href: "/denim/vintage" },
+    ],
+  },
+  {
+    label: "Linen",
+    href: "/linen",
+    productType: "Linen",
+    links: [
+      { label: "All Linen", href: "/linen" },
+      { label: "Linen Trousers", href: "/linen" },
+    ],
+  },
+  {
+    label: "Cotton Twill",
+    href: "/cotton-twill",
+    productType: "Cotton Twill",
+    links: [
+      { label: "All Cotton Twill", href: "/cotton-twill" },
+      { label: "Cotton Twill Trousers", href: "/cotton-twill" },
+    ],
+  },
+];
+
 export const PRIMARY_NAV: NavItem[] = [
   { label: "New In", href: "/new-in", mega: "newIn" },
   {
@@ -95,9 +145,9 @@ export const PRIMARY_NAV: NavItem[] = [
       { label: "Vintage", href: "/denim/vintage" },
     ],
   },
-  { label: "Trousers", href: "/trousers" },
-  { label: "Linen", href: "/linen" },
-  { label: "Cotton Twill", href: "/cotton-twill" },
+  // Shop opens the category menu; its href is only a fallback. Trousers is
+  // reached from the Collections menu, kept apart from Denim and Linen.
+  { label: "Shop", href: "/collections", mega: "shop", groups: SHOP_MENU },
   {
     label: "Collections",
     href: "/collections",

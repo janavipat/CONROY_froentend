@@ -1,121 +1,99 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import type { Product } from "@/types";
 import { SITE } from "@/lib/site";
-import { fetchAllProducts } from "@/services/catalog";
+import { browseProducts, newestFirst, type BrowseQuery } from "@/services/browse";
 import { Container } from "@/components/ui/Container";
-import { ProductGrid } from "@/components/product/ProductGrid";
-import { PageHeader } from "@/layouts/PageHeader";
+import { SafeImage } from "@/components/ui/SafeImage";
 
 export const metadata: Metadata = {
   title: "Collections",
   description:
-    "Browse CONROY by category — men's denim in every fit, and cotton and cotton-lycra T-shirts. Find the collection that suits how you dress.",
+    "Explore CONROY collections — premium denim, linen and cotton twill. Considered fabrics, everyday essentials.",
   alternates: { canonical: "/collections" },
   openGraph: { title: `Collections | ${SITE.name}`, url: `${SITE.url}/collections`, images: [`${SITE.url}/opengraph-image`] },
 };
 
 /**
- * Shoppers browse by category — Denim, T-Shirts — not by the merchandising
- * collections the admin creates ("Romano Fit · Bleu Heritage" and friends).
- * Those still exist and are still reachable from the Collections menu and
- * /collections/[handle]; they are simply not the top-level structure here.
- *
- * The categories are derived from the live catalogue's own `category` and
- * `productType` fields, so nothing is hard-coded beyond the route each one
- * points at, and no database collection is touched.
+ * The collections a shopper browses, in order. Each uses the same query as its
+ * own listing page, so the count and photograph on the card always match what
+ * the shopper finds after clicking through. The admin's merchandising
+ * collections ("Romano Fit · Bleu Heritage" and friends) still live at
+ * /collections/[handle]; they are not the top-level structure here.
  */
-const CATEGORY_ROUTES: Record<string, string> = {
-  denim: "/denim",
-  trousers: "/trousers",
-  linen: "/linen",
-  "cotton twill": "/cotton-twill",
-};
-
-/*
- * Categories withdrawn from the storefront. The T-shirt section has been taken
- * off the site, so it gets no category entry here — its products are still in
- * the catalogue and in admin, untouched.
- */
-const RETIRED_CATEGORIES = new Set(["t-shirts", "cotton t-shirt", "cotton lycra t-shirt"]);
-
-interface CategoryCard {
+const COLLECTIONS: {
   title: string;
-  /** The product types inside it — "Jeans" under Denim. */
-  types: string[];
-  count: number;
   href: string;
-}
-
-function categoriesFrom(products: Product[]): CategoryCard[] {
-  const groups = new Map<string, { title: string; types: Set<string>; count: number }>();
-
-  for (const p of products) {
-    if ((p.status ?? "active") !== "active") continue;
-    const title = (p.category ?? "").trim();
-    if (!title) continue;
-    const key = title.toLowerCase();
-    if (RETIRED_CATEGORIES.has(key)) continue;
-    const group = groups.get(key) ?? { title, types: new Set<string>(), count: 0 };
-    if (p.productType?.trim()) group.types.add(p.productType.trim());
-    group.count += 1;
-    groups.set(key, group);
-  }
-
-  return [...groups.entries()]
-    .map(([key, g]) => ({
-      title: g.title,
-      types: [...g.types],
-      count: g.count,
-      // Unknown categories fall through to the full catalogue rather than a 404.
-      href: CATEGORY_ROUTES[key] ?? "/collections/all",
-    }))
-    .sort((a, b) => b.count - a.count);
-}
+  query: BrowseQuery;
+  /** The listing page shows newest first; the card's photograph follows it. */
+  newest?: boolean;
+}[] = [
+  { title: "Denim", href: "/denim", query: { category: "Denim" } },
+  { title: "Linen", href: "/linen", query: { productType: "Linen" }, newest: true },
+  { title: "Cotton Twill", href: "/cotton-twill", query: { productType: "Cotton Twill" }, newest: true },
+];
 
 export default async function CollectionsPage() {
-  const products = await fetchAllProducts();
-  const categories = categoriesFrom(products);
+  const cards = await Promise.all(
+    COLLECTIONS.map(async (c) => {
+      const found = await browseProducts(c.query);
+      const products = c.newest ? newestFirst(found) : found;
+      const image = products.find((p) => p.images?.[0]?.src)?.images[0];
+      return { ...c, count: products.length, image };
+    }),
+  );
 
   return (
-    <>
-      <PageHeader
-        eyebrow="Shop by category"
-        title="Collections"
-        description="Every CONROY piece, grouped by what it is."
-        breadcrumbs={[{ label: "Home", href: "/" }, { label: "Collections" }]}
-      />
+    <section className="pb-section pt-14 sm:pt-16">
+      <Container>
+        <header className="mx-auto max-w-2xl text-center">
+          <h1 className="font-display text-[2.25rem] leading-[1.1] text-ink sm:text-[2.75rem] lg:text-[3.25rem]">
+            Explore Our Collections
+          </h1>
+          <p className="mt-4 text-[0.75rem] uppercase tracking-[0.22em] text-stone">
+            Considered fabrics. Everyday essentials.
+          </p>
+        </header>
 
-      <section className="py-section-sm">
-        <Container>
-          {/* Categories as a compact row, not a three-column grid: with one
-              category the grid left two empty cells and the page then ran on
-              into blank space before the footer. The products follow straight
-              after it. */}
-          {categories.length > 0 && (
-            <ul className="mb-block flex flex-wrap items-baseline justify-center gap-x-10 gap-y-4 border-b border-line pb-6">
-              {categories.map((c) => (
-                <li key={c.title}>
-                  <Link href={c.href} className="group inline-flex items-baseline gap-3">
-                    <span className="font-display text-[1.625rem] leading-none text-ink transition-colors duration-(--duration-quick) group-hover:text-accent sm:text-[1.875rem]">
-                      {[c.title, ...c.types].join(" / ")}
-                    </span>
-                    <span className="micro-label">
-                      {c.count} {c.count === 1 ? "product" : "products"}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
+        <ul className="mt-12 grid grid-cols-1 gap-x-6 gap-y-12 sm:mt-14 sm:grid-cols-2 lg:grid-cols-3">
+          {cards.map((c, i) => (
+            // Two columns leave the third card alone on its row; centre it
+            // rather than leaving an empty half beside it.
+            <li
+              key={c.href}
+              className="sm:max-lg:odd:last:col-span-2 sm:max-lg:odd:last:mx-auto sm:max-lg:odd:last:w-[calc(50%-0.75rem)]"
+            >
+              <Link href={c.href} className="group block">
+                <span className="relative block aspect-[4/5] w-full overflow-hidden bg-mist">
+                  {c.image && (
+                    <SafeImage
+                      src={c.image.src}
+                      alt={c.image.alt || `${c.title} collection`}
+                      fill
+                      sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                      priority={i === 0}
+                      className="object-cover object-center transition-transform duration-(--duration-slow) ease-[var(--ease-luxe)] group-hover:scale-[1.03]"
+                    />
+                  )}
+                </span>
 
-          {products.length === 0 ? (
-            <p className="py-20 text-center text-sm text-stone">No products yet.</p>
-          ) : (
-            <ProductGrid products={products} columns={4} priorityCount={4} />
-          )}
-        </Container>
-      </section>
-    </>
+                <span className="mt-5 flex items-baseline justify-between gap-4 border-b border-line pb-4">
+                  <span className="font-display text-[1.625rem] leading-none text-ink">{c.title}</span>
+                  <span className="micro-label">
+                    {c.count} {c.count === 1 ? "product" : "products"}
+                  </span>
+                </span>
+
+                <span className="nav-label mt-4 inline-flex items-center gap-2 text-ink transition-colors duration-(--duration-base) group-hover:text-accent">
+                  Explore collection
+                  <span aria-hidden className="transition-transform duration-(--duration-base) group-hover:translate-x-1">
+                    →
+                  </span>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </Container>
+    </section>
   );
 }

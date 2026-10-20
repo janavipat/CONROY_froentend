@@ -11,7 +11,7 @@ export function RouteProgress({ label = "Loading" }: { label?: string }) {
     <div
       role="status"
       aria-live="polite"
-      className="sticky top-[var(--spacing-header)] z-30 h-0.5 w-full overflow-hidden bg-line motion-reduce:bg-ink/25"
+      className="sticky top-[var(--header-height)] z-30 h-0.5 w-full overflow-hidden bg-line motion-reduce:bg-ink/25"
     >
       <span
         aria-hidden
