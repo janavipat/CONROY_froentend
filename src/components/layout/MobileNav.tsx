@@ -22,14 +22,9 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
 
         <nav className="mt-10 flex flex-col">
           {PRIMARY_NAV.map((item) => {
-            const groups = item.groups ?? [];
-            const active = groups.length
-              ? groups.some((g) => pathname.startsWith(g.href))
-              : item.href === "/"
-                ? pathname === "/"
-                : pathname.startsWith(item.href);
+            const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
             const children = item.children ?? [];
-            const expandable = children.length > 0 || groups.length > 0;
+            const expandable = children.length > 0;
             const isOpen = expanded === item.label;
 
             // A section with children expands in place rather than navigating,
@@ -59,37 +54,7 @@ export function MobileNav({ open, onClose }: { open: boolean; onClose: () => voi
                     </span>
                   </button>
 
-                  {/* Clothing: its categories stacked, each heading a link. */}
-                  {isOpen && groups.length > 0 && (
-                    <div className="space-y-3 pb-5 pl-1">
-                      {groups.map((group) => (
-                        <div key={group.href + group.label}>
-                          <Link
-                            href={group.href}
-                            onClick={onClose}
-                            className="block py-3 text-[0.75rem] font-medium uppercase tracking-[0.18em] text-ink"
-                          >
-                            {group.label}
-                          </Link>
-                          <ul>
-                            {group.links.map((link) => (
-                              <li key={link.label}>
-                                <Link
-                                  href={link.href}
-                                  onClick={onClose}
-                                  className="block py-2.5 text-base text-ink-soft"
-                                >
-                                  {link.label}
-                                </Link>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {isOpen && children.length > 0 && (
+                  {isOpen && (
                     <ul className="pb-4 pl-1">
                       {children.map((child) => (
                         <li key={child.href + child.label}>
