@@ -61,7 +61,7 @@ export interface NavItem extends NavLink {
  * menu finds a photograph for each entry.
  */
 export const PRODUCT_TYPE_NAV: (NavLink & { productType: string })[] = [
-  { label: "Jeans", href: "/denim", productType: "Jeans" },
+  { label: "Denim", href: "/denim", productType: "Jeans" },
   { label: "Trousers", href: "/trousers", productType: "Trousers" },
   { label: "Linen", href: "/linen", productType: "Linen" },
   { label: "Cotton Twill", href: "/cotton-twill", productType: "Cotton Twill" },
@@ -82,22 +82,8 @@ export const RETIRED_COLLECTION_HANDLES: readonly string[] = [
 
 export const PRIMARY_NAV: NavItem[] = [
   { label: "New In", href: "/new-in", mega: "newIn" },
-  {
-    label: "Denim",
-    href: "/denim",
-    children: [
-      { label: "All Denim", href: "/denim" },
-      // Fits — how the garment is cut.
-      { label: "Slim", href: "/denim/slim" },
-      { label: "Straight", href: "/denim/straight" },
-      { label: "Relaxed", href: "/denim/relaxed" },
-      // A merchandising grouping, not a fit — resolved via the collection.
-      { label: "Vintage", href: "/denim/vintage" },
-    ],
-  },
-  { label: "Trousers", href: "/trousers" },
-  { label: "Linen", href: "/linen" },
-  { label: "Cotton Twill", href: "/cotton-twill" },
+  // Denim, Trousers, Linen and Cotton Twill live inside Collections rather
+  // than as top-level items, so the header stays short.
   {
     label: "Collections",
     href: "/collections",
