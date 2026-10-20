@@ -149,7 +149,9 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
                   ? `${product.color} ${product.category || "Trousers"}`
                   : product.productType === "Linen"
                     ? `${product.color} Linen`
-                    : `${product.color} Denim`}
+                    : product.productType === "Cotton Twill"
+                      ? `${product.color} Cotton Twill`
+                      : `${product.color} Denim`}
             </p>
             <h1 className="display-section mt-5 text-ink">
               {productDisplayTitle(product)}
@@ -189,7 +191,9 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
                   ? "trouser"
                   : product.productType === "Linen"
                     ? "linen"
-                    : "denim"}{" "}
+                    : product.productType === "Cotton Twill"
+                      ? "cotton twill"
+                      : "denim"}{" "}
               —{" "}
               {/* T-shirts no longer have a category page, so they point at
                   the full collection rather than at a 404. */}
@@ -201,7 +205,9 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
                       ? "/trousers"
                       : product.productType === "Linen"
                         ? "/linen"
-                        : "/denim"
+                        : product.productType === "Cotton Twill"
+                          ? "/cotton-twill"
+                          : "/denim"
                 }
                 className="text-ink underline-offset-4 hover:underline"
               >
@@ -211,7 +217,9 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
                     ? "see all men's trousers"
                     : product.productType === "Linen"
                       ? "see all men's linen"
-                      : "see all men's jeans"}
+                      : product.productType === "Cotton Twill"
+                        ? "see all men's cotton twill"
+                        : "see all men's jeans"}
               </Link>
               .
             </p>

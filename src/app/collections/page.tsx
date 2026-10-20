@@ -29,6 +29,7 @@ const CATEGORY_ROUTES: Record<string, string> = {
   denim: "/denim",
   trousers: "/trousers",
   linen: "/linen",
+  "cotton twill": "/cotton-twill",
 };
 
 /*

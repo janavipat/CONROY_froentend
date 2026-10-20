@@ -64,6 +64,7 @@ export const PRODUCT_TYPE_NAV: (NavLink & { productType: string })[] = [
   { label: "Jeans", href: "/denim", productType: "Jeans" },
   { label: "Trousers", href: "/trousers", productType: "Trousers" },
   { label: "Linen", href: "/linen", productType: "Linen" },
+  { label: "Cotton Twill", href: "/cotton-twill", productType: "Cotton Twill" },
 ];
 
 /**
@@ -96,6 +97,7 @@ export const PRIMARY_NAV: NavItem[] = [
   },
   { label: "Trousers", href: "/trousers" },
   { label: "Linen", href: "/linen" },
+  { label: "Cotton Twill", href: "/cotton-twill" },
   {
     label: "Collections",
     href: "/collections",
@@ -116,6 +118,7 @@ export const FOOTER_NAV: { title: string; links: NavLink[] }[] = [
       { label: "Denim", href: "/denim" },
       { label: "Trousers", href: "/trousers" },
       { label: "Linen", href: "/linen" },
+      { label: "Cotton Twill", href: "/cotton-twill" },
       { label: "Collections", href: "/collections" },
     ],
   },

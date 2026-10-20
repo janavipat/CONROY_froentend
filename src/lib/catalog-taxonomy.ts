@@ -3,8 +3,8 @@
  *
  * The four concepts are deliberately separate:
  *
- *   Product Type   what the garment is      Jeans, T-Shirt, Trousers, Linen
- *   Category       the department           Denim, T-Shirts, Trousers, Linen
+ *   Product Type   what the garment is      Jeans, T-Shirt, Trousers, Linen, Cotton Twill
+ *   Category       the department           Denim, T-Shirts, Trousers, Linen, Cotton Twill
  *   Fit            how it is cut            Slim Fit, Straight Fit, …
  *   Collection     merchandising grouping   Vintage, Essentials  (join table)
  *
@@ -13,7 +13,7 @@
  * migration.
  */
 
-export const PRODUCT_TYPES = ["Jeans", "T-Shirt", "Trousers", "Linen"] as const;
+export const PRODUCT_TYPES = ["Jeans", "T-Shirt", "Trousers", "Linen", "Cotton Twill"] as const;
 
 export const CATEGORIES = [
   "Denim",
@@ -22,6 +22,7 @@ export const CATEGORIES = [
   "Cotton Lycra T-Shirt",
   "Trousers",
   "Linen",
+  "Cotton Twill",
 ] as const;
 
 /** Which category a product type belongs to, used to preselect sensibly. */
@@ -30,6 +31,7 @@ export const CATEGORY_FOR_TYPE: Record<string, string> = {
   "T-Shirt": "T-Shirts",
   Trousers: "Trousers",
   Linen: "Linen",
+  "Cotton Twill": "Cotton Twill",
 };
 
 /**
@@ -46,6 +48,8 @@ export const CATEGORIES_BY_TYPE: Record<string, string[]> = {
   Trousers: ["Trousers"],
   // Linen is its own department, not a kind of trouser.
   Linen: ["Linen"],
+  // Cotton twill is its own department too, separate from linen and trousers.
+  "Cotton Twill": ["Cotton Twill"],
 };
 
 /**
@@ -59,6 +63,7 @@ export const SIZES_BY_TYPE: Record<string, string[]> = {
   // Trousers and linen are sold on waist inches, like denim.
   Trousers: ["28", "30", "32", "34", "36", "38", "40"],
   Linen: ["28", "30", "32", "34", "36", "38", "40"],
+  "Cotton Twill": ["28", "30", "32", "34", "36", "38", "40"],
 };
 
 /** Fits available per category. Denim's three are the official CONROY set. */
@@ -71,6 +76,7 @@ export const FITS_BY_CATEGORY: Record<string, string[]> = {
   "Cotton Lycra T-Shirt": ["Regular Fit", "Slim Fit", "Oversized Fit"],
   Trousers: ["Slim Fit", "Straight Fit", "Relaxed Fit"],
   Linen: ["Slim Fit", "Straight Fit", "Relaxed Fit"],
+  "Cotton Twill": ["Slim Fit", "Straight Fit", "Relaxed Fit"],
 };
 
 /** Filterable colour buckets. `color` stays the merchandising display name. */
@@ -136,6 +142,7 @@ export const COLLECTION_HANDLES_BY_TYPE: Record<string, string[]> = {
   // the denim collections from being offered on these products.
   Trousers: [],
   Linen: [],
+  "Cotton Twill": [],
 };
 
 /** Categories for a product type, falling back to the full list if unknown. */
