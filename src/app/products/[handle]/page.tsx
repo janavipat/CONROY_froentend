@@ -13,6 +13,7 @@ import { Accordion } from "@/components/ui/Accordion";
 import { DiscountBadge } from "@/components/product/DiscountBadge";
 import { ProductGallery } from "@/components/product/ProductGallery";
 import { AddToCartForm } from "@/components/product/AddToCartForm";
+import { MetaViewContent } from "@/components/analytics/MetaViewContent";
 import { ProductGrid } from "@/components/product/ProductGrid";
 import { ProductReviews } from "@/components/product/ProductReviews";
 import { SectionHeading } from "@/components/ui/SectionHeading";
@@ -106,6 +107,12 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }}
+      />
+      <MetaViewContent
+        handle={product.handle}
+        title={product.title}
+        price={product.price}
+        currency={product.currency}
       />
 
       <Container className="py-12 lg:py-16">

@@ -12,6 +12,7 @@ import { GuestOfferPopup } from "@/components/offers/GuestOfferPopup";
 import { ChatWidget } from "@/components/chat/ChatWidget";
 import { VisitorBeacon } from "@/components/analytics/VisitorBeacon";
 import { LocationConsent } from "@/components/analytics/LocationConsent";
+import { MetaPixel } from "@/components/analytics/MetaPixel";
 
 /**
  * Renders the storefront chrome (announcement bar, header, footer) — except on
@@ -32,6 +33,8 @@ export function StoreChrome({ children }: { children: React.ReactNode }) {
           only the handful of routes that happen to have a loading.tsx. */}
       <GlobalRouteProgress />
       <VisitorBeacon />
+      {/* Storefront only — admin sessions are not shopper traffic. */}
+      <MetaPixel />
       <LocationConsent />
       <MaintenanceBanner />
       <AnnouncementBar />

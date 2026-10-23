@@ -12,6 +12,7 @@ import {
 } from "@/lib/pending-cart";
 import { useToast } from "@/components/ui/Toast";
 import { trackCartAdd } from "@/services/analytics";
+import { trackPixelAddToCart } from "@/lib/meta-pixel";
 import { cn } from "@/utils/cn";
 import { Button } from "@/components/ui/Button";
 import { CheckIcon, MinusIcon, PlusIcon } from "@/components/ui/Icons";
@@ -56,6 +57,13 @@ export function AddToCartForm({ product, compact = false }: { product: Product; 
       { phone: user?.phone },
       { size: chosen, quantity: qty, price: product.price, currency: product.currency },
     );
+    trackPixelAddToCart({
+      id: product.handle,
+      name: product.title,
+      quantity: qty,
+      price: product.price,
+      currency: product.currency,
+    });
     setAdded(true);
     setTimeout(() => setAdded(false), 1800);
   }

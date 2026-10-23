@@ -3,7 +3,7 @@
 import { SafeImage } from "@/components/ui/SafeImage";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCart } from "@/lib/cart-context";
 import { useAuth } from "@/lib/auth/auth-context";
 import { createOrder, type PaymentMethod, type ShipAddress } from "@/services/orders";
@@ -27,6 +27,7 @@ import { SavedAddresses } from "@/components/checkout/SavedAddresses";
 import { Container } from "@/components/ui/Container";
 import { BackButton } from "@/components/ui/BackButton";
 import { withRedirect } from "@/lib/auth/redirect";
+import { trackPixelInitiateCheckout, trackPixelPurchase, type PixelItem } from "@/lib/meta-pixel";
 import { Button } from "@/components/ui/Button";
 import { Loader } from "@/components/ui/Loader";
 import {
@@ -154,6 +155,18 @@ export default function PaymentPage() {
   }, [initializing, user, router]);
 
   /*
+   * Meta Pixel InitiateCheckout: a signed-in shopper with something in the
+   * cart has reached checkout. Once per visit to this page — the ref keeps
+   * Strict Mode and later cart edits from reporting it again.
+   */
+  const checkoutTracked = useRef(false);
+  useEffect(() => {
+    if (checkoutTracked.current || !user || items.length === 0) return;
+    checkoutTracked.current = true;
+    trackPixelInitiateCheckout(pixelItems(items), subtotal, items[0].currency || "INR");
+  }, [user, items, subtotal]);
+
+  /*
    * The customer's address book. Held rather than merely copied into the form,
    * so a returning shopper is shown the address they already gave us instead of
    * an empty form they have to fill in again.
@@ -248,6 +261,10 @@ export default function PaymentPage() {
 
   function finish(orderId: string | undefined, m: PaymentMethod) {
     setProcessing(false);
+    // Only reached once the backend has accepted the order (and, online,
+    // verified the payment). Reported before the cart is cleared, with the
+    // same total the confirmation screen shows.
+    trackPixelPurchase(orderId, pixelItems(items), total, items[0]?.currency || "INR");
     setDone({
       orderId,
       method: m,
@@ -1253,6 +1270,11 @@ const PROGRESS = ["Cart", "Details", "Payment", "Done"] as const;
  * Where the shopper is in the purchase. Cart is always behind them (they came
  * from it) and stays a link back; the rest mark progress only.
  */
+/** Cart lines in the shape the Meta Pixel reports. */
+function pixelItems(items: { productHandle: string; quantity: number; price: number }[]): PixelItem[] {
+  return items.map((i) => ({ id: i.productHandle, quantity: i.quantity, price: i.price }));
+}
+
 function CheckoutProgress({ current, disabled = false }: { current: 1 | 2 | 3; disabled?: boolean }) {
   return (
     <ol className="mt-5 flex items-center gap-2 text-[0.7rem] uppercase tracking-[0.14em]" aria-label="Checkout progress">
