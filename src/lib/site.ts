@@ -75,6 +75,12 @@ export const PRODUCT_TYPE_NAV: (NavLink & { productType: string })[] = [
 export const ALL_PRODUCTS_NAV: NavLink = { label: "All", href: "/collections/all" };
 
 /**
+ * "Unisex" — every product an admin has placed in the unisex collection,
+ * whatever its material. Last in the Collections menu.
+ */
+export const UNISEX_NAV: NavLink = { label: "Unisex", href: "/unisex" };
+
+/**
  * Collections withdrawn from the storefront.
  *
  * The T-shirt section has been taken off the site. Its two fabric collections
@@ -97,7 +103,7 @@ export const PRIMARY_NAV: NavItem[] = [
     mega: "productTypes",
     // The same entries the desktop panel shows, so the mobile drawer can
     // expand them without a second list to keep in step.
-    children: [ALL_PRODUCTS_NAV, ...PRODUCT_TYPE_NAV.map(({ label, href }) => ({ label, href }))],
+    children: [ALL_PRODUCTS_NAV, ...PRODUCT_TYPE_NAV.map(({ label, href }) => ({ label, href })), UNISEX_NAV],
   },
   { label: "Shop the Look", href: "/shop-the-look" },
   { label: "About", href: "/about" },
@@ -112,6 +118,7 @@ export const FOOTER_NAV: { title: string; links: NavLink[] }[] = [
       { label: "Trousers", href: "/trousers" },
       { label: "Linen", href: "/linen" },
       { label: "Cotton Twill", href: "/cotton-twill" },
+      { label: "Unisex", href: "/unisex" },
       { label: "Collections", href: "/collections" },
     ],
   },

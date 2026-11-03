@@ -260,3 +260,16 @@ export const DENIM_VIEWS = {
 
 export type DenimView = keyof typeof DENIM_VIEWS;
 
+
+/**
+ * Unisex is a classification, not a material: a product is unisex when an
+ * admin has put it in the "unisex" collection (Admin → Collections). It then
+ * belongs to the UNISEX page instead of its material's men's page (e.g. a
+ * unisex linen trouser shows under Unisex, not Linen). Reading the existing
+ * collection membership means no new product field and no duplicate records.
+ */
+export const UNISEX_COLLECTION = "unisex";
+
+export function isUnisex(product: { collections?: string[] }): boolean {
+  return (product.collections ?? []).includes(UNISEX_COLLECTION);
+}

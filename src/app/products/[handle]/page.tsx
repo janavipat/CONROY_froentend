@@ -5,7 +5,7 @@ import { fetchAllProducts, fetchProductByHandle } from "@/services/catalog";
 import { SITE } from "@/lib/site";
 import { breadcrumbSchema, jsonLd, productSchema, productSeoTitle, truncate } from "@/lib/seo";
 import { formatCurrency } from "@/utils/format";
-import { productDisplayTitle, productLabel } from "@/lib/catalog-taxonomy";
+import { isUnisex, productDisplayTitle, productLabel } from "@/lib/catalog-taxonomy";
 import { Container } from "@/components/ui/Container";
 import { BackButton } from "@/components/ui/BackButton";
 import { Rating } from "@/components/ui/Rating";
@@ -204,9 +204,13 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
               —{" "}
               {/* T-shirts no longer have a category page, so they point at
                   the full collection rather than at a 404. */}
+              {/* Unisex pieces point at /unisex — they aren't listed on
+                  their material's men's page. */}
               <Link
                 href={
-                  product.productType === "T-Shirt"
+                  isUnisex(product)
+                    ? "/unisex"
+                    : product.productType === "T-Shirt"
                     ? "/collections/all"
                     : product.productType === "Trousers"
                       ? "/trousers"
@@ -218,7 +222,9 @@ export default async function ProductPage(props: PageProps<"/products/[handle]">
                 }
                 className="text-ink underline-offset-4 hover:underline"
               >
-                {product.productType === "T-Shirt"
+                {isUnisex(product)
+                  ? "see all unisex"
+                  : product.productType === "T-Shirt"
                   ? "see the full collection"
                   : product.productType === "Trousers"
                     ? "see all men's trousers"

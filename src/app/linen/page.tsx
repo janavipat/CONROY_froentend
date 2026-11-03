@@ -2,14 +2,20 @@ import type { Metadata } from "next";
 import { listingMetadata } from "@/lib/seo";
 import { browseProducts, newestFirst } from "@/services/browse";
 import { BrowseLayout } from "@/layouts/BrowseLayout";
+import { isUnisex } from "@/lib/catalog-taxonomy";
+
+/** Men's linen: the Linen product type, minus anything classified unisex (see /unisex). */
+async function mensLinen() {
+  return (await browseProducts({ productType: "Linen" })).filter((p) => !isUnisex(p));
+}
 
 /**
- * Every linen product — its own category, alongside /denim and /trousers.
+ * Every men's linen product — its own category, alongside /denim and /trousers.
  * Filters on the Linen product type, so linen never mixes into the other
- * listings and they never appear here.
+ * listings and they never appear here. Unisex linen lives on /unisex instead.
  */
 export async function generateMetadata(): Promise<Metadata> {
-  const products = await browseProducts({ productType: "Linen" });
+  const products = await mensLinen();
   const hero = products[0]?.images?.[0];
   return listingMetadata({
     title: "Men's Linen",
@@ -22,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function LinenPage() {
   // Newest first, so the latest linen piece leads the page.
-  const products = newestFirst(await browseProducts({ productType: "Linen" }));
+  const products = newestFirst(await mensLinen());
   return (
     <BrowseLayout
       eyebrow="The category"

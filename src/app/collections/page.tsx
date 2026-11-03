@@ -6,6 +6,7 @@ import { fetchAllProducts } from "@/services/catalog";
 import { Container } from "@/components/ui/Container";
 import { ProductGrid } from "@/components/product/ProductGrid";
 import { PageHeader } from "@/layouts/PageHeader";
+import { isUnisex } from "@/lib/catalog-taxonomy";
 
 export const metadata: Metadata = {
   title: "Collections",
@@ -30,6 +31,7 @@ const CATEGORY_ROUTES: Record<string, string> = {
   trousers: "/trousers",
   linen: "/linen",
   "cotton twill": "/cotton-twill",
+  unisex: "/unisex",
 };
 
 /*
@@ -52,12 +54,14 @@ function categoriesFrom(products: Product[]): CategoryCard[] {
 
   for (const p of products) {
     if ((p.status ?? "active") !== "active") continue;
-    const title = (p.category ?? "").trim();
+    // Unisex is its own category (the admin's unisex collection), counted
+    // there rather than under its material — matching /unisex and /linen.
+    const title = isUnisex(p) ? "Unisex" : (p.category ?? "").trim();
     if (!title) continue;
     const key = title.toLowerCase();
     if (RETIRED_CATEGORIES.has(key)) continue;
     const group = groups.get(key) ?? { title, types: new Set<string>(), count: 0 };
-    if (p.productType?.trim()) group.types.add(p.productType.trim());
+    if (p.productType?.trim() && !isUnisex(p)) group.types.add(p.productType.trim());
     group.count += 1;
     groups.set(key, group);
   }

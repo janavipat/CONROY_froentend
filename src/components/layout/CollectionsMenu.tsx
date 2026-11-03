@@ -2,7 +2,7 @@
 
 import { SafeImage } from "@/components/ui/SafeImage";
 import Link from "next/link";
-import { ALL_PRODUCTS_NAV, PRODUCT_TYPE_NAV } from "@/lib/site";
+import { ALL_PRODUCTS_NAV, PRODUCT_TYPE_NAV, UNISEX_NAV } from "@/lib/site";
 
 /**
  * A photograph for a product type, keyed by the catalogue's `productType`
@@ -71,7 +71,10 @@ export function CollectionsMenu({
           />
         </Link>
 
-        <ul className="flex flex-col justify-center gap-5 pr-4">
+        {/* Block links with gap-4 (was inline with gap-5): six entries fit
+            beside the 208px photo, so the panel keeps the size it had with
+            fewer entries. */}
+        <ul className="flex flex-col justify-center gap-4 pr-4">
           {/* All products first, picked out with a light tint of the brand
               blue. The negative margin keeps its text aligned with the
               entries below while the tint extends around it. */}
@@ -89,12 +92,21 @@ export function CollectionsMenu({
               <Link
                 href={type.href}
                 onClick={onNavigate}
-                className="nav-label whitespace-nowrap text-ink transition-colors duration-(--duration-base) hover:text-accent"
+                className="nav-label block whitespace-nowrap text-ink transition-colors duration-(--duration-base) hover:text-accent"
               >
                 {type.label}
               </Link>
             </li>
           ))}
+          <li>
+            <Link
+              href={UNISEX_NAV.href}
+              onClick={onNavigate}
+              className="nav-label block whitespace-nowrap text-ink transition-colors duration-(--duration-base) hover:text-accent"
+            >
+              {UNISEX_NAV.label}
+            </Link>
+          </li>
         </ul>
       </div>
     </div>
