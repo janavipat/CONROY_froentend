@@ -2,7 +2,7 @@
 
 import { SafeImage } from "@/components/ui/SafeImage";
 import Link from "next/link";
-import { PRODUCT_TYPE_NAV } from "@/lib/site";
+import { ALL_PRODUCTS_NAV, PRODUCT_TYPE_NAV } from "@/lib/site";
 
 /**
  * A photograph for a product type, keyed by the catalogue's `productType`
@@ -72,6 +72,18 @@ export function CollectionsMenu({
         </Link>
 
         <ul className="flex flex-col justify-center gap-5 pr-4">
+          {/* All products first, picked out with a light tint of the brand
+              blue. The negative margin keeps its text aligned with the
+              entries below while the tint extends around it. */}
+          <li>
+            <Link
+              href={ALL_PRODUCTS_NAV.href}
+              onClick={onNavigate}
+              className="nav-label -mx-3 -my-1.5 block whitespace-nowrap bg-accent/8 px-3 py-1.5 text-ink transition-colors duration-(--duration-base) hover:bg-accent/12 hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            >
+              {ALL_PRODUCTS_NAV.label}
+            </Link>
+          </li>
           {PRODUCT_TYPE_NAV.map((type) => (
             <li key={type.href}>
               <Link

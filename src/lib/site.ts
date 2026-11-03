@@ -68,6 +68,13 @@ export const PRODUCT_TYPE_NAV: (NavLink & { productType: string })[] = [
 ];
 
 /**
+ * "All" — every product across every collection, first in the Collections
+ * menu. Points at the existing all-products listing (/collections/all, the
+ * same page "Shop all products" links use), so no listing or data is duplicated.
+ */
+export const ALL_PRODUCTS_NAV: NavLink = { label: "All", href: "/collections/all" };
+
+/**
  * Collections withdrawn from the storefront.
  *
  * The T-shirt section has been taken off the site. Its two fabric collections
@@ -90,7 +97,7 @@ export const PRIMARY_NAV: NavItem[] = [
     mega: "productTypes",
     // The same entries the desktop panel shows, so the mobile drawer can
     // expand them without a second list to keep in step.
-    children: PRODUCT_TYPE_NAV.map(({ label, href }) => ({ label, href })),
+    children: [ALL_PRODUCTS_NAV, ...PRODUCT_TYPE_NAV.map(({ label, href }) => ({ label, href }))],
   },
   { label: "Shop the Look", href: "/shop-the-look" },
   { label: "About", href: "/about" },
