@@ -7,6 +7,7 @@ import { ShopTheLookEdit } from "@/sections/ShopTheLookEdit";
 import { HeritageStory } from "@/sections/HeritageStory";
 import { CampaignBanner } from "@/sections/CampaignBanner";
 import { OfferBanner } from "@/sections/OfferBanner";
+import { PhotoBanner } from "@/sections/PhotoBanner";
 import { ServiceFeatures } from "@/sections/ServiceFeatures";
 import { fetchSiteSettings, isOn } from "@/services/settings";
 import { browseProducts, fetchBestSellers } from "@/services/browse";
@@ -15,8 +16,8 @@ import { browseProducts, fetchBestSellers } from "@/services/browse";
  * Homepage composition — a fashion-brand storytelling order rather than a
  * catalogue dump:
  *
- *   Hero → Denim Edit → Featured → Best Sellers
- *        → Shop the Look → Brand Story → Newsletter (in the footer)
+ *   Hero (cotton campaign) → Denim Edit → Featured → Denim campaign
+ *        → Best Sellers → Shop the Look → Linen campaign → Brand Story → Newsletter (in the footer)
  *
  * New In is deliberately absent: it is admin-curated, so as a permanent
  * homepage rail it sat empty (or one card wide in a four-column grid) and left
@@ -78,6 +79,16 @@ export default async function HomePage() {
         ctaLabel="Shop all denim"
       />
 
+      {/* 3a — Denim campaign. On phones the crop keeps the right-hand side,
+          where the "Outdoors" lettering is. */}
+      <PhotoBanner
+        src="/brand/banner-outdoors.jpg"
+        alt="Styled for the outdoors — three men in CONROY denim by a haystack and a horse paddock"
+        href="/denim"
+        label="Styled for the outdoors — shop the denim collection"
+        mobilePosition="right"
+      />
+
       {/* 4 — Best Sellers. Admin-curated; renders nothing until something is
           marked, and narrows to however many products there are. */}
       <ProductRail
@@ -97,6 +108,16 @@ export default async function HomePage() {
           ctaLabel="Explore the look"
         />
       )}
+
+      {/* 6a — Linen campaign. Kept apart from the denim one: Best Sellers
+          between them renders nothing until it is curated, which would leave
+          the two photographs stacked edge to edge. */}
+      <PhotoBanner
+        src="/brand/banner-linen.jpg"
+        alt="Your everyday linen — two men in CONROY linen trousers on a tennis court"
+        href="/linen"
+        label="Your everyday linen — shop the linen collection"
+      />
 
       {/* 7 — Brand story */}
       {show("section.heritage") && <HeritageStory />}
