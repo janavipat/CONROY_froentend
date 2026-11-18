@@ -65,12 +65,14 @@ export function Header() {
       .then((r) => (r.ok ? r.json() : null))
       .then((j) => {
         if (!active || !j?.data) return;
-        const products = (j.data as NavProduct[]).filter(
-          (p) => (p.status ?? "active") === "active",
-        );
+        const all = j.data as NavProduct[];
+        const products = all.filter((p) => (p.status ?? "active") === "active");
 
+        // New In lists every product the admin marked New In, whatever its
+        // status — the same set the /new-in page shows. Filtering out drafts
+        // here left the dropdown empty while /new-in had eleven products.
         setNewIn(
-          products
+          all
             .filter((p) => p.isNewIn)
             // Products without an explicit order sort last, keeping it stable.
             .sort((a, b) => (a.newInOrder ?? Infinity) - (b.newInOrder ?? Infinity))
