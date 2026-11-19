@@ -36,6 +36,9 @@ function OnlineDot() {
   );
 }
 
+/** Shown when a customer has never given a name — never their phone number. */
+export const NO_NAME = "Name not available";
+
 /** Escapes a value for a CSV cell. */
 function csvCell(v: string | number): string {
   const s = String(v ?? "");
@@ -94,8 +97,9 @@ export function CustomersTable() {
   }, []);
 
   function exportExcel() {
-    const header = ["Mobile", "Email", "Orders", "Total spent (INR)", "Joined"];
+    const header = ["Name", "Mobile", "Email", "Orders", "Total spent (INR)", "Joined"];
     const rows = customers.map((c) => [
+      c.name || NO_NAME,
       c.phone,
       c.email || "",
       c.orderCount,
@@ -152,10 +156,11 @@ export function CustomersTable() {
           /* Narrow screens scroll the table sideways rather than stacking the
              columns out of alignment. */
           <div className="overflow-x-auto [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/15 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar]:h-1.5">
-            <table className="w-full min-w-[760px] table-fixed border-collapse text-sm">
+            <table className="w-full min-w-[940px] table-fixed border-collapse text-sm">
               {/* Everything but Email is fixed, so the figures line up down the
                   table and Email absorbs the slack instead of leaving a gap. */}
               <colgroup>
+                <col className="w-[200px]" />
                 <col className="w-[170px]" />
                 <col />
                 <col className="w-[92px]" />
@@ -166,7 +171,8 @@ export function CustomersTable() {
 
               <thead>
                 <tr className="border-b border-[#E5E5E5] text-left text-[0.6875rem] uppercase tracking-[0.06em] text-[#737373]">
-                  <th className="px-4 py-2.5 font-medium">Mobile</th>
+                  <th className="px-4 py-2.5 font-medium">Name</th>
+                  <th className="px-3 py-2.5 font-medium">Mobile</th>
                   <th className="px-3 py-2.5 font-medium">Email</th>
                   <th className="px-3 py-2.5 text-right font-medium">Orders</th>
                   <th className="px-3 py-2.5 text-right font-medium">Spent</th>
@@ -199,11 +205,19 @@ export function CustomersTable() {
                           <Link
                             href={href}
                             onClick={(e) => e.stopPropagation()}
-                            className="truncate font-medium tabular-nums text-ink outline-none focus-visible:underline"
+                            title={c.name || undefined}
+                            className={
+                              c.name
+                                ? "truncate font-medium text-ink outline-none focus-visible:underline"
+                                : "truncate italic text-stone outline-none focus-visible:underline"
+                            }
                           >
-                            {c.phone}
+                            {c.name || NO_NAME}
                           </Link>
                         </span>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span className="block truncate tabular-nums text-ink-soft">{c.phone}</span>
                       </td>
                       <td className="px-3 py-2.5">
                         <span className="block truncate text-ink-soft" title={c.email || undefined}>

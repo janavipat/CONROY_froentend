@@ -20,6 +20,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/Icons";
 import { cn } from "@/utils/cn";
 import { Loader } from "@/components/ui/Loader";
 import { StatusBadge, ReturnStageBadge } from "./ui";
+import { NO_NAME } from "./CustomersTable";
 
 function formatDate(iso: string): string {
   try {
@@ -216,7 +217,9 @@ export function CustomerDetail({ phone }: { phone: string }) {
   const totalSpent = orders
     .filter((o) => o.status !== "cancelled")
     .reduce((s, o) => s + (o.total ?? o.subtotal - (o.discount ?? 0)), 0);
-  const name = customer?.email || orders[0]?.customerName || null;
+  // The customer's own name — this used to read the email address first.
+  // Orders are a fallback for a phone that has orders but no account.
+  const name = customer?.name || orders.find((o) => o.customerName?.trim())?.customerName?.trim() || null;
   const email = customer?.email || orders[0]?.email || "";
 
   const cartUnits = activity?.cart.reduce((s, c) => s + c.quantity, 0) ?? 0;
@@ -247,11 +250,18 @@ export function CustomerDetail({ phone }: { phone: string }) {
           <div className="flex flex-wrap items-center justify-between gap-5 rounded-xl border border-[#E5E5E5] bg-white p-5 shadow-[0_1px_2px_rgba(16,16,16,0.04)]">
             <div className="flex min-w-0 items-center gap-4">
               <span className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-ink text-base font-medium text-white">
-                {(name || phone).trim().charAt(0).toUpperCase()}
+                {name ? name.charAt(0).toUpperCase() : "?"}
               </span>
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
-                  <h1 className="font-display text-xl leading-tight text-ink sm:text-2xl">{phone}</h1>
+                  <h1
+                    className={cn(
+                      "font-display text-xl leading-tight sm:text-2xl",
+                      name ? "text-ink" : "italic text-stone",
+                    )}
+                  >
+                    {name || NO_NAME}
+                  </h1>
                   {online && (
                     <span className="inline-flex items-center gap-1.5 rounded-full bg-[#16803C]/10 px-2.5 py-1 text-[0.6875rem] font-medium text-[#16803C]">
                       <span className="h-1.5 w-1.5 rounded-full bg-[#16803C]" />
@@ -260,6 +270,8 @@ export function CustomerDetail({ phone }: { phone: string }) {
                   )}
                 </div>
                 <p className="mt-0.5 truncate text-[0.8125rem] text-stone">
+                  <span className="tabular-nums text-ink-soft">{phone}</span>
+                  <span aria-hidden> · </span>
                   {email || "No email on file"}
                 </p>
                 {customer && (

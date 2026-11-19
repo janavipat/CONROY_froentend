@@ -136,6 +136,11 @@ export interface AdminOrder {
 
 export interface AdminCustomer {
   phone: string;
+  /**
+   * The account name, or failing that the name on their latest order. Null
+   * when the customer has never given one.
+   */
+  name: string | null;
   email: string | null;
   joinedAt: string;
   orderCount: number;
